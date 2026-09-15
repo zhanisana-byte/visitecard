@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Brand from "@/components/Brand";
 
 type LoginResponse = {
   access_token?: string;
@@ -157,7 +156,23 @@ export default function ConnexionPage() {
           padding: "28px 20px 0",
         }}
       >
-        <Brand />
+        <Link
+          href="/"
+          aria-label="Retour à l’accueil VisiteCard"
+          style={{ display: "inline-flex", alignItems: "center" }}
+        >
+          <img
+            src="/logo-visitecard.png.png"
+            alt="VisiteCard"
+            style={{
+              display: "block",
+              width: 170,
+              height: 64,
+              objectFit: "contain",
+              objectPosition: "left center",
+            }}
+          />
+        </Link>
       </div>
 
       <div
@@ -404,6 +419,11 @@ export default function ConnexionPage() {
 
           input {
             font-size: 16px !important;
+          }
+
+          main > div:first-child img {
+            width: 132px !important;
+            height: 52px !important;
           }
         }
       `}</style>
