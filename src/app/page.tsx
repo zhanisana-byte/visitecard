@@ -1,584 +1,424 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-type Lang = "fr" | "en";
-
-const content = {
-  fr: {
-    title: "Un seul QR code pour tous vos réseaux sociaux.",
-    subtitle: "Une carte digitale simple, élégante et toujours à jour.",
-    login: "Connexion",
-    signup: "Créer un compte",
-    project: "Projet par Sana Zhani",
-    terms: "Conditions générales d’utilisation",
-  },
-  en: {
-    title: "One QR code for all your social networks.",
-    subtitle: "A simple, elegant digital card that is always up to date.",
-    login: "Login",
-    signup: "Create account",
-    project: "Project by Sana Zhani",
-    terms: "Terms of use",
-  },
-};
-
-function InstagramIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="17.4" cy="6.7" r="1.15" fill="currentColor" />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M13.6 21v-8h2.7l.4-3h-3.1V8.1c0-.9.2-1.5 1.5-1.5h1.7V4a16 16 0 0 0-2.3-.1c-2.4 0-4 1.4-4 4V10H7.8v3h2.7v8h3.1Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function TikTokIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M14.2 3c.4 2.5 1.9 4 4.3 4.2V10c-1.5.1-2.7-.3-4.3-1.3v4.9c0 6.2-6.8 8.2-9.5 3.7-1.8-2.8-.7-7.8 4.9-8v2.7c-.4.1-.9.2-1.4.4-1.3.5-2.1 1.3-1.9 2.9.4 2.9 5.8 3.7 5.4-1.9V3h2.5Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M20 11.7A8 8 0 0 1 8.2 18.8L4 20l1.2-4.1A8 8 0 1 1 20 11.7Z" fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function LinkedInIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="4" y="9" width="3" height="11" rx="1" fill="currentColor" />
-      <circle cx="5.5" cy="5.5" r="1.7" fill="currentColor" />
-      <path d="M10 9h3v1.5c.8-1 1.9-1.8 3.5-1.8 2.8 0 3.2 2 3.2 4.6V20h-3v-5.5c0-1.3 0-2.9-1.8-2.9-1.8 0-2 1.4-2 2.9V20h-3V9Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function YouTubeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M21 12s0-3.4-.4-5a2.3 2.3 0 0 0-1.7-1.7C17.3 4.9 12 4.9 12 4.9s-5.3 0-6.9.4A2.3 2.3 0 0 0 3.4 7C3 8.6 3 12 3 12s0 3.4.4 5a2.3 2.3 0 0 0 1.7 1.7c1.6.4 6.9.4 6.9.4s5.3 0 6.9-.4a2.3 2.3 0 0 0 1.7-1.7c.4-1.6.4-5 .4-5Z" fill="currentColor" />
-      <path d="m10 15 5-3-5-3v6Z" fill="#fff" />
-    </svg>
-  );
-}
 
 const socials = [
-  { label: "Instagram", className: "instagram", icon: <InstagramIcon /> },
-  { label: "Facebook", className: "facebook", icon: <FacebookIcon /> },
-  { label: "TikTok", className: "tiktok", icon: <TikTokIcon /> },
-  { label: "WhatsApp", className: "whatsapp", icon: <WhatsAppIcon /> },
-  { label: "LinkedIn", className: "linkedin", icon: <LinkedInIcon /> },
-  { label: "YouTube", className: "youtube", icon: <YouTubeIcon /> },
+  { name: "Instagram", icon: "◎", className: "instagram" },
+  { name: "Facebook", icon: "f", className: "facebook" },
+  { name: "TikTok", icon: "♪", className: "tiktok" },
+  { name: "WhatsApp", icon: "◔", className: "whatsapp" },
+  { name: "LinkedIn", icon: "in", className: "linkedin" },
+  { name: "YouTube", icon: "▶", className: "youtube" },
 ];
 
 export default function HomePage() {
-  const [lang, setLang] = useState<Lang>("fr");
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem("visitecard_lang");
-    if (savedLang === "fr" || savedLang === "en") setLang(savedLang);
-  }, []);
-
-  function setLanguage(value: Lang) {
-    setLang(value);
-    localStorage.setItem("visitecard_lang", value);
-  }
-
-  const t = content[lang];
-
   return (
-    <main className="page">
+    <main className="home">
       <header className="header">
         <div className="headerInner">
-          <Link href="/" className="logoLink" aria-label="VisiteCard.com">
-            <img
-              src="/logo-visitecard.png.png"
-              alt="VisiteCard.com"
-              className="logo"
-            />
+          <Link href="/" className="brand" aria-label="VisiteCard">
+            <img src="/logo.png" alt="VisiteCard" />
           </Link>
 
-          <div className="headerActions">
-            <div className="langSwitch">
-              <button
-                type="button"
-                className={lang === "fr" ? "active" : ""}
-                onClick={() => setLanguage("fr")}
-              >
-                FR
-              </button>
-              <span>/</span>
-              <button
-                type="button"
-                className={lang === "en" ? "active" : ""}
-                onClick={() => setLanguage("en")}
-              >
-                EN
-              </button>
+          <div className="headerRight">
+            <div className="languages">
+              <button className="active">FR</button>
+              <span />
+              <button>EN</button>
             </div>
 
-            <Link href="/connexion" className="btn btnLogin">
-              {t.login}
+            <Link href="/connexion" className="login">
+              Connexion
             </Link>
 
-            <Link href="/creer-compte" className="btn btnSignup">
-              {t.signup}
+            <Link href="/creer-compte" className="register">
+              Créer un compte
             </Link>
           </div>
         </div>
       </header>
 
       <section className="hero">
-        <div className="glow" />
+        <div className="glow glowLeft" />
+        <div className="glow glowRight" />
 
         <div className="heroContent">
-          <h1>{t.title}</h1>
+          <h1>
+            Un seul QR code
+            <br />
+            pour tous vos réseaux sociaux<span>.</span>
+          </h1>
 
-          <p>{t.subtitle}</p>
+          <p>Une carte digitale simple, élégante et toujours à jour.</p>
 
           <div className="socialGrid">
-            {socials.map((item) => (
-              <div className="socialCard" key={item.label}>
-                <span className={`socialIcon ${item.className}`}>
-                  {item.icon}
-                </span>
-                <span className="socialName">{item.label}</span>
+            {socials.map((social) => (
+              <div className="socialCard" key={social.name}>
+                <div className={`socialIcon ${social.className}`}>
+                  {social.icon}
+                </div>
+                <strong>{social.name}</strong>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="footer">
-        <span>{t.project}</span>
-        <span className="dot">•</span>
-        <Link href="/conditions-generales">{t.terms}</Link>
-      </footer>
-
       <style jsx>{`
-        :global(html),
-        :global(body) {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          min-width: 0;
-          overflow-x: hidden;
-          background: #fbfaf8;
-        }
-
-        :global(*) {
+        * {
           box-sizing: border-box;
         }
 
-        .page {
-          width: 100%;
-          min-height: 100dvh;
-          display: grid;
-          grid-template-rows: auto 1fr auto;
-          overflow-x: hidden;
-          background:
-            radial-gradient(
-              circle at 50% 42%,
-              rgba(255, 82, 40, 0.08),
-              transparent 30%
-            ),
-            #fbfaf8;
-          color: #111;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system,
-            BlinkMacSystemFont, "Segoe UI", sans-serif;
+        .home {
+          min-height: 100vh;
+          background: #fff;
+          color: #07142c;
+          overflow: hidden;
+          font-family: Arial, Helvetica, sans-serif;
         }
 
         .header {
-          width: 100%;
-          border-bottom: 1px solid #ece9e6;
-          background: rgba(255, 255, 255, 0.84);
-          backdrop-filter: blur(14px);
+          height: 112px;
+          border-bottom: 1px solid #e8e8e8;
+          background: rgba(255,255,255,.96);
+          position: relative;
+          z-index: 10;
         }
 
         .headerInner {
-          width: min(1220px, calc(100% - 32px));
-          min-height: 92px;
+          width: min(1340px, calc(100% - 80px));
+          height: 100%;
           margin: 0 auto;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 22px;
+          gap: 32px;
         }
 
-        .logoLink {
-          width: 155px;
-          height: 70px;
-          flex: 0 0 155px;
+        .brand {
           display: flex;
           align-items: center;
-          justify-content: flex-start;
-          overflow: hidden;
           text-decoration: none;
         }
 
-        .logo {
+        .brand img {
           display: block;
-          width: 155px;
-          height: auto;
-          max-height: 68px;
+          width: 285px;
+          max-height: 82px;
           object-fit: contain;
           object-position: left center;
-          image-rendering: auto;
         }
 
-        .headerActions {
+        .headerRight {
           display: flex;
           align-items: center;
-          justify-content: flex-end;
-          gap: 9px;
-          min-width: 0;
+          gap: 20px;
         }
 
-        .langSwitch {
-          min-height: 42px;
-          padding: 0 11px;
+        .languages {
           display: flex;
           align-items: center;
-          gap: 5px;
-          border: 1px solid #dedbd8;
-          border-radius: 15px;
-          background: #fff;
+          gap: 13px;
+          margin-right: 10px;
         }
 
-        .langSwitch button {
-          padding: 0;
+        .languages button {
           border: 0;
           background: transparent;
-          color: #7c8289;
-          font-size: 11px;
-          font-weight: 900;
+          padding: 5px 0;
+          color: #8991a0;
+          font-size: 18px;
+          font-weight: 800;
           cursor: pointer;
         }
 
-        .langSwitch button.active {
-          color: #ff5228;
+        .languages button.active {
+          color: #ff501e;
         }
 
-        .langSwitch span {
-          color: #aaa6a1;
-          font-size: 11px;
+        .languages span {
+          width: 1px;
+          height: 21px;
+          background: #bfc4cc;
         }
 
-        .btn {
-          min-height: 44px;
-          padding: 0 18px;
+        .login,
+        .register {
+          height: 62px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border-radius: 12px;
+          padding: 0 30px;
+          border-radius: 17px;
+          font-size: 17px;
+          font-weight: 800;
           text-decoration: none;
-          font-size: 13px;
-          font-weight: 900;
           white-space: nowrap;
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            background 0.18s ease;
         }
 
-        .btnLogin {
-          border: 1px solid #ff5228;
+        .login {
+          color: #07142c;
+          border: 1.5px solid #8c98ae;
           background: #fff;
-          color: #ff5228;
         }
 
-        .btnLogin:hover {
-          background: #fff4ef;
-          transform: translateY(-1px);
-        }
-
-        .btnSignup {
-          border: 1px solid #ff5228;
-          background: #ff5228;
+        .register {
           color: #fff;
-          box-shadow: 0 9px 22px rgba(255, 82, 40, 0.19);
-        }
-
-        .btnSignup:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 12px 28px rgba(255, 82, 40, 0.24);
+          border: 1.5px solid #ff501e;
+          background: #ff501e;
+          padding-inline: 34px;
         }
 
         .hero {
-          min-width: 0;
-          padding: 74px 18px 82px;
+          min-height: calc(100vh - 112px);
           position: relative;
-          display: grid;
-          place-items: center;
-          overflow: hidden;
-        }
-
-        .glow {
-          position: absolute;
-          width: min(620px, 82vw);
-          aspect-ratio: 1;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            rgba(255, 82, 40, 0.1),
-            rgba(255, 82, 40, 0.025) 45%,
-            transparent 70%
-          );
-          pointer-events: none;
+          display: flex;
+          justify-content: center;
+          padding: 108px 24px 90px;
         }
 
         .heroContent {
-          width: min(920px, 100%);
-          min-width: 0;
           position: relative;
-          z-index: 1;
+          z-index: 2;
+          width: 100%;
+          max-width: 1160px;
           text-align: center;
         }
 
         h1 {
-          max-width: 860px;
-          margin: 0 auto;
-          font-size: clamp(46px, 7.2vw, 82px);
-          line-height: 0.98;
-          letter-spacing: -0.062em;
-          font-weight: 950;
-          color: #111;
+          margin: 0;
+          color: #07142c;
+          font-size: clamp(54px, 5.1vw, 80px);
+          line-height: 1.04;
+          letter-spacing: -3.8px;
+          font-weight: 900;
         }
 
-        p {
-          max-width: 620px;
-          margin: 22px auto 0;
-          color: #777d86;
-          font-size: clamp(15px, 1.8vw, 19px);
-          line-height: 1.6;
+        h1 span {
+          color: #ff501e;
+        }
+
+        .heroContent > p {
+          margin: 25px 0 50px;
+          color: #7b8495;
+          font-size: 25px;
+          line-height: 1.4;
+          font-weight: 400;
         }
 
         .socialGrid {
-          width: min(760px, 100%);
-          margin: 38px auto 0;
+          width: 456px;
+          max-width: 100%;
+          margin: 0 auto;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(3, 1fr);
           gap: 14px;
         }
 
         .socialCard {
-          width: 100%;
-          min-height: 132px;
-          padding: 18px 14px;
-          display: grid;
-          place-items: center;
-          align-content: center;
-          gap: 8px;
-          border: 1px solid #e6e3e0;
-          border-radius: 17px;
-          background: rgba(255, 255, 255, 0.92);
-          box-shadow: 0 10px 30px rgba(20, 16, 13, 0.035);
+          height: 112px;
+          border: 1px solid #e1e4e9;
+          border-radius: 20px;
+          background: rgba(255,255,255,.94);
+          box-shadow: 0 7px 22px rgba(15, 28, 55, .035);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
         }
 
         .socialIcon {
-          width: 54px;
-          height: 54px;
-          display: grid;
-          place-items: center;
+          width: 43px;
+          height: 43px;
           border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: #fff;
+          font-size: 24px;
+          line-height: 1;
+          font-weight: 900;
+          font-family: Arial, Helvetica, sans-serif;
         }
 
-        .socialIcon :global(svg) {
-          width: 29px;
-          height: 29px;
-        }
-
-        .socialName {
-          color: #5f6570;
+        .socialCard strong {
+          color: #596274;
           font-size: 13px;
           font-weight: 800;
         }
 
         .instagram {
-          background: linear-gradient(
-            135deg,
-            #f9ce34,
-            #ee2a7b 55%,
-            #6228d7
-          );
+          background: linear-gradient(135deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5);
         }
 
         .facebook {
           background: #1877f2;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 31px;
         }
 
         .tiktok {
-          background: #111;
+          background: #080808;
         }
 
         .whatsapp {
-          background: #25d366;
+          background: #20d466;
         }
 
         .linkedin {
-          background: #0a66c2;
+          background: #0877bd;
+          font-size: 18px;
         }
 
         .youtube {
-          background: #f00;
+          background: #ff0000;
+          font-size: 17px;
         }
 
-        .footer {
-          width: min(1220px, calc(100% - 32px));
-          margin: 0 auto;
-          padding: 18px 0 25px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-          color: #858b93;
-          font-size: 11px;
-          text-align: center;
+        .glow {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(2px);
+          pointer-events: none;
         }
 
-        .footer a {
-          color: inherit;
-          text-decoration: none;
-          font-weight: 800;
+        .glowLeft {
+          width: 420px;
+          height: 420px;
+          left: -250px;
+          bottom: -190px;
+          background: radial-gradient(circle, rgba(255,114,45,.17), rgba(255,114,45,0) 72%);
         }
 
-        .footer a:hover {
-          color: #ff5228;
+        .glowRight {
+          width: 480px;
+          height: 480px;
+          right: -285px;
+          top: 70px;
+          background: radial-gradient(circle, rgba(255,94,69,.13), rgba(255,94,69,0) 72%);
         }
 
-        .dot {
-          opacity: 0.35;
-        }
+        @media (max-width: 800px) {
+          .header {
+            height: 92px;
+          }
 
-        @media (max-width: 760px) {
           .headerInner {
-            width: calc(100% - 22px);
-            min-height: 76px;
-            gap: 9px;
+            width: calc(100% - 28px);
+            gap: 10px;
           }
 
-          .logoLink {
-            width: 110px;
-            height: 54px;
-            flex-basis: 110px;
+          .brand img {
+            width: 145px;
+            max-height: 58px;
           }
 
-          .logo {
-            width: 110px;
-            max-height: 52px;
+          .headerRight {
+            gap: 7px;
           }
 
-          .headerActions {
-            gap: 6px;
+          .languages {
+            display: none;
           }
 
-          .langSwitch {
-            min-height: 37px;
-            padding: 0 8px;
+          .login,
+          .register {
+            height: 42px;
+            border-radius: 12px;
+            padding: 0 13px;
+            font-size: 12px;
           }
 
-          .btn {
-            min-height: 39px;
-            padding: 0 11px;
-            font-size: 10px;
+          .register {
+            padding-inline: 14px;
           }
 
           .hero {
-            padding: 56px 12px 64px;
+            min-height: calc(100vh - 92px);
+            padding: 70px 18px 60px;
           }
 
           h1 {
-            font-size: clamp(38px, 11vw, 56px);
-            line-height: 1;
-            letter-spacing: -0.055em;
+            font-size: clamp(42px, 12.5vw, 58px);
+            line-height: 1.02;
+            letter-spacing: -2.5px;
+          }
+
+          .heroContent > p {
+            margin: 24px auto 38px;
+            max-width: 360px;
+            font-size: 18px;
+            line-height: 1.45;
           }
 
           .socialGrid {
-            width: 100%;
-            margin-top: 30px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 320px;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
           }
 
           .socialCard {
-            min-width: 0;
-            min-height: 112px;
-            padding: 15px 10px;
+            height: 91px;
+            border-radius: 17px;
+            gap: 7px;
           }
 
           .socialIcon {
-            width: 48px;
-            height: 48px;
+            width: 37px;
+            height: 37px;
+            border-radius: 10px;
+            font-size: 20px;
           }
 
-          .socialName {
-            font-size: 12px;
+          .facebook {
+            font-size: 27px;
           }
 
-          .footer {
-            width: calc(100% - 24px);
-          }
-        }
-
-        @media (max-width: 520px) {
-          .langSwitch {
-            display: none;
+          .linkedin {
+            font-size: 16px;
           }
 
-          .logoLink {
-            width: 88px;
-            height: 48px;
-            flex-basis: 88px;
+          .youtube {
+            font-size: 15px;
           }
 
-          .logo {
-            width: 88px;
-            max-height: 46px;
+          .socialCard strong {
+            font-size: 11px;
           }
         }
 
-        @media (max-width: 420px) {
+        @media (max-width: 480px) {
           .headerInner {
-            width: calc(100% - 16px);
+            width: calc(100% - 20px);
           }
 
-          .logoLink {
-            width: 72px;
-            flex-basis: 72px;
+          .brand img {
+            width: 112px;
           }
 
-          .logo {
-            width: 72px;
+          .login,
+          .register {
+            height: 38px;
+            padding-inline: 9px;
+            font-size: 10.5px;
+            border-radius: 10px;
           }
 
-          .btn {
-            padding: 0 8px;
-            font-size: 9px;
+          .hero {
+            padding-top: 62px;
           }
 
-          .footer {
-            flex-direction: column;
-            gap: 4px;
+          h1 {
+            font-size: 43px;
           }
 
-          .dot {
-            display: none;
+          .socialGrid {
+            width: 292px;
+          }
+
+          .socialCard {
+            height: 86px;
           }
         }
       `}</style>
