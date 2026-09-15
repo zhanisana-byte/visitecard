@@ -128,9 +128,9 @@ export default function HomePage() {
               <>
                 Un seul QR code
                 <br />
-                pour tous vos réseaux
-                <br className="desktopBreak" />
-                sociaux<span>.</span>
+                pour tous vos Réseaux
+                <br className="desktopBreak" />{" "}
+                Sociaux<span>.</span>
               </>
             ) : (
               <>
