@@ -4,7 +4,8 @@ export type SocialKind =
   | "tiktok"
   | "whatsapp"
   | "linkedin"
-  | "youtube";
+  | "youtube"
+  | "website";
 
 type Props = {
   kind: SocialKind;
@@ -24,6 +25,7 @@ export default function SocialIcon({
     whatsapp: "☎",
     linkedin: "in",
     youtube: "▶",
+    website: "↗",
   };
 
   return (
@@ -33,12 +35,14 @@ export default function SocialIcon({
         width: size,
         height: size,
         minWidth: size,
+        minHeight: size,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         fontSize: Math.max(14, size * 0.65),
         fontWeight: 800,
         lineHeight: 1,
+        flexShrink: 0,
       }}
       aria-hidden="true"
     >
