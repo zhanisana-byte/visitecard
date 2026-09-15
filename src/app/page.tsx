@@ -256,7 +256,7 @@ export default function HomePage() {
           align-items: center;
           gap: 5px;
           border: 1px solid #dedbd8;
-          border-radius: 12px;
+          border-radius: 15px;
           background: #fff;
         }
 
@@ -369,18 +369,17 @@ export default function HomePage() {
         }
 
         .socialGrid {
-          margin: 35px auto 0;
-          display: flex;
-          justify-content: center;
-          align-items: stretch;
-          gap: 12px;
-          flex-wrap: wrap;
+          width: min(760px, 100%);
+          margin: 38px auto 0;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
         }
 
         .socialCard {
-          width: 104px;
-          min-height: 92px;
-          padding: 12px 9px;
+          width: 100%;
+          min-height: 132px;
+          padding: 18px 14px;
           display: grid;
           place-items: center;
           align-content: center;
@@ -392,8 +391,8 @@ export default function HomePage() {
         }
 
         .socialIcon {
-          width: 40px;
-          height: 40px;
+          width: 54px;
+          height: 54px;
           display: grid;
           place-items: center;
           border-radius: 12px;
@@ -401,13 +400,13 @@ export default function HomePage() {
         }
 
         .socialIcon :global(svg) {
-          width: 22px;
-          height: 22px;
+          width: 29px;
+          height: 29px;
         }
 
         .socialName {
           color: #5f6570;
-          font-size: 10px;
+          font-size: 13px;
           font-weight: 800;
         }
 
@@ -505,21 +504,31 @@ export default function HomePage() {
           }
 
           h1 {
-            font-size: clamp(40px, 12vw, 60px);
+            font-size: clamp(38px, 11vw, 56px);
             line-height: 1;
+            letter-spacing: -0.055em;
           }
 
           .socialGrid {
-            margin-top: 29px;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 9px;
+            width: 100%;
+            margin-top: 30px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
           }
 
           .socialCard {
-            width: 100%;
             min-width: 0;
-            min-height: 84px;
+            min-height: 112px;
+            padding: 15px 10px;
+          }
+
+          .socialIcon {
+            width: 48px;
+            height: 48px;
+          }
+
+          .socialName {
+            font-size: 12px;
           }
 
           .footer {
@@ -561,10 +570,6 @@ export default function HomePage() {
           .btn {
             padding: 0 8px;
             font-size: 9px;
-          }
-
-          .socialGrid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .footer {
