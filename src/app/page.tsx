@@ -2,37 +2,102 @@
 
 import Link from "next/link";
 
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2.2" />
+      <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="2.2" />
+      <circle cx="17.4" cy="6.8" r="1.15" fill="currentColor" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M13.8 21v-8h2.7l.4-3.1h-3.1V8c0-.9.3-1.5 1.6-1.5H17V3.7c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.3H8.2V13h2.6v8h3z"
+      />
+    </svg>
+  );
+}
+
+function TikTokIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M15.4 3c.3 1.8 1.4 3.3 3.1 4.1.8.4 1.6.5 2.5.5v3.3c-1.9 0-3.7-.6-5.2-1.7v6.2c0 3.1-2.5 5.6-5.6 5.6a5.6 5.6 0 0 1 0-11.2c.4 0 .8 0 1.2.1v3.4a2.3 2.3 0 1 0 1.1 2v-12.3h2.9z"
+      />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 2a9.8 9.8 0 0 0-8.4 14.9L2 22l5.3-1.5A10 10 0 1 0 12 2zm0 17.9a8 8 0 0 1-4.1-1.1l-.3-.2-3.1.9.9-3-.2-.3A7.9 7.9 0 1 1 12 19.9zm4.4-5.9c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.3.1-.2 0-.4 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 5 4.3 1.8.8 2.5.8 3.4.7 1-.2 1.4-.7 1.6-1.3.2-.6.2-1.1.1-1.3-.1-.1-.3-.2-.5-.3z"
+      />
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M6.5 8.4H3.2V19h3.3V8.4zM4.8 3A1.9 1.9 0 1 0 4.8 6.8 1.9 1.9 0 0 0 4.8 3zM19.8 12.9c0-3.2-1.7-4.8-4-4.8-1.9 0-2.7 1-3.2 1.7V8.4H9.3V19h3.3v-5.2c0-1.4.3-2.8 2-2.8 1.7 0 1.7 1.6 1.7 2.9V19h3.3l.2-6.1z"
+      />
+    </svg>
+  );
+}
+
+function YouTubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M22 7.2a2.8 2.8 0 0 0-2-2C18.2 4.7 12 4.7 12 4.7s-6.2 0-8 .5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 1.5 12 29 29 0 0 0 2 16.8a2.8 2.8 0 0 0 2 2c1.8.5 8 .5 8 .5s6.2 0 8-.5a2.8 2.8 0 0 0 2-2 29 29 0 0 0 .5-4.8 29 29 0 0 0-.5-4.8z"
+      />
+      <path fill="#ff0000" d="M10 15.4V8.6l6 3.4-6 3.4z" />
+    </svg>
+  );
+}
+
 const socials = [
   {
     name: "Instagram",
-    icon: "◎",
-    background:
-      "linear-gradient(135deg,#feda75 0%,#fa7e1e 25%,#d62976 50%,#962fbf 75%,#4f5bd5 100%)",
+    className: "instagram",
+    icon: <InstagramIcon />,
   },
   {
     name: "Facebook",
-    icon: "f",
-    background: "#1877F2",
+    className: "facebook",
+    icon: <FacebookIcon />,
   },
   {
     name: "TikTok",
-    icon: "♪",
-    background: "#050505",
+    className: "tiktok",
+    icon: <TikTokIcon />,
   },
   {
     name: "WhatsApp",
-    icon: "◔",
-    background: "#20D466",
+    className: "whatsapp",
+    icon: <WhatsAppIcon />,
   },
   {
     name: "LinkedIn",
-    icon: "in",
-    background: "#0877BD",
+    className: "linkedin",
+    icon: <LinkedInIcon />,
   },
   {
     name: "YouTube",
-    icon: "▶",
-    background: "#FF0000",
+    className: "youtube",
+    icon: <YouTubeIcon />,
   },
 ];
 
@@ -43,7 +108,7 @@ export default function HomePage() {
         <div className="headerInner">
           <Link href="/" className="logoLink">
             <img
-              src="/logo-visitecard.png.png"
+              src="/logo.png"
               alt="VisiteCard"
               className="logo"
             />
@@ -51,13 +116,13 @@ export default function HomePage() {
 
           <div className="headerRight">
             <div className="languages">
-              <button type="button" className="lang active">
+              <button className="lang active" type="button">
                 FR
               </button>
 
-              <span>|</span>
+              <span className="separator">|</span>
 
-              <button type="button" className="lang">
+              <button className="lang" type="button">
                 EN
               </button>
             </div>
@@ -80,9 +145,10 @@ export default function HomePage() {
         <div className="heroContent">
           <h1 className="title">
             <span>Un seul QR code</span>
+
             <span>
               pour tous vos réseaux sociaux
-              <strong>.</strong>
+              <b>.</b>
             </span>
           </h1>
 
@@ -93,26 +159,11 @@ export default function HomePage() {
           <div className="socialGrid">
             {socials.map((social) => (
               <div className="socialCard" key={social.name}>
-                <div
-                  className="socialIcon"
-                  style={{
-                    background: social.background,
-                  }}
-                >
-                  <span
-                    className={
-                      social.name === "Facebook"
-                        ? "facebookIcon"
-                        : social.name === "LinkedIn"
-                          ? "linkedinIcon"
-                          : ""
-                    }
-                  >
-                    {social.icon}
-                  </span>
+                <div className={`socialIcon ${social.className}`}>
+                  {social.icon}
                 </div>
 
-                <span className="socialName">{social.name}</span>
+                <span>{social.name}</span>
               </div>
             ))}
           </div>
@@ -120,15 +171,17 @@ export default function HomePage() {
       </section>
 
       <footer className="footer">
-        <div className="footerFirst">
-          <Link href="/conditions-generales">Conditions générales</Link>
+        <div>
+          <Link href="/conditions-generales">
+            Conditions générales
+          </Link>
 
-          <span className="footerSeparator">·</span>
+          <span className="footerDot">·</span>
 
           <span>© 2026 VisiteCard</span>
         </div>
 
-        <div className="project">Un projet de Sana Zhani</div>
+        <p>Un projet de Sana Zhani</p>
       </footer>
 
       <style jsx global>{`
@@ -136,7 +189,8 @@ export default function HomePage() {
           box-sizing: border-box;
         }
 
-        html {
+        html,
+        body {
           margin: 0;
           padding: 0;
           width: 100%;
@@ -145,67 +199,43 @@ export default function HomePage() {
         }
 
         body {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          min-height: 100%;
-          overflow-x: hidden;
-          overflow-y: auto;
           background: #ffffff;
-          font-family:
-            Inter,
-            Arial,
-            Helvetica,
-            sans-serif;
-        }
-
-        button,
-        input,
-        textarea,
-        select {
-          font-family: inherit;
+          color: #06142d;
+          font-family: Arial, Helvetica, sans-serif;
         }
 
         .home {
-          position: relative;
           width: 100%;
           min-height: 100vh;
-          margin: 0;
-          padding: 0;
 
           display: flex;
           flex-direction: column;
 
-          overflow: hidden;
-
           background: #ffffff;
-          color: #06142d;
+          overflow-x: hidden;
         }
 
-        /* =========================
-           HEADER
-        ========================= */
+        /* HEADER */
 
         .header {
           position: relative;
           z-index: 20;
 
-          flex: 0 0 auto;
-
           width: 100%;
           height: 118px;
+
+          flex-shrink: 0;
 
           display: flex;
           align-items: center;
 
-          background: rgba(255, 255, 255, 0.98);
+          background: #ffffff;
           border-bottom: 1px solid #e8ebef;
         }
 
         .headerInner {
           width: calc(100% - 120px);
           max-width: 1400px;
-
           height: 100%;
 
           margin: 0 auto;
@@ -213,24 +243,23 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+
           gap: 30px;
         }
 
         .logoLink {
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: flex-start;
 
           flex-shrink: 0;
-
-          text-decoration: none;
         }
 
         .logo {
           display: block;
 
           width: 155px;
-          height: 78px;
+          height: 80px;
 
           object-fit: contain;
           object-position: left center;
@@ -248,22 +277,15 @@ export default function HomePage() {
           display: flex;
           align-items: center;
 
-          gap: 12px;
-
-          margin-right: 7px;
-
-          color: #b8bec9;
+          gap: 11px;
+          margin-right: 5px;
         }
 
         .lang {
-          appearance: none;
-
           margin: 0;
           padding: 0;
 
           border: 0;
-          outline: 0;
-
           background: transparent;
 
           color: #8991a0;
@@ -278,11 +300,15 @@ export default function HomePage() {
           color: #ff501e;
         }
 
+        .separator {
+          color: #c0c5cd;
+        }
+
         .loginButton,
         .registerButton {
           height: 62px;
 
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: center;
 
@@ -290,26 +316,19 @@ export default function HomePage() {
 
           border-radius: 18px;
 
-          text-decoration: none;
-
           font-size: 16px;
           font-weight: 800;
 
+          text-decoration: none;
           white-space: nowrap;
-
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            background 0.18s ease;
         }
 
         .loginButton {
           min-width: 158px;
 
-          color: #07142c;
+          color: #06142d;
 
           background: #ffffff;
-
           border: 1.5px solid #94a0b3;
         }
 
@@ -319,39 +338,22 @@ export default function HomePage() {
           color: #ffffff;
 
           background: #ff501e;
-
           border: 1.5px solid #ff501e;
         }
 
-        .loginButton:hover,
-        .registerButton:hover {
-          transform: translateY(-1px);
-        }
-
-        .registerButton:hover {
-          background: #f34518;
-
-          box-shadow: 0 10px 24px rgba(255, 80, 30, 0.18);
-        }
-
-        /* =========================
-           HERO
-        ========================= */
+        /* HERO */
 
         .hero {
           position: relative;
 
-          flex: 1 0 auto;
-
           width: 100%;
-
-          min-height: 650px;
+          flex: 1;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          padding: 72px 30px 80px;
+          padding: 60px 25px 65px;
 
           overflow: hidden;
         }
@@ -361,7 +363,7 @@ export default function HomePage() {
           z-index: 2;
 
           width: 100%;
-          max-width: 1250px;
+          max-width: 1200px;
 
           margin: 0 auto;
 
@@ -374,15 +376,15 @@ export default function HomePage() {
 
         .title {
           width: 100%;
-          max-width: 1100px;
+          max-width: 1050px;
 
           margin: 0;
 
           color: #06142d;
 
-          font-size: clamp(46px, 4.1vw, 64px);
+          font-size: clamp(43px, 3.8vw, 59px);
           line-height: 1.08;
-          letter-spacing: -2.8px;
+          letter-spacing: -2.4px;
           font-weight: 900;
 
           text-align: center;
@@ -392,97 +394,125 @@ export default function HomePage() {
           display: block;
         }
 
-        .title strong {
+        .title b {
           color: #ff501e;
-          font-weight: 900;
         }
 
         .subtitle {
-          margin: 25px 0 0;
+          margin: 24px 0 0;
 
           color: #7d8698;
 
-          font-size: 21px;
+          font-size: 20px;
           line-height: 1.45;
           font-weight: 400;
-
-          text-align: center;
         }
 
-        /* =========================
-           SOCIAL
-        ========================= */
+        /* SOCIALS */
 
         .socialGrid {
-          width: 470px;
+          width: 390px;
           max-width: 100%;
 
-          margin-top: 45px;
+          margin-top: 36px;
 
           display: grid;
           grid-template-columns: repeat(3, 1fr);
 
-          gap: 14px;
+          gap: 10px;
         }
 
         .socialCard {
-          height: 108px;
+          height: 86px;
 
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
 
-          gap: 9px;
+          gap: 7px;
 
-          background: rgba(255, 255, 255, 0.92);
+          background: rgba(255, 255, 255, 0.96);
 
           border: 1px solid #dfe3e9;
-          border-radius: 19px;
+          border-radius: 15px;
 
-          box-shadow: 0 8px 24px rgba(10, 25, 50, 0.035);
+          box-shadow: 0 5px 16px rgba(10, 25, 50, 0.03);
+        }
+
+        .socialCard > span {
+          color: #596274;
+
+          font-size: 11px;
+          line-height: 1;
+          font-weight: 800;
         }
 
         .socialIcon {
-          width: 43px;
-          height: 43px;
+          width: 34px;
+          height: 34px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          border-radius: 12px;
+          border-radius: 9px;
 
           color: #ffffff;
 
-          font-size: 21px;
-          font-weight: 900;
-          line-height: 1;
+          overflow: hidden;
         }
 
-        .facebookIcon {
-          font-size: 30px;
-          font-family: Arial, Helvetica, sans-serif;
-          font-weight: 800;
+        .socialIcon svg {
+          display: block;
+
+          width: 23px;
+          height: 23px;
         }
 
-        .linkedinIcon {
-          font-size: 16px;
-          font-family: Arial, Helvetica, sans-serif;
-          font-weight: 900;
+        .instagram {
+          background:
+            radial-gradient(
+              circle at 30% 105%,
+              #fdf497 0%,
+              #fdf497 5%,
+              #fd5949 45%,
+              #d6249f 60%,
+              #285aeb 90%
+            );
         }
 
-        .socialName {
-          color: #596274;
-
-          font-size: 13px;
-          line-height: 1;
-          font-weight: 800;
+        .facebook {
+          background: #1877f2;
         }
 
-        /* =========================
-           DECORATION
-        ========================= */
+        .facebook svg {
+          width: 28px;
+          height: 28px;
+        }
+
+        .tiktok {
+          background: #050505;
+        }
+
+        .whatsapp {
+          background: #25d366;
+        }
+
+        .linkedin {
+          background: #0a66c2;
+        }
+
+        .youtube {
+          background: #ff0000;
+        }
+
+        .youtube svg {
+          width: 25px;
+          height: 25px;
+        }
+
+        /* DECORATION */
 
         .glow {
           position: absolute;
@@ -493,48 +523,43 @@ export default function HomePage() {
         }
 
         .glowRight {
-          width: 520px;
-          height: 520px;
+          width: 490px;
+          height: 490px;
 
-          right: -320px;
-          top: 50px;
+          right: -305px;
+          top: 45px;
 
           background: radial-gradient(
             circle,
-            rgba(255, 93, 55, 0.13) 0%,
-            rgba(255, 93, 55, 0.055) 45%,
+            rgba(255, 93, 55, 0.12) 0%,
+            rgba(255, 93, 55, 0.05) 45%,
             rgba(255, 93, 55, 0) 72%
           );
         }
 
         .glowLeft {
-          width: 500px;
-          height: 500px;
+          width: 470px;
+          height: 470px;
 
-          left: -310px;
-          bottom: -230px;
+          left: -300px;
+          bottom: -225px;
 
           background: radial-gradient(
             circle,
-            rgba(255, 116, 48, 0.14) 0%,
+            rgba(255, 116, 48, 0.13) 0%,
             rgba(255, 116, 48, 0.05) 46%,
             rgba(255, 116, 48, 0) 72%
           );
         }
 
-        /* =========================
-           FOOTER
-        ========================= */
+        /* FOOTER */
 
         .footer {
-          position: relative;
-          z-index: 10;
-
-          flex: 0 0 auto;
-
           width: 100%;
 
-          padding: 20px 20px 22px;
+          flex-shrink: 0;
+
+          padding: 16px 20px 18px;
 
           background: #ffffff;
 
@@ -544,51 +569,45 @@ export default function HomePage() {
 
           text-align: center;
 
-          font-size: 12px;
-          line-height: 1.7;
+          font-size: 11px;
+          line-height: 1.6;
         }
 
-        .footerFirst {
+        .footer > div {
           display: flex;
           align-items: center;
           justify-content: center;
 
-          flex-wrap: wrap;
-
           gap: 8px;
+
+          flex-wrap: wrap;
         }
 
         .footer a {
           color: #687182;
 
-          text-decoration: none;
-
           font-weight: 600;
+
+          text-decoration: none;
         }
 
-        .footer a:hover {
-          color: #ff501e;
-        }
-
-        .footerSeparator {
+        .footerDot {
           color: #c5c9d0;
         }
 
-        .project {
-          margin-top: 1px;
+        .footer p {
+          margin: 1px 0 0;
 
           color: #a0a6b1;
 
-          font-size: 11px;
+          font-size: 10.5px;
         }
 
-        /* =========================
-           TABLET
-        ========================= */
+        /* TABLET */
 
         @media (max-width: 900px) {
           .header {
-            height: 100px;
+            height: 98px;
           }
 
           .headerInner {
@@ -596,23 +615,19 @@ export default function HomePage() {
           }
 
           .logo {
-            width: 135px;
+            width: 130px;
             height: 65px;
           }
 
           .headerRight {
-            gap: 10px;
-          }
-
-          .languages {
-            margin-right: 2px;
+            gap: 9px;
           }
 
           .loginButton,
           .registerButton {
-            height: 50px;
+            height: 49px;
 
-            padding: 0 19px;
+            padding: 0 18px;
 
             border-radius: 14px;
 
@@ -620,108 +635,73 @@ export default function HomePage() {
           }
 
           .loginButton {
-            min-width: 120px;
+            min-width: 118px;
           }
 
           .registerButton {
-            min-width: 170px;
-          }
-
-          .hero {
-            min-height: 610px;
-
-            padding-top: 70px;
-            padding-bottom: 70px;
+            min-width: 165px;
           }
 
           .title {
-            max-width: 750px;
+            max-width: 760px;
 
-            font-size: 47px;
-            letter-spacing: -2px;
-          }
-
-          .subtitle {
-            font-size: 19px;
+            font-size: 45px;
           }
         }
 
-        /* =========================
-           MOBILE
-        ========================= */
+        /* MOBILE */
 
         @media (max-width: 600px) {
-          html,
-          body {
-            overflow-x: hidden !important;
-          }
-
-          .home {
-            overflow-x: hidden;
-            overflow-y: visible;
-          }
-
           .header {
-            height: 82px;
+            height: 76px;
           }
 
           .headerInner {
             width: 100%;
 
-            padding: 0 13px;
+            padding: 0 11px;
 
-            gap: 7px;
+            gap: 6px;
           }
 
           .logo {
-            width: 92px;
-            height: 50px;
-          }
-
-          .headerRight {
-            gap: 6px;
+            width: 88px;
+            height: 48px;
           }
 
           .languages {
             display: none;
           }
 
-          .loginButton,
-          .registerButton {
-            height: 38px;
-
-            min-width: 0;
-
-            padding: 0 10px;
-
-            border-radius: 11px;
-
-            font-size: 11px;
+          .headerRight {
+            gap: 6px;
           }
 
+          .loginButton,
           .registerButton {
-            padding-left: 11px;
-            padding-right: 11px;
+            min-width: 0;
+
+            height: 37px;
+
+            padding: 0 9px;
+
+            border-radius: 10px;
+
+            font-size: 10.5px;
           }
 
           .hero {
-            min-height: 0;
-
-            padding: 60px 17px 65px;
+            padding: 48px 16px 55px;
 
             align-items: flex-start;
-          }
-
-          .heroContent {
-            max-width: 100%;
           }
 
           .title {
             max-width: 390px;
 
-            font-size: 36px;
-            line-height: 1.06;
-            letter-spacing: -1.5px;
+            font-size: 33px;
+            line-height: 1.07;
+            letter-spacing: -1.4px;
           }
 
           .title span {
@@ -733,110 +713,80 @@ export default function HomePage() {
           }
 
           .subtitle {
-            max-width: 340px;
+            max-width: 330px;
 
-            margin-top: 22px;
+            margin-top: 20px;
 
-            font-size: 16px;
-            line-height: 1.5;
+            font-size: 15px;
+            line-height: 1.45;
           }
 
           .socialGrid {
-            width: 295px;
+            width: 260px;
 
-            margin-top: 35px;
+            margin-top: 29px;
 
-            gap: 9px;
+            gap: 7px;
           }
 
           .socialCard {
-            height: 88px;
+            height: 70px;
 
-            gap: 7px;
+            gap: 5px;
 
-            border-radius: 15px;
+            border-radius: 12px;
           }
 
           .socialIcon {
-            width: 37px;
-            height: 37px;
+            width: 29px;
+            height: 29px;
 
-            border-radius: 10px;
-
-            font-size: 18px;
+            border-radius: 8px;
           }
 
-          .facebookIcon {
-            font-size: 26px;
+          .socialIcon svg {
+            width: 19px;
+            height: 19px;
           }
 
-          .linkedinIcon {
-            font-size: 14px;
+          .facebook svg {
+            width: 23px;
+            height: 23px;
           }
 
-          .socialName {
-            font-size: 11px;
-          }
-
-          .glowRight {
-            width: 330px;
-            height: 330px;
-
-            right: -235px;
-          }
-
-          .glowLeft {
-            width: 320px;
-            height: 320px;
-
-            left: -230px;
-            bottom: -100px;
+          .socialCard > span {
+            font-size: 9px;
           }
 
           .footer {
-            padding: 18px 15px 20px;
-
-            font-size: 11px;
-          }
-
-          .project {
-            font-size: 10.5px;
-          }
-        }
-
-        @media (max-width: 390px) {
-          .headerInner {
-            padding: 0 10px;
-          }
-
-          .logo {
-            width: 82px;
-          }
-
-          .loginButton,
-          .registerButton {
-            height: 36px;
-
-            padding-left: 8px;
-            padding-right: 8px;
+            padding: 14px 12px 16px;
 
             font-size: 10px;
           }
 
-          .title {
-            font-size: 33px;
+          .footer p {
+            font-size: 9.5px;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .logo {
+            width: 78px;
           }
 
-          .subtitle {
-            font-size: 15px;
+          .loginButton,
+          .registerButton {
+            padding: 0 7px;
+
+            font-size: 9.5px;
+          }
+
+          .title {
+            font-size: 30px;
           }
 
           .socialGrid {
-            width: 280px;
-          }
-
-          .socialCard {
-            height: 84px;
+            width: 248px;
           }
         }
       `}</style>
