@@ -44,11 +44,10 @@ export default function HomePage() {
         padding: 0,
         minHeight: "100vh",
         width: "100%",
-        overflow: "hidden",
+        overflowX: "hidden",
         background: "#ffffff",
         color: "#06142d",
-        fontFamily:
-          'Inter, Arial, Helvetica, sans-serif',
+        fontFamily: "Inter, Arial, Helvetica, sans-serif",
       }}
     >
       <header
@@ -64,6 +63,7 @@ export default function HomePage() {
         }}
       >
         <div
+          className="vc-header-inner"
           style={{
             width: "calc(100% - 120px)",
             maxWidth: "1320px",
@@ -82,6 +82,7 @@ export default function HomePage() {
             }}
           >
             <img
+              className="vc-logo"
               src="/logo.png"
               alt="VisiteCard"
               style={{
@@ -95,6 +96,7 @@ export default function HomePage() {
           </Link>
 
           <div
+            className="vc-header-right"
             style={{
               display: "flex",
               alignItems: "center",
@@ -102,13 +104,12 @@ export default function HomePage() {
             }}
           >
             <div
+              className="vc-languages"
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "13px",
                 marginRight: "12px",
-                fontSize: "18px",
-                fontWeight: 800,
               }}
             >
               <button
@@ -127,14 +128,7 @@ export default function HomePage() {
                 FR
               </button>
 
-              <span
-                style={{
-                  color: "#b7bdc8",
-                  fontWeight: 400,
-                }}
-              >
-                |
-              </span>
+              <span style={{ color: "#b7bdc8" }}>|</span>
 
               <button
                 type="button"
@@ -154,6 +148,7 @@ export default function HomePage() {
             </div>
 
             <Link
+              className="vc-login"
               href="/connexion"
               style={{
                 height: "64px",
@@ -176,6 +171,7 @@ export default function HomePage() {
             </Link>
 
             <Link
+              className="vc-register"
               href="/creer-compte"
               style={{
                 height: "64px",
@@ -201,14 +197,15 @@ export default function HomePage() {
       </header>
 
       <section
+        className="vc-hero"
         style={{
           position: "relative",
           width: "100%",
-          minHeight: "calc(100vh - 118px)",
+          minHeight: "calc(100vh - 118px - 100px)",
           display: "flex",
           justifyContent: "center",
           alignItems: "flex-start",
-          padding: "120px 30px 80px",
+          padding: "105px 30px 85px",
           boxSizing: "border-box",
         }}
       >
@@ -254,46 +251,36 @@ export default function HomePage() {
           }}
         >
           <h1
+            className="vc-title"
             style={{
               width: "100%",
-              maxWidth: "1200px",
+              maxWidth: "1100px",
               margin: 0,
               padding: 0,
               textAlign: "center",
               color: "#06142d",
-              fontSize: "clamp(58px, 5.2vw, 80px)",
-              lineHeight: 1.04,
-              letterSpacing: "-4px",
+              fontSize: "clamp(48px, 4.2vw, 66px)",
+              lineHeight: 1.06,
+              letterSpacing: "-3px",
               fontWeight: 900,
             }}
           >
-            <span
-              style={{
-                display: "block",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Un seul QR code
-            </span>
+            <span className="vc-title-line">Un seul QR code</span>
 
-            <span
-              style={{
-                display: "block",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <span className="vc-title-line">
               pour tous vos réseaux sociaux
               <span style={{ color: "#ff501e" }}>.</span>
             </span>
           </h1>
 
           <p
+            className="vc-subtitle"
             style={{
               margin: "26px 0 0",
               padding: 0,
               textAlign: "center",
               color: "#7d8698",
-              fontSize: "25px",
+              fontSize: "22px",
               lineHeight: 1.4,
               fontWeight: 400,
             }}
@@ -302,10 +289,11 @@ export default function HomePage() {
           </p>
 
           <div
+            className="vc-social-grid"
             style={{
               width: "455px",
               maxWidth: "100%",
-              marginTop: "54px",
+              marginTop: "48px",
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: "14px",
@@ -314,6 +302,7 @@ export default function HomePage() {
             {socials.map((social) => (
               <div
                 key={social.name}
+                className="vc-social-card"
                 style={{
                   height: "108px",
                   border: "1px solid #dfe3e9",
@@ -329,6 +318,7 @@ export default function HomePage() {
                 }}
               >
                 <div
+                  className="vc-social-icon"
                   style={{
                     width: "43px",
                     height: "43px",
@@ -342,8 +332,8 @@ export default function HomePage() {
                       social.name === "Facebook"
                         ? "30px"
                         : social.name === "LinkedIn"
-                          ? "17px"
-                          : "21px",
+                        ? "17px"
+                        : "21px",
                     fontWeight: 900,
                     lineHeight: 1,
                   }}
@@ -367,6 +357,72 @@ export default function HomePage() {
         </div>
       </section>
 
+      <footer
+        style={{
+          width: "100%",
+          padding: "25px 20px 28px",
+          boxSizing: "border-box",
+          borderTop: "1px solid #eceef1",
+          background: "#ffffff",
+          textAlign: "center",
+          color: "#8a92a1",
+          fontSize: "13px",
+          lineHeight: 1.8,
+        }}
+      >
+        <div>
+          <Link
+            href="/conditions-generales"
+            style={{
+              color: "#687182",
+              textDecoration: "none",
+            }}
+          >
+            Conditions générales
+          </Link>
+
+          <span
+            style={{
+              margin: "0 10px",
+              color: "#c5c9d0",
+            }}
+          >
+            ·
+          </span>
+
+          <Link
+            href="/confidentialite"
+            style={{
+              color: "#687182",
+              textDecoration: "none",
+            }}
+          >
+            Confidentialité
+          </Link>
+
+          <span
+            style={{
+              margin: "0 10px",
+              color: "#c5c9d0",
+            }}
+          >
+            ·
+          </span>
+
+          <span>© 2026 VisiteCard</span>
+        </div>
+
+        <div
+          style={{
+            marginTop: "2px",
+            fontSize: "12px",
+            color: "#a0a6b1",
+          }}
+        >
+          Un projet de Sana Zhani
+        </div>
+      </footer>
+
       <style jsx global>{`
         html,
         body {
@@ -380,25 +436,30 @@ export default function HomePage() {
           overflow-x: hidden !important;
         }
 
+        .vc-title-line {
+          display: block;
+          white-space: nowrap;
+        }
+
         @media (max-width: 900px) {
-          header > div {
+          .vc-header-inner {
             width: calc(100% - 30px) !important;
           }
 
-          header img {
-            width: 150px !important;
+          .vc-logo {
+            width: 145px !important;
             height: 60px !important;
           }
 
-          header > div > div {
+          .vc-header-right {
             gap: 8px !important;
           }
 
-          header > div > div > div {
+          .vc-languages {
             display: none !important;
           }
 
-          header a[href="/connexion"] {
+          .vc-login {
             min-width: 0 !important;
             height: 44px !important;
             padding: 0 15px !important;
@@ -406,7 +467,7 @@ export default function HomePage() {
             font-size: 13px !important;
           }
 
-          header a[href="/creer-compte"] {
+          .vc-register {
             min-width: 0 !important;
             height: 44px !important;
             padding: 0 16px !important;
@@ -414,16 +475,17 @@ export default function HomePage() {
             font-size: 13px !important;
           }
 
-          section {
+          .vc-hero {
             padding-top: 75px !important;
           }
 
-          h1 {
-            font-size: 50px !important;
-            letter-spacing: -2.5px !important;
+          .vc-title {
+            max-width: 700px !important;
+            font-size: 46px !important;
+            letter-spacing: -2px !important;
           }
 
-          h1 > span {
+          .vc-title-line {
             white-space: normal !important;
           }
         }
@@ -433,67 +495,83 @@ export default function HomePage() {
             height: 88px !important;
           }
 
-          header img {
-            width: 112px !important;
+          .vc-header-inner {
+            width: calc(100% - 20px) !important;
+          }
+
+          .vc-logo {
+            width: 108px !important;
             height: 48px !important;
           }
 
-          header a[href="/connexion"] {
+          .vc-login {
             height: 38px !important;
             padding: 0 9px !important;
-            font-size: 11px !important;
+            font-size: 10.5px !important;
             border-radius: 10px !important;
           }
 
-          header a[href="/creer-compte"] {
+          .vc-register {
             height: 38px !important;
             padding: 0 10px !important;
-            font-size: 11px !important;
+            font-size: 10.5px !important;
             border-radius: 10px !important;
           }
 
-          section {
-            min-height: calc(100vh - 88px) !important;
-            padding: 65px 18px 50px !important;
+          .vc-hero {
+            min-height: auto !important;
+            padding: 60px 18px 65px !important;
           }
 
-          h1 {
-            max-width: 430px !important;
-            font-size: 43px !important;
-            line-height: 1.03 !important;
-            letter-spacing: -2px !important;
+          .vc-title {
+            max-width: 400px !important;
+            font-size: 37px !important;
+            line-height: 1.05 !important;
+            letter-spacing: -1.5px !important;
           }
 
-          p {
-            max-width: 350px !important;
-            margin-top: 23px !important;
-            font-size: 18px !important;
+          .vc-subtitle {
+            max-width: 340px !important;
+            margin-top: 22px !important;
+            font-size: 17px !important;
           }
 
-          section > div:last-child > div:last-child {
-            width: 300px !important;
-            margin-top: 38px !important;
+          .vc-social-grid {
+            width: 294px !important;
+            margin-top: 36px !important;
             gap: 10px !important;
+          }
+
+          .vc-social-card {
+            height: 88px !important;
+            border-radius: 16px !important;
+            gap: 7px !important;
+          }
+
+          .vc-social-icon {
+            width: 37px !important;
+            height: 37px !important;
+            border-radius: 10px !important;
           }
         }
 
         @media (max-width: 390px) {
-          header img {
-            width: 98px !important;
+          .vc-logo {
+            width: 95px !important;
           }
 
-          header a[href="/connexion"] {
+          .vc-login {
             padding: 0 7px !important;
             font-size: 10px !important;
           }
 
-          header a[href="/creer-compte"] {
+          .vc-register {
             padding: 0 8px !important;
             font-size: 10px !important;
           }
 
-          h1 {
-            font-size: 39px !important;
+          .vc-title {
+            font-size: 34px !important;
           }
         }
       `}</style>
