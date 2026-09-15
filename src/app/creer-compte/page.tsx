@@ -33,6 +33,7 @@ export default function CreateAccountPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -59,6 +60,11 @@ export default function CreateAccountPage() {
 
     if (password.length < 8) {
       setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Vous devez accepter les Conditions générales.");
       return;
     }
 
@@ -198,39 +204,14 @@ export default function CreateAccountPage() {
       <div className="authTop">
         <Link
           href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            textDecoration: "none",
-            color: "#111",
-            fontWeight: 800,
-            fontSize: 22,
-          }}
+          aria-label="Retour à l’accueil VisiteCard"
+          style={{ display: "inline-flex", alignItems: "center" }}
         >
-          <span
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: "#ff5a1f",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontSize: 18,
-              fontWeight: 900,
-            }}
-          >
-            V
-          </span>
-
-          <span>
-            visite
-            <span style={{ color: "#ff5a1f" }}>
-              Card
-            </span>
-          </span>
+          <img
+            src="/logo-visitecard.png.png"
+            alt="VisiteCard"
+            className="authLogo"
+          />
         </Link>
       </div>
 
@@ -289,6 +270,26 @@ export default function CreateAccountPage() {
             />
           </label>
 
+          <label className="termsRow">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(event) => setAcceptedTerms(event.target.checked)}
+              required
+            />
+            <span>
+              J’accepte les{" "}
+              <Link href="/conditions-generales" target="_blank">
+                Conditions générales
+              </Link>{" "}
+              et la{" "}
+              <Link href="/confidentialite" target="_blank">
+                Politique de confidentialité
+              </Link>
+              .
+            </span>
+          </label>
+
           {error && (
             <div
               style={{
@@ -340,6 +341,60 @@ export default function CreateAccountPage() {
           </Link>
         </p>
       </section>
+
+      <style jsx global>{`
+        .authLogo {
+          display: block;
+          width: 170px;
+          height: 64px;
+          object-fit: contain;
+          object-position: left center;
+        }
+
+        .termsRow {
+          display: flex !important;
+          grid-template-columns: none !important;
+          align-items: flex-start;
+          gap: 10px !important;
+          font-size: 13px !important;
+          line-height: 1.5;
+          font-weight: 600 !important;
+          color: #697386;
+          cursor: pointer;
+        }
+
+        .termsRow input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          min-height: 18px !important;
+          padding: 0 !important;
+          margin: 1px 0 0;
+          flex: 0 0 18px;
+          accent-color: #ff4f23;
+          box-shadow: none !important;
+        }
+
+        .termsRow a {
+          color: #ff4f23;
+          font-weight: 800;
+          text-decoration: none;
+        }
+
+        @media (max-width: 560px) {
+          .authLogo {
+            width: 132px;
+            height: 52px;
+          }
+
+          .authCard input:not([type="checkbox"]) {
+            font-size: 16px !important;
+          }
+
+          .termsRow {
+            font-size: 12.5px !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }
