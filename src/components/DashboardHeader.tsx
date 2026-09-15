@@ -19,31 +19,35 @@ export default function DashboardHeader() {
   const links = [
     {
       href: "/mon-espace",
-      label: fr ? "Accueil" : "Home",
+      fr: "Accueil",
+      en: "Home",
     },
     {
       href: "/mon-espace/statistiques",
-      label: fr ? "Statistiques" : "Statistics",
+      fr: "Statistiques",
+      en: "Statistics",
     },
     {
       href: "/mon-espace/avis",
-      label: fr ? "Avis" : "Reviews",
+      fr: "Avis",
+      en: "Reviews",
     },
     {
       href: "/mon-espace/profil",
-      label: fr ? "Profil" : "Profile",
+      fr: "Profil",
+      en: "Profile",
     },
   ];
 
-  function isActive(href: string) {
+  const active = (href: string) => {
     if (href === "/mon-espace") {
       return pathname === "/mon-espace";
     }
 
     return pathname.startsWith(href);
-  }
+  };
 
-  async function logout() {
+  async function handleLogout() {
     if (loggingOut) return;
 
     setLoggingOut(true);
@@ -56,7 +60,7 @@ export default function DashboardHeader() {
       router.replace("/connexion");
       router.refresh();
     } catch (error) {
-      console.error(error);
+      console.error("Logout error:", error);
       router.replace("/connexion");
     } finally {
       setLoggingOut(false);
@@ -65,33 +69,48 @@ export default function DashboardHeader() {
 
   return (
     <>
-      <header className="dashboardHeader">
-        <div className="dashboardHeaderInner">
+      <header className="vc-dashboard-header">
+        <div className="vc-dashboard-header-inner">
+          {/* LOGO */}
           <Link
             href="/mon-espace"
-            className="dashboardLogo"
+            className="vc-dashboard-logo"
             onClick={() => setMenuOpen(false)}
           >
-            <img src="/logo.png" alt="VisiteCard" />
+            <img
+              src="/logo.png"
+              alt="VisiteCard"
+            />
           </Link>
 
-          <nav className="desktopNav">
+          {/* MENU DESKTOP */}
+          <nav className="vc-dashboard-nav">
             {links.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={isActive(item.href) ? "active" : ""}
+                className={
+                  active(item.href)
+                    ? "vc-dashboard-nav-link vc-active"
+                    : "vc-dashboard-nav-link"
+                }
               >
-                {item.label}
+                {fr ? item.fr : item.en}
               </Link>
             ))}
           </nav>
 
-          <div className="dashboardActions">
-            <div className="languageSwitch">
+          {/* ACTIONS */}
+          <div className="vc-dashboard-actions">
+            {/* LANGUE */}
+            <div className="vc-dashboard-language">
               <button
                 type="button"
-                className={lang === "fr" ? "active" : ""}
+                className={
+                  lang === "fr"
+                    ? "vc-lang-button vc-lang-active"
+                    : "vc-lang-button"
+                }
                 onClick={() => setLang("fr")}
               >
                 FR
@@ -101,17 +120,22 @@ export default function DashboardHeader() {
 
               <button
                 type="button"
-                className={lang === "en" ? "active" : ""}
+                className={
+                  lang === "en"
+                    ? "vc-lang-button vc-lang-active"
+                    : "vc-lang-button"
+                }
                 onClick={() => setLang("en")}
               >
                 EN
               </button>
             </div>
 
+            {/* DECONNEXION DESKTOP */}
             <button
               type="button"
-              className="logoutButton"
-              onClick={logout}
+              className="vc-dashboard-logout"
+              onClick={handleLogout}
               disabled={loggingOut}
             >
               {loggingOut
@@ -121,12 +145,15 @@ export default function DashboardHeader() {
                   : "Sign out"}
             </button>
 
+            {/* MENU MOBILE */}
             <button
               type="button"
-              className={`mobileMenuButton ${
-                menuOpen ? "open" : ""
-              }`}
-              onClick={() => setMenuOpen((value) => !value)}
+              className={
+                menuOpen
+                  ? "vc-dashboard-burger vc-burger-open"
+                  : "vc-dashboard-burger"
+              }
+              onClick={() => setMenuOpen(!menuOpen)}
               aria-label={fr ? "Ouvrir le menu" : "Open menu"}
               aria-expanded={menuOpen}
             >
@@ -137,23 +164,28 @@ export default function DashboardHeader() {
           </div>
         </div>
 
+        {/* MENU MOBILE OUVERT */}
         {menuOpen && (
-          <div className="mobileNav">
+          <div className="vc-dashboard-mobile-menu">
             {links.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={isActive(item.href) ? "active" : ""}
+                className={
+                  active(item.href)
+                    ? "vc-mobile-link vc-mobile-active"
+                    : "vc-mobile-link"
+                }
                 onClick={() => setMenuOpen(false)}
               >
-                {item.label}
+                {fr ? item.fr : item.en}
               </Link>
             ))}
 
             <button
               type="button"
-              className="mobileLogout"
-              onClick={logout}
+              className="vc-mobile-logout"
+              onClick={handleLogout}
               disabled={loggingOut}
             >
               {loggingOut
@@ -166,285 +198,554 @@ export default function DashboardHeader() {
         )}
       </header>
 
-      <style jsx>{`
-        .dashboardHeader {
-          position: relative;
-          z-index: 100;
-          width: 100%;
-          background: #ffffff;
-          border-bottom: 1px solid #e8ebef;
+      <style jsx global>{`
+        /* ==========================================
+           VISITECARD - HEADER MON ESPACE
+           ========================================== */
+
+        .vc-dashboard-header,
+        .vc-dashboard-header * {
+          box-sizing: border-box;
         }
 
-        .dashboardHeaderInner {
+        .vc-dashboard-header {
+          position: relative;
+          z-index: 1000;
+
           width: 100%;
+
+          background: #ffffff;
+
+          border-bottom: 1px solid #e8ebef;
+
+          font-family:
+            Inter,
+            Arial,
+            Helvetica,
+            sans-serif;
+        }
+
+        /* ==========================================
+           CONTENEUR
+           ========================================== */
+
+        .vc-dashboard-header-inner {
+          width: 100%;
+          max-width: 1600px;
+
           min-height: 104px;
-          padding: 14px 64px;
+
+          margin: 0 auto;
+
+          padding: 12px 64px;
+
           display: grid;
-          grid-template-columns: 190px 1fr auto;
+
+          grid-template-columns:
+            180px
+            minmax(400px, 1fr)
+            auto;
+
           align-items: center;
+
           gap: 30px;
         }
 
-        .dashboardLogo {
-          display: inline-flex;
+        /* ==========================================
+           LOGO
+           ========================================== */
+
+        .vc-dashboard-logo {
+          width: 120px;
+
+          display: flex;
+
           align-items: center;
+
           justify-content: flex-start;
-          width: fit-content;
+
           text-decoration: none;
         }
 
-        .dashboardLogo img {
-          display: block;
-          width: 112px;
+        .vc-dashboard-logo img {
+          width: 105px;
+
+          max-width: 100%;
+
           height: auto;
+
+          display: block;
+
           object-fit: contain;
         }
 
-        .desktopNav {
+        /* ==========================================
+           NAVIGATION DESKTOP
+           ========================================== */
+
+        .vc-dashboard-nav {
           display: flex;
+
           align-items: center;
+
           justify-content: center;
-          gap: 8px;
+
+          gap: 7px;
         }
 
-        .desktopNav a {
+        .vc-dashboard-nav-link {
           min-height: 48px;
+
           padding: 0 17px;
+
           display: inline-flex;
+
           align-items: center;
+
           justify-content: center;
+
           border-radius: 13px;
-          color: #646b78;
+
+          color: #606978;
+
+          background: transparent;
+
           text-decoration: none;
+
           font-size: 15px;
+
           font-weight: 800;
+
+          line-height: 1;
+
+          white-space: nowrap;
+
           transition:
-            background 0.2s ease,
-            color 0.2s ease;
+            background 0.18s ease,
+            color 0.18s ease,
+            transform 0.18s ease;
         }
 
-        .desktopNav a:hover {
+        .vc-dashboard-nav-link:hover {
           color: #ff542d;
-          background: #fff6f2;
+
+          background: #fff5f0;
         }
 
-        .desktopNav a.active {
+        .vc-dashboard-nav-link.vc-active {
           color: #ff542d;
+
           background: #fff0e9;
         }
 
-        .dashboardActions {
+        /* ==========================================
+           PARTIE DROITE
+           ========================================== */
+
+        .vc-dashboard-actions {
           display: flex;
+
           align-items: center;
+
           justify-content: flex-end;
-          gap: 16px;
+
+          gap: 17px;
         }
 
-        .languageSwitch {
+        /* ==========================================
+           FR / EN
+           ========================================== */
+
+        .vc-dashboard-language {
+          min-height: 44px;
+
           display: flex;
+
           align-items: center;
-          gap: 10px;
-          white-space: nowrap;
-        }
 
-        .languageSwitch button {
-          padding: 0;
-          border: 0;
-          background: transparent;
-          color: #9aa0aa;
-          font-family: inherit;
-          font-size: 14px;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .languageSwitch button.active {
-          color: #ff542d;
-        }
-
-        .languageSwitch span {
-          color: #c7cbd1;
-          font-size: 14px;
-        }
-
-        .logoutButton {
-          min-height: 48px;
-          padding: 0 18px;
-          border: 1px solid #dfe3e8;
-          border-radius: 14px;
-          background: #ffffff;
-          color: #596170;
-          font-family: inherit;
-          font-size: 14px;
-          font-weight: 800;
-          cursor: pointer;
-          transition:
-            border-color 0.2s ease,
-            color 0.2s ease,
-            background 0.2s ease;
-        }
-
-        .logoutButton:hover {
-          border-color: #ff542d;
-          background: #fff7f4;
-          color: #ff542d;
-        }
-
-        .logoutButton:disabled,
-        .mobileLogout:disabled {
-          cursor: wait;
-          opacity: 0.6;
-        }
-
-        .mobileMenuButton {
-          width: 44px;
-          height: 44px;
-          padding: 0;
-          display: none;
-          flex-direction: column;
-          align-items: center;
           justify-content: center;
-          gap: 5px;
-          border: 1px solid #e1e5ea;
-          border-radius: 12px;
-          background: #ffffff;
+
+          gap: 9px;
+        }
+
+        .vc-lang-button {
+          margin: 0;
+
+          padding: 5px 2px;
+
+          border: 0;
+
+          outline: none;
+
+          background: transparent;
+
+          color: #9aa0aa;
+
+          font-family: inherit;
+
+          font-size: 14px;
+
+          font-weight: 900;
+
+          line-height: 1;
+
           cursor: pointer;
         }
 
-        .mobileMenuButton span {
-          width: 19px;
-          height: 2px;
-          display: block;
-          border-radius: 10px;
-          background: #17202c;
-          transition: 0.2s ease;
+        .vc-lang-button:hover {
+          color: #ff542d;
         }
 
-        .mobileMenuButton.open span:nth-child(1) {
+        .vc-lang-button.vc-lang-active {
+          color: #ff542d;
+        }
+
+        .vc-dashboard-language span {
+          color: #c7cbd1;
+
+          font-size: 14px;
+
+          font-weight: 400;
+        }
+
+        /* ==========================================
+           BOUTON DECONNEXION
+           ========================================== */
+
+        .vc-dashboard-logout {
+          min-height: 48px;
+
+          padding: 0 19px;
+
+          display: inline-flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border: 1px solid #dfe3e8;
+
+          border-radius: 14px;
+
+          outline: none;
+
+          background: #ffffff;
+
+          color: #606978;
+
+          font-family: inherit;
+
+          font-size: 14px;
+
+          font-weight: 800;
+
+          white-space: nowrap;
+
+          cursor: pointer;
+
+          box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.02);
+
+          transition:
+            color 0.18s ease,
+            background 0.18s ease,
+            border-color 0.18s ease,
+            box-shadow 0.18s ease;
+        }
+
+        .vc-dashboard-logout:hover {
+          color: #ff542d;
+
+          border-color: #ffb9a6;
+
+          background: #fff7f4;
+
+          box-shadow:
+            0 5px 16px rgba(255, 84, 45, 0.08);
+        }
+
+        .vc-dashboard-logout:disabled {
+          opacity: 0.55;
+
+          cursor: wait;
+        }
+
+        /* ==========================================
+           BURGER
+           ========================================== */
+
+        .vc-dashboard-burger {
+          width: 44px;
+
+          height: 44px;
+
+          padding: 0;
+
+          display: none;
+
+          flex-direction: column;
+
+          align-items: center;
+
+          justify-content: center;
+
+          gap: 5px;
+
+          border: 1px solid #e0e4e9;
+
+          border-radius: 12px;
+
+          background: #ffffff;
+
+          cursor: pointer;
+        }
+
+        .vc-dashboard-burger span {
+          width: 19px;
+
+          height: 2px;
+
+          display: block;
+
+          border-radius: 20px;
+
+          background: #17202c;
+
+          transition:
+            transform 0.2s ease,
+            opacity 0.2s ease;
+        }
+
+        .vc-dashboard-burger.vc-burger-open
+          span:nth-child(1) {
           transform: translateY(7px) rotate(45deg);
         }
 
-        .mobileMenuButton.open span:nth-child(2) {
+        .vc-dashboard-burger.vc-burger-open
+          span:nth-child(2) {
           opacity: 0;
         }
 
-        .mobileMenuButton.open span:nth-child(3) {
+        .vc-dashboard-burger.vc-burger-open
+          span:nth-child(3) {
           transform: translateY(-7px) rotate(-45deg);
         }
 
-        .mobileNav {
+        /* ==========================================
+           MENU MOBILE
+           ========================================== */
+
+        .vc-dashboard-mobile-menu {
           display: none;
         }
 
-        @media (max-width: 980px) {
-          .dashboardHeaderInner {
-            padding: 13px 28px;
-            grid-template-columns: 140px 1fr auto;
+        /* ==========================================
+           TABLETTE
+           ========================================== */
+
+        @media (max-width: 1050px) {
+          .vc-dashboard-header-inner {
+            padding-left: 30px;
+
+            padding-right: 30px;
+
+            grid-template-columns:
+              140px
+              1fr
+              auto;
+
+            gap: 18px;
           }
 
-          .desktopNav a {
-            padding: 0 10px;
+          .vc-dashboard-nav {
+            gap: 3px;
+          }
+
+          .vc-dashboard-nav-link {
+            padding-left: 11px;
+
+            padding-right: 11px;
+
             font-size: 14px;
           }
 
-          .logoutButton {
-            padding: 0 13px;
-          }
-        }
-
-        @media (max-width: 760px) {
-          .dashboardHeaderInner {
-            min-height: 78px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-          }
-
-          .dashboardLogo img {
-            width: 86px;
-          }
-
-          .desktopNav {
-            display: none;
-          }
-
-          .dashboardActions {
+          .vc-dashboard-actions {
             gap: 11px;
           }
 
-          .languageSwitch {
-            gap: 6px;
-          }
+          .vc-dashboard-logout {
+            padding-left: 14px;
 
-          .languageSwitch button {
-            font-size: 12px;
-          }
-
-          .languageSwitch span {
-            font-size: 11px;
-          }
-
-          .logoutButton {
-            display: none;
-          }
-
-          .mobileMenuButton {
-            display: flex;
-          }
-
-          .mobileNav {
-            padding: 8px 15px 15px;
-            display: grid;
-            gap: 5px;
-            border-top: 1px solid #f0f1f3;
-            background: #ffffff;
-          }
-
-          .mobileNav a,
-          .mobileLogout {
-            width: 100%;
-            min-height: 48px;
-            padding: 0 15px;
-            display: flex;
-            align-items: center;
-            border: 0;
-            border-radius: 12px;
-            background: transparent;
-            color: #5f6672;
-            text-decoration: none;
-            text-align: left;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 800;
-          }
-
-          .mobileNav a.active {
-            color: #ff542d;
-            background: #fff0e9;
-          }
-
-          .mobileLogout {
-            margin-top: 5px;
-            border: 1px solid #eceef1;
-            color: #ff542d;
-            cursor: pointer;
+            padding-right: 14px;
           }
         }
 
+        /* ==========================================
+           MOBILE
+           ========================================== */
+
+        @media (max-width: 760px) {
+          .vc-dashboard-header-inner {
+            min-height: 78px;
+
+            padding: 9px 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 12px;
+          }
+
+          .vc-dashboard-logo {
+            width: auto;
+          }
+
+          .vc-dashboard-logo img {
+            width: 86px;
+          }
+
+          .vc-dashboard-nav {
+            display: none;
+          }
+
+          .vc-dashboard-actions {
+            margin-left: auto;
+
+            gap: 10px;
+          }
+
+          .vc-dashboard-language {
+            gap: 6px;
+          }
+
+          .vc-lang-button {
+            font-size: 12px;
+          }
+
+          .vc-dashboard-language span {
+            font-size: 11px;
+          }
+
+          .vc-dashboard-logout {
+            display: none;
+          }
+
+          .vc-dashboard-burger {
+            display: flex;
+          }
+
+          .vc-dashboard-mobile-menu {
+            width: 100%;
+
+            padding: 8px 14px 15px;
+
+            display: grid;
+
+            gap: 5px;
+
+            border-top: 1px solid #f0f1f3;
+
+            background: #ffffff;
+
+            box-shadow:
+              0 12px 30px rgba(15, 23, 42, 0.06);
+          }
+
+          .vc-mobile-link {
+            width: 100%;
+
+            min-height: 48px;
+
+            padding: 0 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            border-radius: 12px;
+
+            color: #626a78;
+
+            background: transparent;
+
+            text-decoration: none;
+
+            font-size: 14px;
+
+            font-weight: 800;
+          }
+
+          .vc-mobile-link.vc-mobile-active {
+            color: #ff542d;
+
+            background: #fff0e9;
+          }
+
+          .vc-mobile-logout {
+            width: 100%;
+
+            min-height: 48px;
+
+            margin-top: 4px;
+
+            padding: 0 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            border: 1px solid #eceef1;
+
+            border-radius: 12px;
+
+            background: #ffffff;
+
+            color: #ff542d;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+          }
+
+          .vc-mobile-logout:hover {
+            background: #fff6f2;
+          }
+        }
+
+        /* ==========================================
+           PETIT MOBILE
+           ========================================== */
+
         @media (max-width: 390px) {
-          .dashboardHeaderInner {
+          .vc-dashboard-header-inner {
             padding-left: 11px;
+
             padding-right: 11px;
           }
 
-          .dashboardLogo img {
+          .vc-dashboard-logo img {
             width: 78px;
           }
 
-          .dashboardActions {
-            gap: 8px;
+          .vc-dashboard-actions {
+            gap: 7px;
+          }
+
+          .vc-dashboard-language {
+            gap: 4px;
+          }
+
+          .vc-dashboard-burger {
+            width: 41px;
+
+            height: 41px;
           }
         }
       `}</style>
