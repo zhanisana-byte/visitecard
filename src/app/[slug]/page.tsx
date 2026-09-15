@@ -510,7 +510,7 @@ export default function PublicCardPage() {
 
   return (
     <main
-      className="page"
+      className="vcPublicPage"
       style={{
         background: pageBg,
         color: text,
@@ -527,7 +527,7 @@ export default function PublicCardPage() {
         </div>
       ) : null}
 
-      <div className="shell">
+      <div className="vcPublicShell">
         <div className="topTools">
           <div className="langSwitch">
             <button
@@ -551,16 +551,16 @@ export default function PublicCardPage() {
           </div>
         </div>
 
-        <section className={`hero ${ledOn ? "ledFrame" : ""}`}>
-          <div className="cover">
+        <section className={`vcPublicHero ${ledOn ? "ledFrame" : ""}`}>
+          <div className="vcPublicCover">
             {card.cover_url ? (
               <img src={card.cover_url} alt="" />
             ) : (
-              <div className="coverFallback" />
+              <div className="vcPublicCoverFallback" />
             )}
           </div>
 
-          <div className="avatar">
+          <div className="vcPublicAvatar">
             {card.photo_url ? (
               <img src={card.photo_url} alt="" />
             ) : (
@@ -568,7 +568,7 @@ export default function PublicCardPage() {
             )}
           </div>
 
-          <div className="identity">
+          <div className="vcPublicIdentity">
             <h1>{card.full_name || "VisiteCard"}</h1>
             {card.job_title ? <p>{card.job_title}</p> : null}
             {card.company ? <small>{card.company}</small> : null}
@@ -588,7 +588,7 @@ export default function PublicCardPage() {
             ) : null}
           </div>
 
-          <div className="insideLinks">
+          <div className="vcPublicLinks">
             {socials.map((item) => (
               <a
                 key={item.id}
@@ -597,7 +597,7 @@ export default function PublicCardPage() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <span className="socialIcon" style={{ background: socialColor(item.type) }}>
+                <span className="vcPublicSocialIcon" style={{ background: socialColor(item.type) }}>
                   <SocialIcon type={item.type} />
                 </span>
                 <strong>{item.label}</strong>
@@ -612,21 +612,21 @@ export default function PublicCardPage() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <span className="socialIcon customIcon">↗</span>
+                <span className="vcPublicSocialIcon customIcon">↗</span>
                 <strong>{item.label}</strong>
               </a>
             ))}
           </div>
 
-          <div className="contactRow">
+          <div className="vcPublicContactRow">
             {card.show_email !== false && card.email ? (
-              <a href={`mailto:${card.email}`} className="contact primary">
+              <a href={`mailto:${card.email}`} className="vcPublicContact primary">
                 ✉ {t.email}
               </a>
             ) : null}
 
             {card.show_phone !== false && card.phone ? (
-              <a href={`tel:${card.phone}`} className="contact">
+              <a href={`tel:${card.phone}`} className="vcPublicContact">
                 ☎ {t.call}
               </a>
             ) : null}
@@ -638,7 +638,7 @@ export default function PublicCardPage() {
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="contact"
+                className="vcPublicContact"
               >
                 ⌖ {t.address}
               </a>
@@ -736,8 +736,8 @@ export default function PublicCardPage() {
         ) : null}
 
         {card.show_qr !== false ? (
-          <section className={ledOn ? "qrSection ledFrame" : "qrSection"}>
-            <div className="qrCopy">
+          <section className={ledOn ? "vcPublicQrSection ledFrame" : "vcPublicQrSection"}>
+            <div className="vcPublicQrCopy">
               <small>{t.qrMini}</small>
               <h2>{t.qrTitle}</h2>
               <p>{t.qrText}</p>
@@ -746,7 +746,7 @@ export default function PublicCardPage() {
               </button>
             </div>
 
-            <div className="qrBox">
+            <div className="vcPublicQrBox">
               <img src={qrUrl} alt="QR Code" />
             </div>
           </section>
@@ -755,8 +755,8 @@ export default function PublicCardPage() {
 
       <style jsx>{`
         * { box-sizing: border-box; }
-        .page { min-height:100dvh; padding:28px 18px 46px; font-family:Inter,system-ui,sans-serif; }
-        .shell { width:min(800px,100%); margin:auto; }
+        .vcPublicPage { min-height:100dvh; padding:28px 18px 46px; font-family:Inter,system-ui,sans-serif; }
+        .vcPublicShell { width:min(800px,100%); margin:auto; }
         .topTools { margin-bottom:14px; display:flex; justify-content:space-between; gap:12px; }
         .langSwitch,.shareTools { display:flex; align-items:center; gap:8px; }
         .langSwitch { min-height:42px; padding:0 12px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); }
@@ -764,20 +764,20 @@ export default function PublicCardPage() {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:inherit; font-weight:800; cursor:pointer; }
-        .hero,.qrSection,.reviewsSection { border:1px solid rgba(255,255,255,.09); border-radius:28px; background:rgba(255,255,255,.02); }
+        .vcPublicHero,.vcPublicQrSection,.reviewsSection { border:1px solid rgba(255,255,255,.09); border-radius:28px; background:rgba(255,255,255,.02); }
         .ledFrame { border-color:var(--led); box-shadow:0 0 0 1px color-mix(in srgb,var(--led) 45%,transparent),0 0 18px color-mix(in srgb,var(--led) 32%,transparent); }
         .ledSoft { border-color:color-mix(in srgb,var(--led) 55%,rgba(255,255,255,.08)) !important; box-shadow:0 0 12px color-mix(in srgb,var(--led) 16%,transparent); }
-        .hero { overflow:hidden; }
-        .cover { height:230px; overflow:hidden; background:#111; }
-        .cover img,.coverFallback { width:100%; height:100%; object-fit:cover; display:block; }
-        .coverFallback { background:radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 34%),linear-gradient(135deg,#111820,#25140f); }
-        .avatar { width:126px; height:126px; margin:-63px auto 0; position:relative; z-index:2; display:grid; place-items:center; overflow:hidden; border:3px solid var(--accent); border-radius:50%; background:#eee; color:#222; font-size:40px; font-weight:900; }
-        .avatar img { width:100%; height:100%; object-fit:cover; }
-        .identity { padding:18px 24px 18px; text-align:center; }
-        .identity h1 { margin:0; font-size:clamp(34px,7vw,52px); letter-spacing:-.05em; }
-        .identity p,.identity small,.bio { color:var(--muted); }
-        .identity p { margin:10px 0 0; }
-        .identity small { display:block; margin-top:4px; }
+        .vcPublicHero { overflow:hidden; }
+        .vcPublicCover { height:230px; overflow:hidden; background:#111; }
+        .vcPublicCover img,.vcPublicCoverFallback { width:100%; height:100%; object-fit:cover; display:block; }
+        .vcPublicCoverFallback { background:radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 34%),linear-gradient(135deg,#111820,#25140f); }
+        .vcPublicAvatar { width:126px; height:126px; margin:-63px auto 0; position:relative; z-index:2; display:grid; place-items:center; overflow:hidden; border:3px solid var(--accent); border-radius:50%; background:#eee; color:#222; font-size:40px; font-weight:900; }
+        .vcPublicAvatar img { width:100%; height:100%; object-fit:cover; }
+        .vcPublicIdentity { padding:18px 24px 18px; text-align:center; }
+        .vcPublicIdentity h1 { margin:0; font-size:clamp(34px,7vw,52px); letter-spacing:-.05em; }
+        .vcPublicIdentity p,.vcPublicIdentity small,.bio { color:var(--muted); }
+        .vcPublicIdentity p { margin:10px 0 0; }
+        .vcPublicIdentity small { display:block; margin-top:4px; }
         .bio { max-width:560px; margin:14px auto 0; line-height:1.55; }
         .ratingSummary {
           margin:16px auto 0;
@@ -812,13 +812,13 @@ export default function PublicCardPage() {
           font-size:12px;
         }
 
-        .insideLinks { padding:0 24px; display:grid; gap:10px; }
+        .vcPublicLinks { padding:0 24px; display:grid; gap:10px; }
         .linkCard { min-height:72px; padding:11px 18px; display:flex; align-items:center; gap:14px; border:1px solid rgba(255,255,255,.08); border-radius:19px; background:var(--panel); color:inherit; text-decoration:none; }
-        .socialIcon { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:14px; color:#fff; }
+        .vcPublicSocialIcon { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:14px; color:#fff; }
         .customIcon { background:#e8b39b; color:#111; }
-        .contactRow { padding:14px 24px 24px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-        .contact { min-height:56px; display:flex; align-items:center; justify-content:center; border:1px solid var(--accent); border-radius:16px; color:inherit; text-decoration:none; font-weight:900; }
-        .contact.primary { background:color-mix(in srgb,var(--accent) 24%,#fff); color:#171717; }
+        .vcPublicContactRow { padding:14px 24px 24px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .vcPublicContact { min-height:56px; display:flex; align-items:center; justify-content:center; border:1px solid var(--accent); border-radius:16px; color:inherit; text-decoration:none; font-weight:900; }
+        .vcPublicContact.primary { background:color-mix(in srgb,var(--accent) 24%,#fff); color:#171717; }
 
         .reviewModalBackdrop {
           position:fixed;
@@ -988,13 +988,13 @@ export default function PublicCardPage() {
           text-align:center;
         }
 
-        .qrSection { margin-top:18px; padding:24px; display:grid; grid-template-columns:1fr auto; gap:30px; align-items:center; }
-        .qrCopy small { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.16em; }
-        .qrCopy h2 { margin:8px 0; font-size:clamp(28px,5vw,42px); }
-        .qrCopy p { max-width:420px; margin:0 0 18px; color:var(--muted); line-height:1.55; }
-        .qrCopy button { min-height:46px; padding:0 16px; border:0; border-radius:13px; background:var(--accent); color:#fff; font-weight:900; cursor:pointer; }
-        .qrBox { width:176px; height:176px; padding:10px; border-radius:16px; background:#fff; }
-        .qrBox img { width:100%; height:100%; object-fit:contain; }
+        .vcPublicQrSection { margin-top:18px; padding:24px; display:grid; grid-template-columns:1fr auto; gap:30px; align-items:center; }
+        .vcPublicQrCopy small { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.16em; }
+        .vcPublicQrCopy h2 { margin:8px 0; font-size:clamp(28px,5vw,42px); }
+        .vcPublicQrCopy p { max-width:420px; margin:0 0 18px; color:var(--muted); line-height:1.55; }
+        .vcPublicQrCopy button { min-height:46px; padding:0 16px; border:0; border-radius:13px; background:var(--accent); color:#fff; font-weight:900; cursor:pointer; }
+        .vcPublicQrBox { width:176px; height:176px; padding:10px; border-radius:16px; background:#fff; }
+        .vcPublicQrBox img { width:100%; height:100%; object-fit:contain; }
         .thanksToast {
           position: fixed;
           top: 22px;
@@ -1031,13 +1031,13 @@ export default function PublicCardPage() {
         .loader { width:40px; height:40px; border:4px solid rgba(255,255,255,.2); border-top-color:#ff6a3d; border-radius:50%; animation:spin .8s linear infinite; }
         @keyframes spin { to { transform:rotate(360deg); } }
         @media (max-width:620px) {
-          .page { padding:12px 10px 28px; }
+          .vcPublicPage { padding:12px 10px 28px; }
           .shareTools button { padding:0 10px; font-size:12px; }
-          .cover { height:180px; }
-          .insideLinks { padding:0 14px; }
-          .contactRow { padding:14px; grid-template-columns:1fr; }
-          .qrSection { grid-template-columns:1fr; }
-          .qrBox { width:160px; height:160px; }
+          .vcPublicCover { height:180px; }
+          .vcPublicLinks { padding:0 14px; }
+          .vcPublicContactRow { padding:14px; grid-template-columns:1fr; }
+          .vcPublicQrSection { grid-template-columns:1fr; }
+          .vcPublicQrBox { width:160px; height:160px; }
         }
       `}</style>
     </main>
