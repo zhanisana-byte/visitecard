@@ -1,0 +1,1 @@
+export default function SocialIcon({type}:{type:string}){const p:{[k:string]:string}={instagram:"◎",facebook:"f",tiktok:"♪",whatsapp:"☎",linkedin:"in",youtube:"▶"};return <span className={`si si-${type}`}>{p[type]||"↗"}</span>}
