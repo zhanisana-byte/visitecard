@@ -658,6 +658,19 @@ export default function MonEspacePage() {
             ...emptyCard,
             ...loaded,
 
+            slug: loaded.slug ?? "",
+            full_name: loaded.full_name ?? "",
+            job_title: loaded.job_title ?? "",
+            company: loaded.company ?? "",
+            bio: loaded.bio ?? "",
+            email: loaded.email ?? "",
+            phone: loaded.phone ?? "",
+            address: loaded.address ?? "",
+            photo_url: loaded.photo_url ?? "",
+            cover_url: loaded.cover_url ?? "",
+            primary_color: loaded.primary_color ?? "#ff6a3d",
+            background_color: loaded.background_color ?? "#f5f1ef",
+
             led_enabled:
               typeof loaded.led_enabled ===
               "boolean"
@@ -1123,7 +1136,7 @@ export default function MonEspacePage() {
     setSuccess("");
     setShowSaveSuccess(false);
 
-    if (!card.full_name.trim()) {
+    if (!(card.full_name ?? "").trim()) {
       setError("Ajoutez votre nom.");
       return;
     }
@@ -1181,13 +1194,13 @@ export default function MonEspacePage() {
       const payload = {
         user_id: currentUserId,
         slug: baseSlug,
-        full_name: card.full_name.trim(),
-        job_title: card.job_title.trim(),
-        company: card.company.trim(),
-        bio: card.bio.trim(),
-        email: card.email.trim(),
-        phone: card.phone.trim(),
-        address: card.address.trim(),
+        full_name: (card.full_name ?? "").trim(),
+        job_title: (card.job_title ?? "").trim(),
+        company: (card.company ?? "").trim(),
+        bio: (card.bio ?? "").trim(),
+        email: (card.email ?? "").trim(),
+        phone: (card.phone ?? "").trim(),
+        address: (card.address ?? "").trim(),
         whatsapp: socialValue("whatsapp"),
         website: socialValue("website"),
         facebook: socialValue("facebook"),
