@@ -3749,7 +3749,6 @@ export default function MonEspacePage() {
             margin: 0 12px;
           }
         }
-      `}
         .imageEditorOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:16px}
         .imageEditorModal{width:min(560px,100%);max-height:94vh;overflow:auto;background:#fff;color:#171717;border-radius:22px;padding:18px}
         .imageEditorHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:18px}
@@ -3766,6 +3765,7 @@ export default function MonEspacePage() {
         .imageEditorActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800}
         .imageEditorActions .applyCrop{background:#ff6a3d;border-color:#ff6a3d;color:#fff}
+      `}
 </style>
     </main>
   );
