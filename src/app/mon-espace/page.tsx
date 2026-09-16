@@ -518,6 +518,9 @@ export default function MonEspacePage() {
   const [success, setSuccess] =
     useState("");
 
+  const [showSaveSuccess, setShowSaveSuccess] =
+    useState(false);
+
   const siteUrl =
     process.env
       .NEXT_PUBLIC_SITE_URL ||
@@ -1296,7 +1299,8 @@ export default function MonEspacePage() {
         }));
       }
 
-      setSuccess("Carte enregistrée.");
+      setSuccess("Carte enregistrée avec succès.");
+      setShowSaveSuccess(true);
     } catch (error) {
       console.error("Erreur enregistrement carte:", error);
       setError("Impossible d'enregistrer votre carte.");
@@ -2536,7 +2540,116 @@ export default function MonEspacePage() {
         </aside>
       </div>
 
+      {showSaveSuccess ? (
+        <div className="vcSaveModalOverlay" role="dialog" aria-modal="true">
+          <div className="vcSaveModal">
+            <div className="vcSaveModalIcon">✓</div>
+            <h2>Carte enregistrée avec succès</h2>
+            <p>Vos modifications et vos réseaux sociaux sont maintenant enregistrés sur votre carte publique.</p>
+            <div className="vcSaveModalActions">
+              {publicUrl ? (
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="vcSaveModalPublic"
+                >
+                  Voir ma carte publique
+                </a>
+              ) : null}
+              <button
+                type="button"
+                className="vcSaveModalClose"
+                onClick={() => setShowSaveSuccess(false)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <style jsx global>{`
+
+        .vcSaveModalOverlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          background: rgba(8, 15, 25, 0.52);
+          backdrop-filter: blur(4px);
+        }
+
+        .vcSaveModal {
+          width: min(440px, 100%);
+          padding: 32px 26px 26px;
+          border-radius: 24px;
+          background: #ffffff;
+          text-align: center;
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+        }
+
+        .vcSaveModalIcon {
+          width: 62px;
+          height: 62px;
+          margin: 0 auto 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #ff4f27;
+          color: #ffffff;
+          font-size: 32px;
+          font-weight: 900;
+        }
+
+        .vcSaveModal h2 {
+          margin: 0 0 10px;
+          color: #0b1729;
+          font-size: 23px;
+          line-height: 1.2;
+        }
+
+        .vcSaveModal p {
+          margin: 0;
+          color: #6c7480;
+          font-size: 15px;
+          line-height: 1.55;
+        }
+
+        .vcSaveModalActions {
+          margin-top: 24px;
+          display: grid;
+          gap: 10px;
+        }
+
+        .vcSaveModalPublic,
+        .vcSaveModalClose {
+          min-height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 14px;
+          font: inherit;
+          font-weight: 800;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .vcSaveModalPublic {
+          border: 1px solid #ff4f27;
+          background: #ff4f27;
+          color: #ffffff;
+        }
+
+        .vcSaveModalClose {
+          border: 1px solid #dfe3e8;
+          background: #ffffff;
+          color: #172033;
+        }
         * {
           box-sizing: border-box;
         }
