@@ -1130,24 +1130,27 @@ export default function MonEspacePage() {
 
     setSaving(true);
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+
     try {
-      const supabase = getSupabaseBrowser();
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey =
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      // getSession() lit d'abord la session locale et évite un appel réseau
-      // supplémentaire à chaque enregistrement.
-      let { data: sessionData } = await supabase.auth.getSession();
-      let session = sessionData.session;
-
-      if (!session?.user) {
-        const refreshed = await supabase.auth.refreshSession();
-        session = refreshed.data.session;
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Configuration Supabase manquante.");
       }
 
-      const user = session?.user;
-      if (!user) {
+      const session = await getValidAccessToken(supabaseUrl, supabaseKey);
+
+      if (!session?.accessToken || !session?.user?.id) {
         router.replace("/connexion");
         return;
       }
+
+      const currentUserId = session.user.id;
 
       const cleanSocialLinks = card.social_links
         .map((item) => ({
@@ -1155,6 +1158,8 @@ export default function MonEspacePage() {
           type: item.type,
           label: (item.label || "").trim() || networkName(item.type),
           value: (item.value || "").trim(),
+          name: (item.label || "").trim() || networkName(item.type),
+          url: (item.value || "").trim(),
         }))
         .filter((item) => item.value.length > 0);
 
@@ -1167,13 +1172,14 @@ export default function MonEspacePage() {
         .filter((item) => item.label || item.url);
 
       const baseSlug =
-        card.slug || `${slugify(card.full_name) || "carte"}-${user.id.slice(0, 6)}`;
+        card.slug ||
+        `${slugify(card.full_name) || "carte"}-${currentUserId.slice(0, 6)}`;
 
       const socialValue = (type: SocialType) =>
         cleanSocialLinks.find((item) => item.type === type)?.value || "";
 
       const payload = {
-        user_id: user.id,
+        user_id: currentUserId,
         slug: baseSlug,
         full_name: card.full_name.trim(),
         job_title: card.job_title.trim(),
@@ -1207,29 +1213,66 @@ export default function MonEspacePage() {
         updated_at: new Date().toISOString(),
       };
 
-      // Pas de .select().single(): on évite une deuxième lecture réseau après
-      // l'UPSERT. L'interface possède déjà toutes les valeurs sauvegardées.
-      const { error: saveError } = await supabase
-        .from("cards")
-        .upsert(payload, { onConflict: "user_id" });
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/cards?on_conflict=user_id`,
+        {
+          method: "POST",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${session.accessToken}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        }
+      );
 
-      if (saveError) {
-        setError(saveError.message || "Impossible d'enregistrer votre carte.");
-        return;
+      if (!response.ok) {
+        const raw = await response.text();
+        let message = raw || "Impossible d'enregistrer votre carte.";
+
+        try {
+          const parsed = JSON.parse(raw);
+          message =
+            parsed?.message ||
+            parsed?.details ||
+            parsed?.hint ||
+            message;
+        } catch {}
+
+        throw new Error(message);
       }
 
       setCard((previous) => ({
         ...previous,
         slug: baseSlug,
-        social_links: cleanSocialLinks,
+        social_links: cleanSocialLinks.map((item) => ({
+          id: item.id,
+          type: item.type,
+          label: item.label,
+          value: item.value,
+        })),
         custom_links: cleanCustomLinks,
       }));
 
-      setSuccess("Carte enregistrée avec succès.");
+      setSuccess("");
       setShowSaveSuccess(true);
+
+      window.setTimeout(() => {
+        setShowSaveSuccess(false);
+      }, 1800);
     } catch (saveError: any) {
-      setError(saveError?.message || "Impossible d'enregistrer votre carte.");
+      if (saveError?.name === "AbortError") {
+        setError("Enregistrement trop long. Réessayez.");
+      } else {
+        setError(
+          saveError?.message ||
+            "Impossible d'enregistrer votre carte."
+        );
+      }
     } finally {
+      window.clearTimeout(timeout);
       setSaving(false);
     }
   }
@@ -2469,27 +2512,7 @@ export default function MonEspacePage() {
         <div className="vcSaveModalOverlay" role="dialog" aria-modal="true">
           <div className="vcSaveModal">
             <div className="vcSaveModalIcon">✓</div>
-            <h2>Carte enregistrée avec succès</h2>
-            <p>Vos modifications et vos réseaux sociaux sont maintenant enregistrés sur votre carte publique.</p>
-            <div className="vcSaveModalActions">
-              {publicUrl ? (
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="vcSaveModalPublic"
-                >
-                  Voir ma carte publique
-                </a>
-              ) : null}
-              <button
-                type="button"
-                className="vcSaveModalClose"
-                onClick={() => setShowSaveSuccess(false)}
-              >
-                Fermer
-              </button>
-            </div>
+            <h2>Enregistrement avec succès</h2>
           </div>
         </div>
       ) : null}
