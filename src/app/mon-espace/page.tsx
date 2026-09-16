@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowser } from "@/app/lib/supabase";
 
 type SocialType =
   | "instagram"
@@ -372,112 +373,48 @@ function SocialIcon({
 }
 
 async function getValidAccessToken(
-  supabaseUrl: string,
-  supabaseKey: string
+  _supabaseUrl: string,
+  _supabaseKey: string
 ) {
-  let accessToken =
-    localStorage.getItem(
-      "visitecard_access_token"
-    );
+  try {
+    const supabase = getSupabaseBrowser();
 
-  const refreshToken =
-    localStorage.getItem(
-      "visitecard_refresh_token"
-    );
+    let { data, error } = await supabase.auth.getSession();
 
-  if (!accessToken) {
-    return null;
-  }
-
-  const check = await fetch(
-    `${supabaseUrl}/auth/v1/user`,
-    {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${accessToken}`,
-      },
+    if (error) {
+      console.error("Erreur getSession:", error);
     }
-  );
 
-  if (check.ok) {
-    const user =
-      await check.json();
+    let session = data.session;
 
-    localStorage.setItem(
-      "visitecard_user",
-      JSON.stringify(user)
-    );
+    if (!session) {
+      const refreshed = await supabase.auth.refreshSession();
+      if (refreshed.error) {
+        console.error("Erreur refreshSession:", refreshed.error);
+        return null;
+      }
+      session = refreshed.data.session;
+    }
+
+    if (!session?.access_token || !session?.user?.id) {
+      return null;
+    }
+
+    // Compatibilité avec les anciennes pages VisiteCard.
+    localStorage.setItem("visitecard_access_token", session.access_token);
+    if (session.refresh_token) {
+      localStorage.setItem("visitecard_refresh_token", session.refresh_token);
+    }
+    localStorage.setItem("visitecard_user", JSON.stringify(session.user));
 
     return {
-      accessToken,
-      user,
+      accessToken: session.access_token,
+      user: session.user,
     };
-  }
-
-  if (!refreshToken) {
+  } catch (error) {
+    console.error("Impossible de récupérer la session Supabase:", error);
     return null;
   }
-
-  const refresh = await fetch(
-    `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
-    {
-      method: "POST",
-
-      headers: {
-        apikey: supabaseKey,
-        "Content-Type":
-          "application/json",
-      },
-
-      body: JSON.stringify({
-        refresh_token:
-          refreshToken,
-      }),
-    }
-  );
-
-  if (!refresh.ok) {
-    return null;
-  }
-
-  const session =
-    await refresh.json();
-
-  if (
-    !session?.access_token ||
-    !session?.user
-  ) {
-    return null;
-  }
-
-  accessToken =
-    session.access_token;
-
-  localStorage.setItem(
-    "visitecard_access_token",
-    session.access_token
-  );
-
-  if (
-    session.refresh_token
-  ) {
-    localStorage.setItem(
-      "visitecard_refresh_token",
-      session.refresh_token
-    );
-  }
-
-  localStorage.setItem(
-    "visitecard_user",
-    JSON.stringify(
-      session.user
-    )
-  );
-
-  return {
-    accessToken,
-    user: session.user,
-  };
 }
 
 export default function MonEspacePage() {
@@ -1120,7 +1057,6 @@ export default function MonEspacePage() {
 
     setError("");
     setSuccess("");
-    setShowSaveSuccess(false);
 
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -2352,10 +2288,9 @@ export default function MonEspacePage() {
 
           <div className="saveArea">
             <button
-              type="button"
+              type="submit"
               className="saveButton"
               disabled={saving}
-              onClick={() => void saveCard()}
             >
               {saving
                 ? "Enregistrement..."
