@@ -9,8 +9,6 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useLanguage } from "@/components/LanguageProvider";
-import { getSupabaseBrowser } from "../lib/supabase";
 
 type SocialType =
   | "instagram"
@@ -484,8 +482,6 @@ async function getValidAccessToken(
 
 export default function MonEspacePage() {
   const router = useRouter();
-  const { lang } = useLanguage();
-  const fr = lang === "fr";
 
   const [card, setCard] =
     useState<CardData>(emptyCard);
@@ -578,28 +574,28 @@ export default function MonEspacePage() {
       }
 
       try {
-        const supabase = getSupabaseBrowser();
-        const { data: sessionData } = await supabase.auth.getSession();
-        let session = sessionData.session;
+        const session =
+          await getValidAccessToken(
+            supabaseUrl,
+            supabaseKey
+          );
 
-        if (!session) {
-          const { data: userData } = await supabase.auth.getUser();
-          if (!userData.user) {
-            router.replace("/connexion");
-            return;
-          }
-          const { data: refreshed } = await supabase.auth.refreshSession();
-          session = refreshed.session;
-        }
-
-        if (!session?.access_token || !session.user?.id) {
-          router.replace("/connexion");
+        if (
+          !session?.accessToken ||
+          !session?.user?.id
+        ) {
+          logout();
           return;
         }
 
-        const accessToken = session.access_token;
-        const currentUser = session.user as StoredUser;
-        const currentUserId = currentUser.id;
+        const accessToken =
+          session.accessToken;
+
+        const currentUser =
+          session.user as StoredUser;
+
+        const currentUserId =
+          currentUser.id;
 
         if (!currentUserId) {
           setError(
@@ -1123,187 +1119,187 @@ export default function MonEspacePage() {
     setSuccess("");
 
     const supabaseUrl =
-      process.env
-        .NEXT_PUBLIC_SUPABASE_URL;
+      process.env.NEXT_PUBLIC_SUPABASE_URL;
 
     const supabaseKey =
-      process.env
-        .NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      process.env
-        .NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (
-      !supabaseUrl ||
-      !supabaseKey
-    ) {
-      setError(
-        "Configuration Supabase manquante."
-      );
-
+    if (!supabaseUrl || !supabaseKey) {
+      setError("Configuration Supabase manquante.");
       return;
     }
 
-    const session =
-      await getValidAccessToken(
-        supabaseUrl,
-        supabaseKey
-      );
+    const session = await getValidAccessToken(
+      supabaseUrl,
+      supabaseKey
+    );
 
-    if (
-      !session?.accessToken ||
-      !session?.user?.id
-    ) {
-      router.replace(
-        "/connexion"
-      );
-
+    if (!session?.accessToken || !session?.user?.id) {
+      router.replace("/connexion");
       return;
     }
 
-    if (
-      !card.full_name.trim()
-    ) {
-      setError(
-        "Ajoutez votre nom."
-      );
-
+    if (!card.full_name.trim()) {
+      setError("Ajoutez votre nom.");
       return;
     }
+
+    const cleanSocialLinks = card.social_links
+      .map((item) => ({
+        id: item.id || uid(),
+        type: item.type,
+        label:
+          (item.label || "").trim() ||
+          networkName(item.type),
+        value: (item.value || "").trim(),
+      }))
+      .filter((item) => item.value.length > 0);
+
+    const cleanCustomLinks = card.custom_links
+      .map((item) => ({
+        id: item.id || uid(),
+        label: (item.label || "").trim(),
+        url: (item.url || "").trim(),
+      }))
+      .filter((item) => item.label || item.url);
+
+    const payload = {
+      full_name: card.full_name.trim(),
+      job_title: card.job_title.trim(),
+      company: card.company.trim(),
+      bio: card.bio.trim(),
+      email: card.email.trim(),
+      phone: card.phone.trim(),
+      address: card.address.trim(),
+      photo_url: card.photo_url,
+      cover_url: card.cover_url,
+      primary_color: card.primary_color,
+      background_color: card.background_color,
+      theme: card.theme,
+      language: card.language,
+      is_public: card.is_public,
+      show_qr: card.show_qr,
+      show_email: card.show_email,
+      show_phone: card.show_phone,
+      show_address: card.show_address,
+      show_reviews: card.show_reviews,
+      led_enabled: card.led_enabled,
+      led_color: card.led_color,
+      social_links: cleanSocialLinks,
+      custom_links: cleanCustomLinks,
+      updated_at: new Date().toISOString(),
+    };
 
     try {
       setSaving(true);
 
-      const response =
-        await fetch(
-          `${supabaseUrl}/rest/v1/cards?user_id=eq.${session.user.id}`,
-          {
-            method:
-              "PATCH",
+      // On modifie uniquement la carte appartenant à l'utilisateur connecté.
+      // select=* permet de vérifier qu'une ligne a réellement été mise à jour.
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/cards?user_id=eq.${encodeURIComponent(
+          session.user.id
+        )}&select=*`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${session.accessToken}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-            headers: {
-              apikey:
-                supabaseKey,
-
-              Authorization:
-                `Bearer ${session.accessToken}`,
-
-              "Content-Type":
-                "application/json",
-
-              Prefer:
-                "return=representation",
-            },
-
-            body:
-              JSON.stringify({
-                full_name:
-                  card.full_name.trim(),
-
-                job_title:
-                  card.job_title.trim(),
-
-                company:
-                  card.company.trim(),
-
-                bio:
-                  card.bio.trim(),
-
-                email:
-                  card.email.trim(),
-
-                phone:
-                  card.phone.trim(),
-
-                address:
-                  card.address.trim(),
-
-                photo_url:
-                  card.photo_url,
-
-                cover_url:
-                  card.cover_url,
-
-                primary_color:
-                  card.primary_color,
-
-                background_color:
-                  card.background_color,
-
-                theme:
-                  card.theme,
-
-                language:
-                  card.language,
-
-                is_public:
-                  card.is_public,
-
-                show_qr:
-                  card.show_qr,
-
-                show_email:
-                  card.show_email,
-
-                show_phone:
-                  card.show_phone,
-
-                show_address:
-                  card.show_address,
-
-                led_enabled:
-                  card.led_enabled,
-
-                led_color:
-                  card.led_color,
-
-                social_links:
-                  card.social_links,
-
-                custom_links:
-                  card.custom_links,
-
-                updated_at:
-                  new Date().toISOString(),
-              }),
-          }
-        );
-
-      const raw =
-        await response.text();
+      const raw = await response.text();
 
       if (!response.ok) {
+        console.error("Erreur Supabase save card:", raw);
         setError(
-          raw ||
-            "Impossible d'enregistrer la carte."
+          raw || "Impossible d'enregistrer votre carte."
         );
-
         return;
       }
 
-      const result =
-        raw
-          ? JSON.parse(raw)
-          : [];
+      let rows: any[] = [];
 
-      if (
-        Array.isArray(result) &&
-        result[0]
-      ) {
-        setCard(
-          (previous) => ({
-            ...previous,
-            ...result[0],
-          })
-        );
+      try {
+        rows = raw ? JSON.parse(raw) : [];
+      } catch {
+        rows = [];
       }
 
-      setSuccess(
-        "Carte enregistrée."
-      );
-    } catch {
-      setError(
-        "Impossible d'enregistrer votre carte."
-      );
+      // Si aucune carte n'existe encore pour ce compte, on la crée.
+      if (!Array.isArray(rows) || rows.length === 0) {
+        const baseSlug =
+          card.slug ||
+          `${slugify(card.full_name) || "carte"}-${session.user.id.slice(
+            0,
+            6
+          )}`;
+
+        const createResponse = await fetch(
+          `${supabaseUrl}/rest/v1/cards`,
+          {
+            method: "POST",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${session.accessToken}`,
+              "Content-Type": "application/json",
+              Prefer: "return=representation",
+            },
+            body: JSON.stringify({
+              user_id: session.user.id,
+              slug: baseSlug,
+              ...payload,
+            }),
+          }
+        );
+
+        const createRaw = await createResponse.text();
+
+        if (!createResponse.ok) {
+          console.error(
+            "Erreur Supabase create card:",
+            createRaw
+          );
+          setError(
+            createRaw || "Impossible d'enregistrer votre carte."
+          );
+          return;
+        }
+
+        try {
+          rows = createRaw ? JSON.parse(createRaw) : [];
+        } catch {
+          rows = [];
+        }
+      }
+
+      if (Array.isArray(rows) && rows[0]) {
+        setCard((previous) => ({
+          ...previous,
+          ...rows[0],
+          social_links: Array.isArray(rows[0].social_links)
+            ? rows[0].social_links
+            : cleanSocialLinks,
+          custom_links: Array.isArray(rows[0].custom_links)
+            ? rows[0].custom_links
+            : cleanCustomLinks,
+        }));
+      } else {
+        setCard((previous) => ({
+          ...previous,
+          social_links: cleanSocialLinks,
+          custom_links: cleanCustomLinks,
+        }));
+      }
+
+      setSuccess("Carte enregistrée.");
+    } catch (error) {
+      console.error("Erreur enregistrement carte:", error);
+      setError("Impossible d'enregistrer votre carte.");
     } finally {
       setSaving(false);
     }
@@ -1469,15 +1465,15 @@ export default function MonEspacePage() {
       <section className="dashboardHead">
         <div>
           <span className="eyebrow">
-            {fr ? "MON ESPACE" : "MY SPACE"}
+            MON ESPACE
           </span>
 
           <h1>
-            {fr ? "Ma carte digitale" : "My digital card"}
+            Ma carte digitale
           </h1>
 
           <p>
-            {fr ? "Modifiez votre carte et voyez immédiatement le résultat public." : "Edit your card and instantly preview the public result."}
+            Modifiez votre carte et voyez immédiatement le résultat public.
           </p>
         </div>
 
@@ -1491,8 +1487,8 @@ export default function MonEspacePage() {
           />
 
           {card.is_public
-            ? (fr ? "Carte publique" : "Public card")
-            : (fr ? "Carte privée" : "Private card")}
+            ? "Carte publique"
+            : "Carte privée"}
         </div>
       </section>
 
@@ -1504,7 +1500,7 @@ export default function MonEspacePage() {
           <section className="formSection">
             <div className="sectionTitle">
               <h2>
-                {fr ? "Identité visuelle" : "Visual identity"}
+                Identité visuelle
               </h2>
             </div>
 
@@ -1532,15 +1528,15 @@ export default function MonEspacePage() {
 
                 <div className="mediaInfo">
                   <strong>
-                    {fr ? "Photo / logo" : "Photo / logo"}
+                    Photo / logo
                   </strong>
 
                   <small>
-                    {fr ? "Photo principale ronde." : "Main round profile image."}
+                    Photo principale ronde.
                   </small>
 
                   <label className="uploadButton">
-                    {fr ? "Choisir" : "Choose"}
+                    Choisir
 
                     <input
                       type="file"
@@ -1581,15 +1577,15 @@ export default function MonEspacePage() {
 
                 <div className="mediaInfo">
                   <strong>
-                    {fr ? "Photo de couverture" : "Cover image"}
+                    Photo de couverture
                   </strong>
 
                   <small>
-                    {fr ? "Elle apparaît en haut de la page publique." : "It appears at the top of your public page."}
+                    Elle apparaît en haut de la page publique.
                   </small>
 
                   <label className="uploadButton">
-                    {fr ? "Choisir" : "Choose"}
+                    Choisir
 
                     <input
                       type="file"
@@ -1610,7 +1606,7 @@ export default function MonEspacePage() {
 
             <div className="grid two">
               <label>
-                {fr ? "Nom" : "Name"}
+                Nom
 
                 <input
                   value={
@@ -1626,7 +1622,7 @@ export default function MonEspacePage() {
               </label>
 
               <label>
-                {fr ? "Fonction" : "Job title"}
+                Fonction
 
                 <input
                   value={
@@ -1643,7 +1639,7 @@ export default function MonEspacePage() {
               </label>
 
               <label>
-                {fr ? "Entreprise" : "Company"}
+                Entreprise
 
                 <input
                   value={
@@ -1677,7 +1673,7 @@ export default function MonEspacePage() {
               </label>
 
               <label>
-                {fr ? "Téléphone" : "Phone"}
+                Téléphone
 
                 <input
                   value={
@@ -1694,7 +1690,7 @@ export default function MonEspacePage() {
               </label>
 
               <label>
-                {fr ? "Adresse" : "Address"}
+                Adresse
 
                 <input
                   value={
@@ -1712,7 +1708,7 @@ export default function MonEspacePage() {
             </div>
 
             <label>
-              {fr ? "Présentation" : "About"}
+              Présentation
 
               <textarea
                 value={
@@ -1734,11 +1730,11 @@ export default function MonEspacePage() {
             <div className="sectionTitle networkTitle">
               <div>
                 <h2>
-                  {fr ? "Réseaux sociaux" : "Social networks"}
+                  Réseaux sociaux
                 </h2>
 
                 <p>
-                  {fr ? "Choisissez le vrai réseau, ajoutez le lien et le nom affiché." : "Choose the network, add the link and the displayed name."}
+                  Choisissez le vrai réseau, ajoutez le lien et le nom affiché.
                 </p>
               </div>
 
@@ -1752,7 +1748,7 @@ export default function MonEspacePage() {
                   )
                 }
               >
-                {fr ? "+ Ajouter" : "+ Add"}
+                + Ajouter
               </button>
             </div>
 
@@ -1834,7 +1830,7 @@ export default function MonEspacePage() {
                     </div>
 
                     <label>
-                      {fr ? "Lien" : "Link"}
+                      Lien
 
                       <input
                         value={
@@ -1859,7 +1855,7 @@ export default function MonEspacePage() {
                     </label>
 
                     <label>
-                      {fr ? "Nom affiché" : "Display name"}
+                      Nom affiché
 
                       <input
                         value={
@@ -1900,7 +1896,7 @@ export default function MonEspacePage() {
           <section className="formSection">
             <div className="sectionTitle">
               <h2>
-                {fr ? "Autres liens" : "Other links"}
+                Autres liens
               </h2>
             </div>
 
@@ -1921,7 +1917,7 @@ export default function MonEspacePage() {
                     </div>
 
                     <label>
-                      {fr ? "Lien" : "Link"}
+                      Lien
 
                       <input
                         value={
@@ -1941,7 +1937,7 @@ export default function MonEspacePage() {
                     </label>
 
                     <label>
-                      {fr ? "Nom affiché" : "Display name"}
+                      Nom affiché
 
                       <input
                         value={
@@ -1983,20 +1979,20 @@ export default function MonEspacePage() {
                 addCustomLink
               }
             >
-              {fr ? "+ Ajouter un autre lien" : "+ Add another link"}
+              + Ajouter un autre lien
             </button>
           </section>
 
           <section className="formSection">
             <div className="sectionTitle">
               <h2>
-                {fr ? "Apparence" : "Appearance"}
+                Apparence
               </h2>
             </div>
 
             <div className="grid two">
               <label>
-                {fr ? "Langue par défaut" : "Default language"}
+                Langue par défaut
 
                 <select
                   value={
@@ -2012,7 +2008,7 @@ export default function MonEspacePage() {
                   }
                 >
                   <option value="fr">
-                    {fr ? "Français" : "French"}
+                    Français
                   </option>
 
                   <option value="en">
@@ -2022,7 +2018,7 @@ export default function MonEspacePage() {
               </label>
 
               <label>
-                {fr ? "Thème" : "Theme"}
+                Thème
 
                 <select
                   value={
@@ -2038,11 +2034,11 @@ export default function MonEspacePage() {
                   }
                 >
                   <option value="dark">
-                    {fr ? "Sombre" : "Dark"}
+                    Sombre
                   </option>
 
                   <option value="light">
-                    {fr ? "Clair" : "Light"}
+                    Clair
                   </option>
                 </select>
               </label>
@@ -2050,7 +2046,7 @@ export default function MonEspacePage() {
 
             <div className="colorsGrid">
               <label className="colorField">
-                {fr ? "Couleur principale" : "Primary color"}
+                Couleur principale
 
                 <div>
                   <input
@@ -2075,7 +2071,7 @@ export default function MonEspacePage() {
               </label>
 
               <label className="colorField">
-                {fr ? "Couleur LED" : "LED color"}
+                Couleur LED
 
                 <div>
                   <input
@@ -2103,11 +2099,11 @@ export default function MonEspacePage() {
             <div className="toggleRow">
               <div>
                 <strong>
-                  {fr ? "Effet LED sur les cadres" : "LED effect on frames"}
+                  Effet LED sur les cadres
                 </strong>
 
                 <small>
-                  {fr ? "Contour lumineux sur la page publique." : "Glow outline on the public page."}
+                  Contour lumineux sur la page publique.
                 </small>
               </div>
 
@@ -2133,13 +2129,13 @@ export default function MonEspacePage() {
           <section className="formSection">
             <div className="sectionTitle">
               <h2>
-                {fr ? "Boutons de contact" : "Contact buttons"}
+                Boutons de contact
               </h2>
             </div>
 
             <div className="toggleRow">
               <strong>
-                {fr ? "Afficher Email" : "Show Email"}
+                Afficher Email
               </strong>
 
               <button
@@ -2162,7 +2158,7 @@ export default function MonEspacePage() {
 
             <div className="toggleRow">
               <strong>
-                {fr ? "Afficher Appeler" : "Show Call"}
+                Afficher Appeler
               </strong>
 
               <button
@@ -2185,7 +2181,7 @@ export default function MonEspacePage() {
 
             <div className="toggleRow">
               <strong>
-                {fr ? "Afficher Adresse" : "Show Address"}
+                Afficher Adresse
               </strong>
 
               <button
@@ -2210,7 +2206,7 @@ export default function MonEspacePage() {
           <section className="formSection">
             <div className="sectionTitle">
               <h2>
-                {fr ? "Mon QR Code" : "My QR Code"}
+                Mon QR Code
               </h2>
             </div>
 
@@ -2226,7 +2222,7 @@ export default function MonEspacePage() {
 
               <div className="qrManagerInfo">
                 <small>
-                  {fr ? "Votre lien public" : "Your public link"}
+                  Votre lien public
                 </small>
 
                 <strong>
@@ -2260,7 +2256,7 @@ export default function MonEspacePage() {
             <div className="readonlyLinkBox">
               <div>
                 <small>
-                  {fr ? "Lien public" : "Public link"}
+                  Lien public
                 </small>
 
                 <strong>
@@ -2276,7 +2272,7 @@ export default function MonEspacePage() {
                     copyPublicLink
                   }
                 >
-                  {fr ? "⧉ Copier" : "⧉ Copy"}
+                  ⧉ Copier
                 </button>
 
                 <button
@@ -2285,14 +2281,14 @@ export default function MonEspacePage() {
                     sharePublicLink
                   }
                 >
-                  {fr ? "⌯ Partager" : "⌯ Share"}
+                  ⌯ Partager
                 </button>
               </div>
             </div>
 
             <div className="toggleRow">
               <strong>
-                {fr ? "Carte publique" : "Public card"}
+                Carte publique
               </strong>
 
               <button
@@ -2315,7 +2311,7 @@ export default function MonEspacePage() {
 
             <div className="toggleRow">
               <strong>
-                {fr ? "Afficher le QR Code" : "Show QR Code"}
+                Afficher le QR Code
               </strong>
 
               <button
@@ -2357,7 +2353,7 @@ export default function MonEspacePage() {
             >
               {saving
                 ? "Enregistrement..."
-                : fr ? "Enregistrer ma carte" : "Save my card"}
+                : "Enregistrer ma carte"}
             </button>
           </div>
         </form>
@@ -2366,7 +2362,7 @@ export default function MonEspacePage() {
           <div className="stickyPreview">
             <div className="previewTopTools">
               <strong>
-                {fr ? "Aperçu" : "Preview"}
+                Aperçu
               </strong>
 
               <button
@@ -2380,7 +2376,7 @@ export default function MonEspacePage() {
                   )
                 }
               >
-                {fr ? "Ouvrir" : "Open"}
+                Ouvrir
               </button>
             </div>
 
