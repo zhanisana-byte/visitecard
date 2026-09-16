@@ -1120,6 +1120,7 @@ export default function MonEspacePage() {
 
     setError("");
     setSuccess("");
+    setShowSaveSuccess(false);
 
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -2351,9 +2352,10 @@ export default function MonEspacePage() {
 
           <div className="saveArea">
             <button
-              type="submit"
+              type="button"
               className="saveButton"
               disabled={saving}
+              onClick={() => void saveCard()}
             >
               {saving
                 ? "Enregistrement..."
