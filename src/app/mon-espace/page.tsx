@@ -957,7 +957,7 @@ export default function MonEspacePage() {
             value;
 
           if (
-            !item.label.trim()
+            !(item.label ?? "").trim()
           ) {
             item.label =
               networkName(
@@ -1169,7 +1169,7 @@ export default function MonEspacePage() {
     setSaving(true);
 
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    const timeout = window.setTimeout(() => controller.abort(), 30000);
 
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -1211,7 +1211,7 @@ export default function MonEspacePage() {
 
       const baseSlug =
         card.slug ||
-        `${slugify(card.full_name) || "carte"}-${currentUserId.slice(0, 6)}`;
+        `${slugify(card.full_name ?? "") || "carte"}-${currentUserId.slice(0, 6)}`;
 
       const socialValue = (type: SocialType) =>
         cleanSocialLinks.find((item) => item.type === type)?.value || "";
@@ -1232,10 +1232,10 @@ export default function MonEspacePage() {
         instagram: socialValue("instagram"),
         tiktok: socialValue("tiktok"),
         linkedin: socialValue("linkedin"),
-        photo_url: card.photo_url,
-        cover_url: card.cover_url,
-        primary_color: card.primary_color,
-        background_color: card.background_color,
+        photo_url: card.photo_url ?? "",
+        cover_url: card.cover_url ?? "",
+        primary_color: card.primary_color ?? "#ff6a3d",
+        background_color: card.background_color ?? "#f5f1ef",
         theme: card.theme,
         language: card.language,
         is_public: card.is_public,
@@ -1245,7 +1245,7 @@ export default function MonEspacePage() {
         show_address: card.show_address,
         show_reviews: card.show_reviews,
         led_enabled: card.led_enabled,
-        led_color: card.led_color,
+        led_color: card.led_color ?? "#ff6a3d",
         social_links: cleanSocialLinks,
         custom_links: cleanCustomLinks,
         updated_at: new Date().toISOString(),
@@ -1284,6 +1284,7 @@ export default function MonEspacePage() {
 
       setCard((previous) => ({
         ...previous,
+        ...payload,
         slug: baseSlug,
         social_links: cleanSocialLinks.map((item) => ({
           id: item.id,
