@@ -26,7 +26,6 @@ type ProfileCompanyLink = {
   company_card_id: string;
   position_title: string | null;
   created_at?: string | null;
-  updated_at?: string | null;
 };
 
 type LinkedCompany = ProfileCompanyLink & {
@@ -156,8 +155,7 @@ export default function ProfileCompaniesEditor({
             profile_card_id,
             company_card_id,
             position_title,
-            created_at,
-            updated_at
+            created_at
           `
         )
         .eq("profile_card_id", profileCardId)
