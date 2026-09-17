@@ -2675,6 +2675,15 @@ export default function MonEspacePage() {
 
                 ["--preview-panel" as any]:
                   previewPanel,
+
+                ["--button-bg" as any]:
+                  card.button_color || card.primary_color,
+
+                ["--button-text" as any]:
+                  card.button_text_color || "#ffffff",
+
+                ["--button-border" as any]:
+                  card.button_border_color || card.button_color || card.primary_color,
               }}
             >
               <div className="previewCover">
@@ -2732,10 +2741,11 @@ export default function MonEspacePage() {
                 ) : null}
               </div>
 
-              <div className="previewLinks">
+              <div className={`previewLinks ${card.entity_type === "profile" ? "profilePreviewLinks" : ""}`}>
                 {card.social_links
                   .filter((item) =>
-                    item.value.trim()
+                    item.value.trim() &&
+                    (card.entity_type !== "profile" || (item.type !== "whatsapp" && item.type !== "website"))
                   )
                   .map((item) => (
                     <a
@@ -2779,7 +2789,7 @@ export default function MonEspacePage() {
                     </a>
                   ))}
 
-                {card.show_address
+                {card.entity_type !== "profile" && card.show_address
                   ? card.custom_links
                       .filter(
                         (item) =>
@@ -2802,6 +2812,20 @@ export default function MonEspacePage() {
                       ))
                   : null}
               </div>
+
+              {card.entity_type === "profile" ? (
+                <div className="profilePreviewContacts">
+                  {card.show_phone !== false && card.phone ? (
+                    <span>☎ Appeler</span>
+                  ) : null}
+                  {card.social_links.some((item) => item.type === "whatsapp" && item.value.trim()) ? (
+                    <span>WhatsApp</span>
+                  ) : null}
+                  {card.show_email !== false && card.email ? (
+                    <span>✉ Email</span>
+                  ) : null}
+                </div>
+              ) : null}
 
               {card.show_qr &&
               publicUrl ? (
@@ -3759,7 +3783,15 @@ export default function MonEspacePage() {
         .previewMapIcon {
           width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-size:21px;font-weight:900;
         }
-        .previewLocation small { margin-left:auto;color:var(--accent);font-size:10px;font-weight:850; }
+        .previewLocation { border:2px solid var(--button-border) !important; background:var(--button-bg) !important; color:var(--button-text) !important; }
+        .previewLocation .previewMapIcon,.previewLocation b,.previewLocation small { color:var(--button-text) !important; }
+        .previewLocation small { margin-left:auto;font-size:10px;font-weight:850; }
+        .profilePreviewLinks { display:flex !important; justify-content:center; gap:10px; flex-wrap:wrap; }
+        .profilePreviewLinks a { width:38px !important; min-height:38px !important; padding:3px !important; border:0 !important; background:transparent !important; }
+        .profilePreviewLinks a b { display:none; }
+        .profilePreviewLinks .previewSocialIcon { width:34px;height:34px;border-radius:50%; }
+        .profilePreviewContacts { display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px 18px 18px; }
+        .profilePreviewContacts span { min-height:34px;padding:0 11px;display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.045);font-size:10px;font-weight:800; }
 
         .previewLinks {
           margin-top: 18px;
