@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getSupabaseBrowser } from "@/app/lib/supabase";
+import { clearLegacyAuthStorage, getSupabaseBrowser } from "@/app/lib/supabase";
 
 export default function DashboardHeader() {
   const pathname = usePathname();
@@ -56,11 +56,13 @@ export default function DashboardHeader() {
       const supabase = getSupabaseBrowser();
 
       await supabase.auth.signOut();
+      clearLegacyAuthStorage();
 
       router.replace("/connexion");
       router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
+      clearLegacyAuthStorage();
       router.replace("/connexion");
     } finally {
       setLoggingOut(false);
