@@ -727,7 +727,7 @@ export default function MonEspacePage() {
                 loaded.custom_links
               )
                 ? loaded.custom_links.map(
-                    (item: any) => ({
+                    (item: any): CustomLink => ({
                       id:
                         item.id ||
                         uid(),
@@ -1292,8 +1292,8 @@ export default function MonEspacePage() {
         }))
         .filter((item) => item.value.length > 0);
 
-      const cleanCustomLinks = card.custom_links
-        .map((item) => ({
+      const cleanCustomLinks: CustomLink[] = card.custom_links
+        .map((item): CustomLink => ({
           id: item.id || uid(),
           label: (item.label || "").trim(),
           url: (item.url || "").trim(),
