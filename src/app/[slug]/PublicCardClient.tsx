@@ -549,6 +549,12 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item.value || "").trim()
   );
 
+  const isProfile = card.entity_type === "profile";
+  const profileWhatsapp = socials.find((item) => item.type === "whatsapp");
+  const profileSocials = socials.filter(
+    (item) => item.type !== "whatsapp" && item.type !== "website"
+  );
+
   const customs = (card.custom_links || []).filter(
     (item) =>
       !isLocationLink(item) &&
@@ -625,7 +631,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             {card.job_title ? <p>{card.job_title}</p> : null}
             {card.company ? <small>{card.company}</small> : null}
             {card.bio ? <div className="bio">{card.bio}</div> : null}
-            {card.show_reviews !== false ? (
+            {!isProfile && card.show_reviews !== false ? (
               <button
                 type="button"
                 className="ratingSummary"
@@ -640,90 +646,105 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             ) : null}
           </div>
 
-          <div className="vcPublicLinks">
-            {socials.map((item) => (
-              <a
-                key={item.id}
-                className={ledOn ? "linkCard ledSoft" : "linkCard"}
-                href={socialHref(item)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="vcPublicSocialIcon" style={{ background: socialColor(item.type) }}>
-                  <SocialIcon type={item.type} />
-                </span>
-                <strong>{item.label}</strong>
-              </a>
-            ))}
+          {isProfile ? (
+            <>
+              {profileSocials.length ? (
+                <div className="profileSocialsCompact" aria-label={lang === "en" ? "Social networks" : "Réseaux sociaux"}>
+                  {profileSocials.map((item) => (
+                    <a
+                      key={item.id}
+                      href={socialHref(item)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="profileSocialMini"
+                      aria-label={item.label || item.type}
+                      title={item.label || item.type}
+                    >
+                      <span style={{ background: socialColor(item.type) }}>
+                        <SocialIcon type={item.type} />
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
 
-            {customs.map((item) => (
-              <a
-                key={item.id}
-                className={ledOn ? "linkCard ledSoft" : "linkCard"}
-                href={normalizeUrl(item.url)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="vcPublicSocialIcon customIcon">↗</span>
-                <strong>{item.label}</strong>
-              </a>
-            ))}
-          </div>
-
-          {card.show_address !== false && locations.length ? (
-            <div className="vcPublicLocations">
-              <div className="vcPublicLocationsTitle">
-                <span>⌖</span>
-                <strong>{t.locations}</strong>
+              <div className="profileContactCompact">
+                {card.show_phone !== false && card.phone ? (
+                  <a href={`tel:${card.phone}`} className="profileContactPill">
+                    <span>☎</span><strong>{t.call}</strong>
+                  </a>
+                ) : null}
+                {profileWhatsapp ? (
+                  <a href={socialHref(profileWhatsapp)} target="_blank" rel="noreferrer" className="profileContactPill whatsapp">
+                    <span className="miniSocial"><SocialIcon type="whatsapp" /></span><strong>WhatsApp</strong>
+                  </a>
+                ) : null}
+                {card.show_email !== false && card.email ? (
+                  <a href={`mailto:${card.email}`} className="profileContactPill">
+                    <span>✉</span><strong>{t.email}</strong>
+                  </a>
+                ) : null}
               </div>
-
-              <div className="vcPublicLocationsList">
-                {locations.map((item) => (
+            </>
+          ) : (
+            <>
+              <div className="vcPublicLinks">
+                {socials.map((item) => (
                   <a
                     key={item.id}
+                    className={ledOn ? "linkCard ledSoft" : "linkCard"}
+                    href={socialHref(item)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="vcPublicSocialIcon" style={{ background: socialColor(item.type) }}>
+                      <SocialIcon type={item.type} />
+                    </span>
+                    <strong>{item.label}</strong>
+                  </a>
+                ))}
+
+                {customs.map((item) => (
+                  <a
+                    key={item.id}
+                    className={ledOn ? "linkCard ledSoft" : "linkCard"}
                     href={normalizeUrl(item.url)}
                     target="_blank"
                     rel="noreferrer"
-                    className={ledOn ? "locationLink ledSoft" : "locationLink"}
                   >
-                    <span className="locationIcon">⌖</span>
-                    <span className="locationCopy">
-                      <strong>{item.label}</strong>
-                      <small>Google Maps</small>
-                    </span>
-                    <span className="locationAction">{t.directions} →</span>
+                    <span className="vcPublicSocialIcon customIcon">↗</span>
+                    <strong>{item.label}</strong>
                   </a>
                 ))}
               </div>
-            </div>
-          ) : null}
 
-          <div className="vcPublicContactRow">
-            {card.show_email !== false && card.email ? (
-              <a href={`mailto:${card.email}`} className="vcPublicContact primary">
-                ✉ {t.email}
-              </a>
-            ) : null}
+              {card.show_address !== false && locations.length ? (
+                <div className="vcPublicLocations">
+                  <div className="vcPublicLocationsTitle">
+                    <span>⌖</span>
+                    <strong>{t.locations}</strong>
+                  </div>
+                  <div className="vcPublicLocationsList">
+                    {locations.map((item) => (
+                      <a key={item.id} href={normalizeUrl(item.url)} target="_blank" rel="noreferrer" className={ledOn ? "locationLink ledSoft" : "locationLink"}>
+                        <span className="locationIcon">⌖</span>
+                        <span className="locationCopy"><strong>{item.label}</strong><small>Google Maps</small></span>
+                        <span className="locationAction">{t.directions} →</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
-            {card.show_phone !== false && card.phone ? (
-              <a href={`tel:${card.phone}`} className="vcPublicContact">
-                ☎ {t.call}
-              </a>
-            ) : null}
-
-            {card.show_address !== false && !locations.length && card.address ? (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  card.address
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="vcPublicContact"
-              >
-                ⌖ {t.address}
-              </a>
-            ) : null}
-          </div>
+              <div className="vcPublicContactRow">
+                {card.show_email !== false && card.email ? <a href={`mailto:${card.email}`} className="vcPublicContact primary">✉ {t.email}</a> : null}
+                {card.show_phone !== false && card.phone ? <a href={`tel:${card.phone}`} className="vcPublicContact">☎ {t.call}</a> : null}
+                {card.show_address !== false && !locations.length && card.address ? (
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address)}`} target="_blank" rel="noreferrer" className="vcPublicContact">⌖ {t.address}</a>
+                ) : null}
+              </div>
+            </>
+          )}
         </section>
 
         {card.entity_type === "profile" && profileCompanies.length ? (
@@ -741,7 +762,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           </section>
         ) : null}
 
-        {reviewOpen && card.show_reviews !== false ? (
+        {!isProfile && reviewOpen && card.show_reviews !== false ? (
           <div className="reviewModalBackdrop" onClick={() => setReviewOpen(false)}>
             <div
               className="reviewModal"
@@ -859,7 +880,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:inherit; font-weight:800; cursor:pointer; }
-        .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
+        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 12px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800}.profileContactPill.whatsapp{border-color:rgba(37,211,102,.28)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
+                .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
         .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{font-size:12px;font-weight:800;color:var(--accent)}
         @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
         
