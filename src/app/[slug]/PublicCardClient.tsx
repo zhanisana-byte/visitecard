@@ -57,6 +57,8 @@ type CardRow = {
   entity_type?: "profile" | "company";
 };
 
+type ProfileCompany = { id:string; position_title:string; company?: { id:string; full_name:string; slug:string; photo_url?:string; job_title?:string; bio?:string } };
+
 type Review = {
   id: string;
   reviewer_name?: string;
@@ -255,7 +257,6 @@ function SocialIcon({ type }: { type: SocialType }) {
 export default function PublicCardClient({ slug }: { slug: string }) {
 
   const [card, setCard] = useState<CardRow | null>(null);
-  const [linkedCompanies, setLinkedCompanies] = useState<Array<{id:string;slug:string;full_name:string;photo_url?:string;job_title?:string;position_title?:string}>>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<"fr" | "en">("fr");
@@ -268,6 +269,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [reviewSending, setReviewSending] = useState(false);
   const [reviewMessage, setReviewMessage] = useState("");
   const [thanksMessage, setThanksMessage] = useState("");
+  const [profileCompanies, setProfileCompanies] = useState<ProfileCompany[]>([]);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -359,17 +361,10 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         setCard(normalized);
         setLang(normalized.language === "en" ? "en" : "fr");
 
-        if ((normalized.entity_type || "profile") === "profile" && normalized.id) {
-          fetch(`${supabaseUrl}/rest/v1/profile_company_links?profile_card_id=eq.${normalized.id}&select=company_card_id,position_title`, { headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store" })
-            .then(r => r.ok ? r.json() : [])
-            .then(async (links:any[]) => {
-              if (!links.length) return;
-              const ids = links.map(x => x.company_card_id).join(",");
-              const cr = await fetch(`${supabaseUrl}/rest/v1/cards?id=in.(${ids})&is_public=eq.true&select=id,slug,full_name,photo_url,job_title`, { headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store" });
-              if (!cr.ok) return;
-              const companies = await cr.json();
-              setLinkedCompanies(companies.map((c:any) => ({...c, position_title: links.find(x => x.company_card_id === c.id)?.position_title || ""})));
-            }).catch(()=>{});
+        if (normalized.entity_type === "profile" && normalized.id) {
+          fetch(`${supabaseUrl}/rest/v1/profile_company_links?profile_card_id=eq.${normalized.id}&select=id,position_title,company:cards!profile_company_links_company_card_id_fkey(id,full_name,slug,photo_url,job_title,bio)`, {
+            headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store"
+          }).then(async r => { if (r.ok) { const data = await r.json(); setProfileCompanies(Array.isArray(data) ? data : []); } }).catch(() => {});
         }
 
         // Afficher la carte immédiatement. Les avis se chargent ensuite
@@ -703,21 +698,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             </div>
           ) : null}
 
-          {(card.entity_type || "profile") === "profile" && linkedCompanies.length > 0 ? (
-            <div className="vcProfileCompanies">
-              <div className="vcProfileCompaniesTitle"><span>▦</span><strong>{lang === "fr" ? "Mes sociétés" : "My companies"}</strong></div>
-              <div className="vcProfileCompaniesList">
-                {linkedCompanies.map((company) => (
-                  <a key={company.id} href={`/${company.slug}`} className={ledOn ? "vcProfileCompany ledSoft" : "vcProfileCompany"}>
-                    <span className="vcProfileCompanyLogo">{company.photo_url ? <img src={company.photo_url} alt="" /> : company.full_name.charAt(0)}</span>
-                    <span className="vcProfileCompanyCopy"><strong>{company.full_name}</strong><small>{company.position_title || (lang === "fr" ? "Voir la société" : "View company")}</small></span>
-                    <span className="vcProfileCompanyGo">→</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
           <div className="vcPublicContactRow">
             {card.show_email !== false && card.email ? (
               <a href={`mailto:${card.email}`} className="vcPublicContact primary">
@@ -745,6 +725,21 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             ) : null}
           </div>
         </section>
+
+        {card.entity_type === "profile" && profileCompanies.length ? (
+          <section className="profileCompaniesPublic">
+            <div className="profileCompaniesTitle"><span>SOCIÉTÉS</span><h2>Mes sociétés</h2></div>
+            <div className="profileCompaniesGrid">
+              {profileCompanies.map((link) => (
+                <a key={link.id} href={`/${link.company?.slug || ""}`} className={ledOn ? "profileCompanyCard ledSoft" : "profileCompanyCard"}>
+                  <span className="profileCompanyLogo">{link.company?.photo_url ? <img src={link.company.photo_url} alt="" /> : (link.company?.full_name || "S").charAt(0)}</span>
+                  <span className="profileCompanyCopy"><strong>{link.company?.full_name}</strong><small>{link.position_title}</small></span>
+                  <span className="profileCompanyArrow">Voir la page →</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {reviewOpen && card.show_reviews !== false ? (
           <div className="reviewModalBackdrop" onClick={() => setReviewOpen(false)}>
@@ -864,6 +859,10 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:inherit; font-weight:800; cursor:pointer; }
+        .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
+        .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{font-size:12px;font-weight:800;color:var(--accent)}
+        @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
+        
         .vcPublicHero,.vcPublicQrSection,.reviewsSection { border:1px solid rgba(255,255,255,.09); border-radius:28px; background:rgba(255,255,255,.02); }
         .ledFrame { border-color:var(--led); box-shadow:0 0 0 1px color-mix(in srgb,var(--led) 45%,transparent),0 0 18px color-mix(in srgb,var(--led) 32%,transparent); }
         .ledSoft { border-color:color-mix(in srgb,var(--led) 55%,rgba(255,255,255,.08)) !important; box-shadow:0 0 12px color-mix(in srgb,var(--led) 16%,transparent); }
