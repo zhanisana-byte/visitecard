@@ -63,28 +63,6 @@ export default function CreerComptePage() {
         throw new Error("Impossible de créer le compte.");
       }
 
-      /*
-       * On enregistre uniquement le TYPE choisi.
-       *
-       * La carte complète sera ensuite configurée
-       * dans Mon espace.
-       *
-       * PROFILE :
-       * Nom
-       * Prénom
-       * Profession
-       * Coordonnées
-       * RS personnels
-       * Sociétés existantes
-       *
-       * COMPANY :
-       * Nom société
-       * Activité
-       * Logo / couverture
-       * RS
-       * Localisation
-       */
-
       const temporarySlug =
         entityType === "profile"
           ? `profil-${data.user.id.slice(0, 6)}`
@@ -163,19 +141,11 @@ export default function CreerComptePage() {
 
       <section className="registerCard">
         <div className="brand">
-          <div className="brandIcon">
-            <span />
-          </div>
-
-          <div>
-            <div className="brandName">
-              Visite<span>Card</span>
-            </div>
-
-            <div className="brandSubtitle">
-              Votre identité digitale
-            </div>
-          </div>
+          <img
+            src="/logo.png"
+            alt="VisiteCard"
+            className="brandLogo"
+          />
         </div>
 
         <div className="heading">
@@ -390,57 +360,12 @@ export default function CreerComptePage() {
           margin-bottom: 36px;
         }
 
-        .brandIcon {
-          width: 45px;
-          height: 45px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 13px;
-          transform: rotate(-7deg);
-          background: linear-gradient(
-            135deg,
-            #4b36d7,
-            #7a4dff
-          );
-          box-shadow: 0 8px 18px rgba(93, 61, 224, 0.25);
-        }
-
-        .brandIcon span {
-          position: relative;
-          width: 24px;
-          height: 15px;
+        .brandLogo {
           display: block;
-          border-radius: 3px;
-          background: white;
-        }
-
-        .brandIcon span::after {
-          content: "";
-          position: absolute;
-          top: 4px;
-          left: 4px;
-          width: 15px;
-          height: 2px;
-          border-radius: 2px;
-          background: #6d4aff;
-        }
-
-        .brandName {
-          font-size: 21px;
-          font-weight: 900;
-          letter-spacing: -0.7px;
-          color: #10172c;
-        }
-
-        .brandName span {
-          color: #ff633f;
-        }
-
-        .brandSubtitle {
-          margin-top: 1px;
-          font-size: 11px;
-          color: #8b91a1;
+          width: auto;
+          height: 52px;
+          max-width: 220px;
+          object-fit: contain;
         }
 
         .heading {
@@ -689,6 +614,11 @@ export default function CreerComptePage() {
 
           .brand {
             margin-bottom: 28px;
+          }
+
+          .brandLogo {
+            height: 45px;
+            max-width: 190px;
           }
 
           h1 {
