@@ -24,6 +24,7 @@ type CustomLink = {
   id: string;
   label: string;
   url: string;
+  kind?: "link" | "location";
 };
 
 type CardRow = {
@@ -69,6 +70,8 @@ const texts = {
     email: "Email",
     call: "Appeler",
     address: "Adresse",
+    locations: "Localisations",
+    directions: "Itinéraire",
     copy: "Copier",
     copied: "Copié",
     share: "Partager",
@@ -91,6 +94,8 @@ const texts = {
     email: "Email",
     call: "Call",
     address: "Address",
+    locations: "Locations",
+    directions: "Directions",
     copy: "Copy",
     copied: "Copied",
     share: "Share",
@@ -317,6 +322,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                 id: item.id || crypto.randomUUID(),
                 label: item.label || item.name || "Lien",
                 url: item.url || "",
+                kind: item.kind === "location" ? "location" : "link",
               }))
             : [],
         };
@@ -507,7 +513,17 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   );
 
   const customs = (card.custom_links || []).filter(
-    (item) => (item.label || "").trim() && (item.url || "").trim()
+    (item) =>
+      item.kind !== "location" &&
+      (item.label || "").trim() &&
+      (item.url || "").trim()
+  );
+
+  const locations = (card.custom_links || []).filter(
+    (item) =>
+      item.kind === "location" &&
+      (item.label || "").trim() &&
+      (item.url || "").trim()
   );
 
   return (
@@ -620,6 +636,34 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             ))}
           </div>
 
+          {card.show_address !== false && locations.length ? (
+            <div className="vcPublicLocations">
+              <div className="vcPublicLocationsTitle">
+                <span>⌖</span>
+                <strong>{t.locations}</strong>
+              </div>
+
+              <div className="vcPublicLocationsList">
+                {locations.map((item) => (
+                  <a
+                    key={item.id}
+                    href={normalizeUrl(item.url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={ledOn ? "locationLink ledSoft" : "locationLink"}
+                  >
+                    <span className="locationIcon">⌖</span>
+                    <span className="locationCopy">
+                      <strong>{item.label}</strong>
+                      <small>Google Maps</small>
+                    </span>
+                    <span className="locationAction">{t.directions} →</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="vcPublicContactRow">
             {card.show_email !== false && card.email ? (
               <a href={`mailto:${card.email}`} className="vcPublicContact primary">
@@ -633,7 +677,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               </a>
             ) : null}
 
-            {card.show_address !== false && card.address ? (
+            {card.show_address !== false && !locations.length && card.address ? (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                   card.address
@@ -818,6 +862,84 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .linkCard { min-height:72px; padding:11px 18px; display:flex; align-items:center; gap:14px; border:1px solid rgba(255,255,255,.08); border-radius:19px; background:var(--panel); color:inherit; text-decoration:none; }
         .vcPublicSocialIcon { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:14px; color:#fff; }
         .customIcon { background:#e8b39b; color:#111; }
+        .vcPublicLocations {
+          padding: 14px 24px 0;
+        }
+
+        .vcPublicLocationsTitle {
+          margin: 2px 0 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--muted);
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: .08em;
+        }
+
+        .vcPublicLocationsTitle > span {
+          color: var(--accent);
+          font-size: 18px;
+          line-height: 1;
+        }
+
+        .vcPublicLocationsList {
+          display: grid;
+          gap: 9px;
+        }
+
+        .locationLink {
+          min-height: 66px;
+          padding: 10px 13px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 17px;
+          background: var(--panel);
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .locationIcon {
+          width: 44px;
+          height: 44px;
+          flex: 0 0 44px;
+          display: grid;
+          place-items: center;
+          border-radius: 13px;
+          background: color-mix(in srgb,var(--accent) 18%,transparent);
+          color: var(--accent);
+          font-size: 22px;
+          font-weight: 900;
+        }
+
+        .locationCopy {
+          min-width: 0;
+          display: grid;
+          gap: 3px;
+        }
+
+        .locationCopy strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 14px;
+        }
+
+        .locationCopy small {
+          color: var(--muted);
+          font-size: 11px;
+        }
+
+        .locationAction {
+          margin-left: auto;
+          color: var(--accent);
+          font-size: 11px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
         .vcPublicContactRow { padding:14px 24px 24px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
         .vcPublicContact { min-height:56px; display:flex; align-items:center; justify-content:center; border:1px solid var(--accent); border-radius:16px; color:inherit; text-decoration:none; font-weight:900; }
         .vcPublicContact.primary { background:color-mix(in srgb,var(--accent) 24%,#fff); color:#171717; }
