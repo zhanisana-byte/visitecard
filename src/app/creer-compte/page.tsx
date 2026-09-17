@@ -1,58 +1,143 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { clearLegacyAuthStorage, getSupabaseBrowser } from "@/app/lib/supabase";
-
+import { getSupabaseBrowser } from "@/app/lib/supabase";
 
 const supabase = getSupabaseBrowser();
+
 type EntityType = "profile" | "company";
 
 export default function CreerComptePage() {
-  const [entityType, setEntityType] = useState<EntityType>("company");
+  const router = useRouter();
+
+  const [entityType, setEntityType] =
+    useState<EntityType>("company");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  function validateEmail(value: string) {
+    /*
+      IMPORTANT :
+      - aucune transformation de l'e-mail
+      - pas de toLowerCase()
+      - pas de remplacement automatique
+      - caractères accentués interdits
+      - domaine obligatoire avec extension
+    */
+
+    if (!value) {
+      return false;
+    }
+
+    const emailRegex =
+      /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
+
+    return emailRegex.test(value);
+  }
+
+  async function handleSubmit(
+    e: FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
     setError("");
 
-    const cleanEmail = email.trim().toLowerCase();
+    /*
+      On supprime seulement les espaces
+      accidentels avant/après.
+
+      L'e-mail lui-même n'est PAS transformé.
+    */
+    const cleanEmail = email.trim();
 
     if (!cleanEmail) {
-      setError("Veuillez saisir votre adresse e-mail.");
+      setError(
+        "Veuillez saisir votre adresse e-mail."
+      );
+      return;
+    }
+
+    /*
+      Empêche par exemple :
+      contact@gmail.coù
+      contact@gmail.côm
+      contact @gmail.com
+      contact@gmail
+      etc.
+
+      Le compte n'est PAS créé.
+    */
+    if (!validateEmail(cleanEmail)) {
+      setError(
+        "Adresse e-mail incorrecte. Vérifiez chaque lettre avant de créer le compte."
+      );
+      return;
+    }
+
+    /*
+      Sécurité supplémentaire :
+      refuse explicitement tout caractère
+      non ASCII pour éviter la conversion
+      automatique en xn-- par le système.
+    */
+    if (/[^\x00-\x7F]/.test(cleanEmail)) {
+      setError(
+        "L'adresse e-mail contient un caractère incorrect. Vérifiez votre saisie."
+      );
+      return;
+    }
+
+    /*
+      On refuse également une adresse qui
+      contiendrait déjà un domaine Punycode.
+    */
+    if (cleanEmail.toLowerCase().includes("xn--")) {
+      setError(
+        "Cette adresse e-mail semble incorrecte. Vérifiez le domaine."
+      );
       return;
     }
 
     if (password.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caractères.");
+      setError(
+        "Le mot de passe doit contenir au moins 6 caractères."
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(
+        "Les mots de passe ne correspondent pas."
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      // Un navigateur peut encore contenir la session d'un ancien compte.
-      // On la ferme AVANT de créer le nouveau compte afin que /mon-espace
-      // ne puisse jamais recharger l'ancien utilisateur.
-      clearLegacyAuthStorage();
-      const { data: currentSession } = await supabase.auth.getSession();
-      if (currentSession.session) {
-        await supabase.auth.signOut();
-      }
-      clearLegacyAuthStorage();
+      /*
+        IMPORTANT :
+        on transmet EXACTEMENT l'adresse
+        validée par l'utilisateur.
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
+        Aucun :
+        .toLowerCase()
+        .replace()
+        encodage
+        ou transformation.
+      */
+      const {
+        data,
+        error: signUpError,
+      } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -67,15 +152,8 @@ export default function CreerComptePage() {
       }
 
       if (!data.user) {
-        throw new Error("Impossible de créer le compte.");
-      }
-
-      // Avec la confirmation e-mail désactivée, Supabase renvoie immédiatement
-      // la nouvelle session. Si elle n'existe pas, on évite d'ouvrir /mon-espace
-      // avec une éventuelle session précédente.
-      if (!data.session) {
         throw new Error(
-          "Compte créé, mais aucune session n'a été ouverte. Connectez-vous avec votre nouvel e-mail et votre mot de passe."
+          "Impossible de créer le compte."
         );
       }
 
@@ -84,67 +162,96 @@ export default function CreerComptePage() {
           ? `profil-${data.user.id.slice(0, 6)}`
           : `societe-${data.user.id.slice(0, 6)}`;
 
-      const { error: cardError } = await supabase.from("cards").insert({
-        user_id: data.user.id,
-        slug: temporarySlug,
+      const { error: cardError } =
+        await supabase.from("cards").insert({
+          user_id: data.user.id,
 
-        full_name: "",
-        job_title: "",
-        company: "",
-        bio: "",
+          slug: temporarySlug,
 
-        phone: "",
-        email: cleanEmail,
-        whatsapp: "",
-        website: "",
+          full_name: "",
+          job_title: "",
+          company: "",
+          bio: "",
 
-        facebook: "",
-        instagram: "",
-        tiktok: "",
-        linkedin: "",
+          phone: "",
 
-        photo_url: "",
-        cover_url: "",
+          /*
+            Même adresse que celle tapée.
+            Aucune modification.
+          */
+          email: cleanEmail,
 
-        primary_color: "#6D4AFF",
-        background_color: "#071521",
+          whatsapp: "",
+          website: "",
 
-        theme: "dark",
-        language: "fr",
+          facebook: "",
+          instagram: "",
+          tiktok: "",
+          linkedin: "",
 
-        show_qr: true,
-        show_reviews: true,
+          photo_url: "",
+          cover_url: "",
 
-        show_email: true,
-        show_phone: true,
-        show_address: true,
+          primary_color: "#6D4AFF",
+          background_color: "#071521",
 
-        led_enabled: true,
-        led_color: "#6D4AFF",
+          theme: "dark",
+          language: "fr",
 
-        social_links: [],
-        custom_links: [],
+          show_qr: true,
+          show_reviews: true,
 
-        address: "",
+          show_email: true,
+          show_phone: true,
+          show_address: true,
 
-        is_public: true,
+          led_enabled: true,
+          led_color: "#6D4AFF",
 
-        entity_type: entityType,
-      });
+          social_links: [],
+          custom_links: [],
+
+          address: "",
+
+          is_public: true,
+
+          entity_type: entityType,
+        });
 
       if (cardError) {
         throw cardError;
       }
 
-      // Navigation complète : évite aussi toute page préchargée de l'ancien espace.
-      window.location.replace("/mon-espace");
+      router.push("/mon-espace");
+      router.refresh();
     } catch (err: any) {
-      console.error(err);
-
-      setError(
-        err?.message ||
-          "Une erreur est survenue pendant la création du compte."
+      console.error(
+        "Erreur création compte :",
+        err
       );
+
+      if (
+        err?.message
+          ?.toLowerCase()
+          .includes("already registered")
+      ) {
+        setError(
+          "Cette adresse e-mail possède déjà un compte."
+        );
+      } else if (
+        err?.message
+          ?.toLowerCase()
+          .includes("invalid email")
+      ) {
+        setError(
+          "Adresse e-mail incorrecte. Vérifiez chaque lettre."
+        );
+      } else {
+        setError(
+          err?.message ||
+            "Une erreur est survenue pendant la création du compte."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -165,16 +272,22 @@ export default function CreerComptePage() {
         </div>
 
         <div className="heading">
-          <span className="eyebrow">CRÉER UN COMPTE</span>
+          <span className="eyebrow">
+            CRÉER UN COMPTE
+          </span>
 
           <h1>Créez votre VisiteCard</h1>
 
           <p>
-            Choisissez simplement le type de carte que vous souhaitez créer.
+            Choisissez simplement le type de
+            carte que vous souhaitez créer.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+        >
           <div className="typeSection">
             <label className="sectionLabel">
               Type de carte
@@ -184,9 +297,13 @@ export default function CreerComptePage() {
               <button
                 type="button"
                 className={`typeCard ${
-                  entityType === "profile" ? "active" : ""
+                  entityType === "profile"
+                    ? "active"
+                    : ""
                 }`}
-                onClick={() => setEntityType("profile")}
+                onClick={() =>
+                  setEntityType("profile")
+                }
               >
                 <div className="typeIcon">
                   <PersonIcon />
@@ -194,20 +311,27 @@ export default function CreerComptePage() {
 
                 <div className="typeText">
                   <strong>Profil</strong>
-                  <span>Carte personnelle</span>
+                  <span>
+                    Carte personnelle
+                  </span>
                 </div>
 
                 <div className="radio">
-                  {entityType === "profile" && <span />}
+                  {entityType ===
+                    "profile" && <span />}
                 </div>
               </button>
 
               <button
                 type="button"
                 className={`typeCard ${
-                  entityType === "company" ? "active" : ""
+                  entityType === "company"
+                    ? "active"
+                    : ""
                 }`}
-                onClick={() => setEntityType("company")}
+                onClick={() =>
+                  setEntityType("company")
+                }
               >
                 <div className="typeIcon">
                   <CompanyIcon />
@@ -215,11 +339,14 @@ export default function CreerComptePage() {
 
                 <div className="typeText">
                   <strong>Société</strong>
-                  <span>Carte entreprise</span>
+                  <span>
+                    Carte entreprise
+                  </span>
                 </div>
 
                 <div className="radio">
-                  {entityType === "company" && <span />}
+                  {entityType ===
+                    "company" && <span />}
                 </div>
               </button>
             </div>
@@ -227,18 +354,36 @@ export default function CreerComptePage() {
 
           <div className="fields">
             <div className="field">
-              <label htmlFor="email">E-mail</label>
+              <label htmlFor="email">
+                E-mail
+              </label>
 
               <input
                 id="email"
-                type="email"
+                type="text"
                 autoComplete="email"
                 inputMode="email"
                 placeholder="votre@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  /*
+                    On conserve exactement
+                    ce que tape l'utilisateur.
+                  */
+                  setEmail(e.target.value);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
                 required
               />
+
+              <small className="emailHelp">
+                Vérifiez attentivement votre
+                adresse e-mail avant de créer
+                votre compte.
+              </small>
             </div>
 
             <div className="field">
@@ -252,7 +397,9 @@ export default function CreerComptePage() {
                 autoComplete="new-password"
                 placeholder="Minimum 6 caractères"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 required
               />
             </div>
@@ -268,7 +415,11 @@ export default function CreerComptePage() {
                 autoComplete="new-password"
                 placeholder="Répétez votre mot de passe"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) =>
+                  setConfirmPassword(
+                    e.target.value
+                  )
+                }
                 required
               />
             </div>
@@ -344,7 +495,12 @@ export default function CreerComptePage() {
           height: 330px;
           top: -160px;
           right: -100px;
-          background: rgba(109, 74, 255, 0.08);
+          background: rgba(
+            109,
+            74,
+            255,
+            0.08
+          );
         }
 
         .registerBackgroundTwo {
@@ -352,7 +508,12 @@ export default function CreerComptePage() {
           height: 260px;
           bottom: -130px;
           left: -90px;
-          background: rgba(255, 103, 64, 0.07);
+          background: rgba(
+            255,
+            103,
+            64,
+            0.07
+          );
         }
 
         .registerCard {
@@ -363,10 +524,17 @@ export default function CreerComptePage() {
           padding: 38px;
           border: 1px solid #e7e9f0;
           border-radius: 28px;
-          background: rgba(255, 255, 255, 0.97);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.97
+          );
           box-shadow:
-            0 30px 80px rgba(20, 27, 45, 0.09),
-            0 4px 14px rgba(20, 27, 45, 0.03);
+            0 30px 80px
+              rgba(20, 27, 45, 0.09),
+            0 4px 14px
+              rgba(20, 27, 45, 0.03);
         }
 
         .brand {
@@ -458,7 +626,8 @@ export default function CreerComptePage() {
         .typeCard.active {
           border-color: #6d4aff;
           background: #f8f6ff;
-          box-shadow: 0 7px 22px rgba(109, 74, 255, 0.1);
+          box-shadow: 0 7px 22px
+            rgba(109, 74, 255, 0.1);
         }
 
         .typeIcon {
@@ -550,11 +719,20 @@ export default function CreerComptePage() {
 
         .field input:focus {
           border-color: #6d4aff;
-          box-shadow: 0 0 0 4px rgba(109, 74, 255, 0.09);
+          box-shadow: 0 0 0 4px
+            rgba(109, 74, 255, 0.09);
         }
 
         .field input::placeholder {
           color: #a7acb8;
+        }
+
+        .emailHelp {
+          display: block;
+          margin-top: -1px;
+          font-size: 11px;
+          line-height: 1.4;
+          color: #8a91a1;
         }
 
         .errorMessage {
@@ -583,7 +761,8 @@ export default function CreerComptePage() {
             #6042ed,
             #7b4cff
           );
-          box-shadow: 0 10px 25px rgba(102, 68, 238, 0.22);
+          box-shadow: 0 10px 25px
+            rgba(102, 68, 238, 0.22);
           font-size: 15px;
           font-weight: 900;
           color: white;
@@ -596,7 +775,8 @@ export default function CreerComptePage() {
 
         .submitButton:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 13px 30px rgba(102, 68, 238, 0.27);
+          box-shadow: 0 13px 30px
+            rgba(102, 68, 238, 0.27);
         }
 
         .submitButton:disabled {
