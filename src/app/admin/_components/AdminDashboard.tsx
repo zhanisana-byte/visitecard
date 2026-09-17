@@ -11,6 +11,14 @@ type User = {
 type Tab = "all" | "profile" | "company";
 type Modal = "add" | "edit" | "password" | "links" | null;
 
+function isValidEmail(value: string) {
+  const email = value.trim();
+  if (!email) return false;
+  if (/[^\x00-\x7F]/.test(email)) return false;
+  if (email.toLowerCase().includes("xn--")) return false;
+  return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(email);
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -70,11 +78,13 @@ export default function AdminDashboard() {
   function closeModal() { if (!actionLoading) { setModal(null); setCurrent(null); setFormPassword(""); } }
 
   async function createUser() {
-    if (!formEmail.trim()) return setError("E-mail obligatoire.");
+    const cleanEmail = formEmail.trim();
+    if (!cleanEmail) return setError("E-mail obligatoire.");
+    if (!isValidEmail(cleanEmail)) return setError("Adresse e-mail incorrecte. Vérifiez chaque lettre.");
     if (formPassword.length < 8) return setError("Le mot de passe doit contenir au moins 8 caractères.");
     setActionLoading(true); setError("");
     try {
-      const r = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: formName.trim(), email: formEmail.trim(), password: formPassword, entity_type: formType }) });
+      const r = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: formName.trim(), email: cleanEmail, password: formPassword, entity_type: formType }) });
       const data = await r.json(); if (!r.ok) throw new Error(data.error || "Création impossible.");
       setModal(null); setSuccess(formType === "profile" ? "Profil créé avec succès." : "Société créée avec succès."); await loadUsers();
     } catch (e: any) { setError(e?.message || "Création impossible."); } finally { setActionLoading(false); }
@@ -88,6 +98,17 @@ export default function AdminDashboard() {
       const data = await r.json(); if (!r.ok) throw new Error(data.error || "Modification impossible.");
       setModal(null); setSuccess(message); await loadUsers();
     } catch (e: any) { setError(e?.message || "Modification impossible."); } finally { setActionLoading(false); }
+  }
+
+  async function saveEdit() {
+    if (!current) return;
+    const cleanEmail = formEmail.trim();
+    if (!cleanEmail) return setError("E-mail obligatoire.");
+    if (!isValidEmail(cleanEmail)) return setError("Adresse e-mail incorrecte. Vérifiez chaque lettre.");
+    await updateUser(
+      { name: formName.trim(), email: cleanEmail },
+      "Compte modifié avec succès. Le QR code reste inchangé."
+    );
   }
 
   async function deleteUser(u: User) {
@@ -120,7 +141,7 @@ export default function AdminDashboard() {
       </section>
     </div>
     {modal&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)closeModal()}}><div className="modal"><button className="close" onClick={closeModal}>×</button>{modal==="add"&&<><small>NOUVEAU COMPTE</small><h3>Ajouter {formType==="profile"?"un profil":"une société"}</h3><div className="typeChoice"><button className={formType==="profile"?"chosen":""} onClick={()=>setFormType("profile")}>Profil</button><button className={formType==="company"?"chosen":""} onClick={()=>setFormType("company")}>Société</button></div><label>Nom<input value={formName} onChange={e=>setFormName(e.target.value)}/></label><label>E-mail<input type="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)}/></label><label>Mot de passe<input type="password" value={formPassword} onChange={e=>setFormPassword(e.target.value)} placeholder="8 caractères minimum"/></label><button className="save" disabled={actionLoading} onClick={createUser}>{actionLoading?"Création...":"Créer le compte"}</button></>}
-      {modal==="edit"&&current&&<><small>COMPTE</small><h3>Modifier {current.entity_type==="profile"?"le profil":"la société"}</h3><label>Nom<input value={formName} onChange={e=>setFormName(e.target.value)}/></label><label>E-mail de connexion<input type="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)}/></label><button className="save" disabled={actionLoading} onClick={()=>updateUser({name:formName.trim(),email:formEmail.trim().toLowerCase()},"Compte modifié avec succès.")}>{actionLoading?"Enregistrement...":"Enregistrer"}</button></>}
+      {modal==="edit"&&current&&<><small>COMPTE</small><h3>Modifier {current.entity_type==="profile"?"le profil":"la société"}</h3><label>Nom<input value={formName} onChange={e=>setFormName(e.target.value)}/></label><label>E-mail de connexion<input type="text" inputMode="email" autoComplete="email" value={formEmail} onChange={e=>setFormEmail(e.target.value)}/></label><p className="modalText">La modification de l’e-mail ne change ni le QR code ni l’URL publique de la carte.</p><button className="save" disabled={actionLoading} onClick={saveEdit}>{actionLoading?"Enregistrement...":"Enregistrer"}</button></>}
       {modal==="password"&&current&&<><small>SÉCURITÉ</small><h3>Nouveau mot de passe</h3><p className="modalText">{current.name||current.email}<br/><b>{current.email}</b></p><label>Nouveau mot de passe<input type="password" value={formPassword} onChange={e=>setFormPassword(e.target.value)} placeholder="8 caractères minimum"/></label><button className="save" disabled={actionLoading||formPassword.length<8} onClick={()=>updateUser({password:formPassword},"Mot de passe modifié avec succès.")}>{actionLoading?"Modification...":"Modifier le mot de passe"}</button></>}
       {modal==="links"&&current&&<><small>PROFIL</small><h3>Sociétés liées à {current.name||"ce profil"}</h3><div className="linkedList">{current.linked_companies.map(c=><div className="linked" key={c.id}>{c.company_photo_url?<img src={c.company_photo_url} alt=""/>:<div className="companyIcon">S</div>}<div><strong>{c.company_name}</strong><span>{c.position_title||"Société liée"}</span></div>{c.company_slug&&<a href={`/${c.company_slug}`} target="_blank" rel="noreferrer">Voir ↗</a>}</div>)}{current.linked_companies.length===0&&<div className="emptyMini">Aucune société liée à ce profil.</div>}</div></>}
       {error&&<div className="modalError">{error}</div>}</div></div>}
