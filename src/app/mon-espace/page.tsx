@@ -237,6 +237,10 @@ function socialColor(type: SocialType) {
     return "#111111";
   }
 
+  if (type === "website") {
+    return "#2563EB";
+  }
+
   return "#E8B39B";
 }
 
@@ -367,6 +371,26 @@ function SocialIcon({
         <path
           d="M5 4h3.5l3.9 5.1L16.7 4h2l-5.3 6.5L19.4 20H16l-4.3-5.6L7.1 20H5l5.9-7.1L5 4Z"
           fill="white"
+        />
+      </svg>
+    );
+  }
+
+  if (type === "website") {
+    return (
+      <svg {...common}>
+        <circle
+          cx="12"
+          cy="12"
+          r="8.5"
+          stroke="white"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M3.8 12h16.4M12 3.5c2.15 2.3 3.25 5.15 3.25 8.5S14.15 18.2 12 20.5M12 3.5C9.85 5.8 8.75 8.65 8.75 12s1.1 6.2 3.25 8.5"
+          stroke="white"
+          strokeWidth="1.6"
+          strokeLinecap="round"
         />
       </svg>
     );
@@ -631,35 +655,37 @@ export default function MonEspacePage() {
               loaded.primary_color ||
               "#ff6a3d",
 
-            social_links:
-              Array.isArray(
-                loaded.social_links
-              )
-                ? loaded.social_links.map(
-                    (item: any) => ({
-                      id:
-                        item.id ||
-                        uid(),
+            social_links: (() => {
+              const links: SocialLink[] = Array.isArray(loaded.social_links)
+                ? loaded.social_links.map((item: any): SocialLink => ({
+                    id: item.id || uid(),
+                    type: item.type || "website",
+                    label:
+                      item.label ||
+                      item.name ||
+                      networkName(item.type || "website"),
+                    value: item.value || item.url || "",
+                  }))
+                : [];
 
-                      type:
-                        item.type ||
-                        "website",
+              // Compatibilité avec les anciennes cartes : le site pouvait
+              // être enregistré dans cards.website sans être dans social_links.
+              const legacyWebsite = String(loaded.website || "").trim();
 
-                      label:
-                        item.label ||
-                        item.name ||
-                        networkName(
-                          item.type ||
-                            "website"
-                        ),
+              if (
+                legacyWebsite &&
+                !links.some((item) => item.type === "website")
+              ) {
+                links.push({
+                  id: uid(),
+                  type: "website",
+                  label: "Site web",
+                  value: legacyWebsite,
+                });
+              }
 
-                      value:
-                        item.value ||
-                        item.url ||
-                        "",
-                    })
-                  )
-                : [],
+              return links;
+            })(),
 
             custom_links:
               Array.isArray(
@@ -2700,7 +2726,7 @@ export default function MonEspacePage() {
                 {card.social_links
                   .filter((item) =>
                     item.value.trim() &&
-                    (card.entity_type !== "profile" || (item.type !== "whatsapp" && item.type !== "website"))
+                    (card.entity_type !== "profile" || item.type !== "whatsapp")
                   )
                   .map((item) => (
                     <a
@@ -2768,7 +2794,12 @@ export default function MonEspacePage() {
                   : null}
               </div>
 
-              {card.entity_type === "profile" ? (
+              {card.entity_type === "profile" &&
+              ((card.show_phone !== false && card.phone.trim()) ||
+                card.social_links.some(
+                  (item) => item.type === "whatsapp" && item.value.trim()
+                ) ||
+                (card.show_email !== false && card.email.trim())) ? (
                 <div className="profilePreviewContacts">
                   {card.show_phone !== false && card.phone ? (
                     <span>☎ Appeler</span>
@@ -3741,11 +3772,12 @@ export default function MonEspacePage() {
         .previewLocation { border:2px solid var(--button-border) !important; background:var(--button-bg) !important; color:var(--button-text) !important; }
         .previewLocation .previewMapIcon,.previewLocation b,.previewLocation small { color:var(--button-text) !important; }
         .previewLocation small { margin-left:auto;font-size:10px;font-weight:850; }
-        .profilePreviewLinks { display:flex !important; justify-content:center; gap:10px; flex-wrap:wrap; }
+        .profilePreviewLinks { display:flex !important; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:8px !important; }
+        .profilePreviewLinks:empty { display:none !important; margin:0 !important; padding:0 !important; }
         .profilePreviewLinks a { width:38px !important; min-height:38px !important; padding:3px !important; border:0 !important; background:transparent !important; }
         .profilePreviewLinks a b { display:none; }
         .profilePreviewLinks .previewSocialIcon { width:34px;height:34px;border-radius:50%; }
-        .profilePreviewContacts { display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px 18px 18px; }
+        .profilePreviewContacts { display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:6px 18px 18px; }
         .profilePreviewContacts span { min-height:34px;padding:0 11px;display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.045);font-size:10px;font-weight:800; }
 
         .previewLinks {
