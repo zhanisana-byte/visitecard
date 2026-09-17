@@ -45,6 +45,13 @@ type CardRow = {
   button_color?: string;
   button_text_color?: string;
   button_border_color?: string;
+  directions_button_color?: string;
+  directions_text_color?: string;
+  directions_border_color?: string;
+  maps_button_color?: string;
+  maps_text_color?: string;
+  maps_border_color?: string;
+  call_icon?: string;
   theme?: "light" | "dark";
   language?: "fr" | "en";
   is_public?: boolean;
@@ -127,6 +134,42 @@ function normalizeUrl(value: string) {
   if (!clean) return "";
   if (/^https?:\/\//i.test(clean)) return clean;
   return `https://${clean}`;
+}
+
+function getGoogleMapsUrl(value: string) {
+  const clean = (value || "").trim();
+  if (!clean) return "#";
+  if (/^https?:\/\//i.test(clean)) return clean;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clean)}`;
+}
+
+function DirectionIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 2 9.7 14.3"/><path d="m22 2-7.8 20-4.5-7.7L2 9.8 22 2Z"/></svg>;
+}
+
+function MapIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/></svg>;
+}
+
+function ChevronIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>;
+}
+
+function MailIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>;
+}
+
+function CallIcon({ variant }: { variant: string }) {
+  if (variant === "mobile") {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>;
+  }
+  if (variant === "circle") {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.8 7.8c.5-.5 1.3-.4 1.7.2l1.1 1.8c.3.5.2 1.1-.2 1.5l-.8.7c.7 1.4 1.8 2.5 3.2 3.2l.7-.8c.4-.4 1-.5 1.5-.2l1.8 1.1c.6.4.7 1.2.2 1.7l-.8.8c-.8.8-2 1.1-3.1.8-4.2-1.2-7.5-4.5-8.7-8.7-.3-1.1 0-2.3.8-3.1l.6-.6Z"/></svg>;
+  }
+  if (variant === "call") {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.7 2.6a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.8.3 1.7.6 2.6.7a2 2 0 0 1 2 2.3Z"/></svg>;
+  }
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.7 2.6a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.8.3 1.7.6 2.6.7a2 2 0 0 1 2 2.3Z"/></svg>;
 }
 
 function isGoogleMapsUrl(value?: string | null) {
@@ -550,6 +593,13 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const buttonColor = card.button_color || accent;
   const buttonTextColor = card.button_text_color || "#ffffff";
   const buttonBorderColor = card.button_border_color || buttonColor;
+  const directionsButtonColor = card.directions_button_color || "#2563eb";
+  const directionsTextColor = card.directions_text_color || "#ffffff";
+  const directionsBorderColor = card.directions_border_color || directionsButtonColor;
+  const mapsButtonColor = card.maps_button_color || "#16a34a";
+  const mapsTextColor = card.maps_text_color || "#ffffff";
+  const mapsBorderColor = card.maps_border_color || mapsButtonColor;
+  const callIcon = card.call_icon || "phone";
 
   const socials = (card.social_links || []).filter((item) =>
     (item.value || "").trim()
@@ -585,6 +635,12 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         ["--button-bg" as any]: buttonColor,
         ["--button-text" as any]: buttonTextColor,
         ["--button-border" as any]: buttonBorderColor,
+        ["--directions-bg" as any]: directionsButtonColor,
+        ["--directions-text" as any]: directionsTextColor,
+        ["--directions-border" as any]: directionsBorderColor,
+        ["--maps-bg" as any]: mapsButtonColor,
+        ["--maps-text" as any]: mapsTextColor,
+        ["--maps-border" as any]: mapsBorderColor,
       }}
     >
       {thanksMessage ? (
@@ -758,12 +814,15 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                               <strong>{item.label}</strong>
                             </div>
                           </div>
-                          <a href={normalizeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumDirections">
-                            <span>➤</span>
+                          <a href={getGoogleMapsUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumDirections">
+                            <DirectionIcon />
                             <strong>{t.directions}</strong>
+                            <ChevronIcon />
                           </a>
-                          <a href={normalizeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumGoogleMaps">
-                            {lang === "en" ? "View on Google Maps" : "Voir sur Google Maps"} ↗
+                          <a href={getGoogleMapsUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumGoogleMaps">
+                            <MapIcon />
+                            <strong>{lang === "en" ? "View on Google Maps" : "Voir sur Google Maps"}</strong>
+                            <ChevronIcon />
                           </a>
                         </div>
                       </article>
@@ -773,8 +832,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               ) : null}
 
               <div className="vcPublicContactRow">
-                {card.show_email !== false && card.email ? <a href={`mailto:${card.email}`} className="vcPublicContact primary">✉ {t.email}</a> : null}
-                {card.show_phone !== false && card.phone ? <a href={`tel:${card.phone}`} className="vcPublicContact">☎ {t.call}</a> : null}
+                {card.show_email !== false && card.email ? <a href={`mailto:${card.email}`} className="vcPublicContact primary"><MailIcon /> <span>{t.email}</span></a> : null}
+                {card.show_phone !== false && card.phone ? <a href={`tel:${card.phone}`} className="vcPublicContact"><CallIcon variant={callIcon} /> <span>{t.call}</span></a> : null}
                 {card.show_address !== false && !locations.length && card.address ? (
                   <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address)}`} target="_blank" rel="noreferrer" className="vcPublicContact">⌖ {t.address}</a>
                 ) : null}
@@ -1002,7 +1061,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
         .premiumLocations{margin-top:18px;padding:18px;border:1px solid color-mix(in srgb,var(--accent) 45%,rgba(255,255,255,.08));border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--panel)),var(--panel));overflow:hidden}
         .premiumLocationHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.premiumLocationTitle{display:flex;align-items:center;gap:11px}.premiumLocationPin{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);font-size:22px}.premiumLocationTitle div{display:grid;gap:2px}.premiumLocationTitle strong{font-size:18px}.premiumLocationTitle small{color:var(--muted);font-size:12px}
-        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;border-radius:12px;background:var(--button-bg);color:var(--button-text);border:2px solid var(--button-border);font-weight:900}.premiumDirections{padding:11px 12px}.premiumDirections span{color:var(--button-text)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;font-size:11px}
+        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{min-height:54px;display:grid;grid-template-columns:24px 1fr 18px;align-items:center;gap:10px;padding:0 16px;text-decoration:none;border-radius:14px;font-weight:900;box-shadow:0 10px 24px rgba(0,0,0,.14)}.premiumDirections{background:var(--directions-bg);color:var(--directions-text);border:2px solid var(--directions-border)}.premiumGoogleMaps{background:var(--maps-bg);color:var(--maps-text);border:2px solid var(--maps-border);font-size:12px}.premiumDirections svg,.premiumGoogleMaps svg{width:20px;height:20px}.premiumDirections svg:last-child,.premiumGoogleMaps svg:last-child{width:16px;height:16px;justify-self:end}.premiumDirections strong,.premiumGoogleMaps strong{color:inherit}
         @media(max-width:680px){.premiumLocations{padding:13px;border-radius:20px}.premiumLocationCard{grid-template-columns:1fr;padding:9px;gap:11px}.premiumMapWrap,.premiumMapWrap iframe{min-height:180px}.premiumLocationInfo{padding:3px 2px 4px}.premiumLocationTitle strong{font-size:16px}}
 
         .locationLink {
@@ -1058,7 +1117,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         }
 
         .vcPublicContactRow { padding:14px 24px 24px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-        .vcPublicContact { min-height:56px; display:flex; align-items:center; justify-content:center; border:2px solid var(--button-border); border-radius:16px; background:var(--button-bg); color:var(--button-text); text-decoration:none; font-weight:900; }
+        .vcPublicContact { min-height:56px; display:flex; align-items:center; justify-content:center; gap:10px; border:2px solid var(--button-border); border-radius:16px; background:var(--button-bg); color:var(--button-text); text-decoration:none; font-weight:900; }.vcPublicContact svg{width:22px;height:22px;flex:0 0 auto}
         .vcPublicContact.primary { background:var(--button-bg); color:var(--button-text); border-color:var(--button-border); }
 
         .reviewModalBackdrop {
