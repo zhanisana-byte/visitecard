@@ -719,18 +719,45 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               </div>
 
               {card.show_address !== false && locations.length ? (
-                <div className="vcPublicLocations">
-                  <div className="vcPublicLocationsTitle">
-                    <span>⌖</span>
-                    <strong>{t.locations}</strong>
+                <div className="vcPublicLocations premiumLocations">
+                  <div className="premiumLocationHeader">
+                    <div className="premiumLocationTitle">
+                      <span className="premiumLocationPin">⌖</span>
+                      <div>
+                        <strong>{locations.length > 1 ? t.locations : (lang === "en" ? "Location" : "Localisation")}</strong>
+                        <small>{lang === "en" ? "Find us easily" : "Retrouvez-nous facilement"}</small>
+                      </div>
+                    </div>
                   </div>
-                  <div className="vcPublicLocationsList">
-                    {locations.map((item) => (
-                      <a key={item.id} href={normalizeUrl(item.url)} target="_blank" rel="noreferrer" className={ledOn ? "locationLink ledSoft" : "locationLink"}>
-                        <span className="locationIcon">⌖</span>
-                        <span className="locationCopy"><strong>{item.label}</strong><small>Google Maps</small></span>
-                        <span className="locationAction">{t.directions} →</span>
-                      </a>
+                  <div className="premiumLocationList">
+                    {locations.map((item, index) => (
+                      <article key={item.id} className={ledOn ? "premiumLocationCard ledSoft" : "premiumLocationCard"}>
+                        <div className="premiumMapWrap">
+                          <iframe
+                            title={`${lang === "en" ? "Location" : "Localisation"} ${index + 1}`}
+                            src={`https://www.google.com/maps?q=${encodeURIComponent(item.label || card.full_name || "")}&output=embed`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            allowFullScreen
+                          />
+                        </div>
+                        <div className="premiumLocationInfo">
+                          <div className="premiumLocationAddress">
+                            <span className="premiumLocationInfoIcon">●</span>
+                            <div>
+                              <small>{lang === "en" ? `Address ${locations.length > 1 ? index + 1 : ""}` : `Adresse ${locations.length > 1 ? index + 1 : ""}`}</small>
+                              <strong>{item.label}</strong>
+                            </div>
+                          </div>
+                          <a href={normalizeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumDirections">
+                            <span>➤</span>
+                            <strong>{t.directions}</strong>
+                          </a>
+                          <a href={normalizeUrl(item.url)} target="_blank" rel="noopener noreferrer" className="premiumGoogleMaps">
+                            {lang === "en" ? "View on Google Maps" : "Voir sur Google Maps"} ↗
+                          </a>
+                        </div>
+                      </article>
                     ))}
                   </div>
                 </div>
@@ -752,7 +779,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             <div className="profileCompaniesTitle"><span>SOCIÉTÉS</span><h2>Mes sociétés</h2></div>
             <div className="profileCompaniesGrid">
               {profileCompanies.map((link) => (
-                <a key={link.id} href={`/${link.company?.slug || ""}`} className={ledOn ? "profileCompanyCard ledSoft" : "profileCompanyCard"}>
+                <a key={link.id} href={`/${link.company?.slug || ""}`} target="_blank" rel="noopener noreferrer" className={ledOn ? "profileCompanyCard ledSoft" : "profileCompanyCard"}>
                   <span className="profileCompanyLogo">{link.company?.photo_url ? <img src={link.company.photo_url} alt="" /> : (link.company?.full_name || "S").charAt(0)}</span>
                   <span className="profileCompanyCopy"><strong>{link.company?.full_name}</strong><small>{link.position_title}</small></span>
                   <span className="profileCompanyArrow">Voir la page →</span>
@@ -962,6 +989,12 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           display: grid;
           gap: 9px;
         }
+
+
+        .premiumLocations{margin-top:18px;padding:18px;border:1px solid color-mix(in srgb,var(--accent) 45%,rgba(255,255,255,.08));border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--panel)),var(--panel));overflow:hidden}
+        .premiumLocationHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.premiumLocationTitle{display:flex;align-items:center;gap:11px}.premiumLocationPin{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);font-size:22px}.premiumLocationTitle div{display:grid;gap:2px}.premiumLocationTitle strong{font-size:18px}.premiumLocationTitle small{color:var(--muted);font-size:12px}
+        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;border-radius:12px}.premiumDirections{padding:11px 12px;background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}.premiumDirections span{color:var(--accent)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;border:1px solid color-mix(in srgb,var(--accent) 40%,rgba(255,255,255,.08));color:var(--accent);font-size:11px;font-weight:800}
+        @media(max-width:680px){.premiumLocations{padding:13px;border-radius:20px}.premiumLocationCard{grid-template-columns:1fr;padding:9px;gap:11px}.premiumMapWrap,.premiumMapWrap iframe{min-height:180px}.premiumLocationInfo{padding:3px 2px 4px}.premiumLocationTitle strong{font-size:16px}}
 
         .locationLink {
           min-height: 66px;
