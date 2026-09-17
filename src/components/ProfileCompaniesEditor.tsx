@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseBrowser } from "@/app/lib/supabase";
 
+
+const supabase = getSupabaseBrowser();
 type Company = {
   id: string;
   slug: string;
