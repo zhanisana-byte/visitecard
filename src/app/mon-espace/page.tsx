@@ -52,6 +52,9 @@ type CardData = {
   cover_url: string;
   primary_color: string;
   background_color: string;
+  button_color: string;
+  button_text_color: string;
+  button_border_color: string;
   theme: "light" | "dark";
   language: "fr" | "en";
   is_public: boolean;
@@ -103,6 +106,9 @@ const emptyCard: CardData = {
   cover_url: "",
   primary_color: "#ff6a3d",
   background_color: "#f5f1ef",
+  button_color: "#b11235",
+  button_text_color: "#ffffff",
+  button_border_color: "#b11235",
   theme: "dark",
   language: "fr",
   is_public: true,
@@ -684,6 +690,9 @@ export default function MonEspacePage() {
             cover_url: loaded.cover_url ?? "",
             primary_color: loaded.primary_color ?? "#ff6a3d",
             background_color: loaded.background_color ?? "#f5f1ef",
+            button_color: loaded.button_color ?? loaded.primary_color ?? "#b11235",
+            button_text_color: loaded.button_text_color ?? "#ffffff",
+            button_border_color: loaded.button_border_color ?? loaded.primary_color ?? "#b11235",
 
             led_enabled:
               typeof loaded.led_enabled ===
@@ -1336,6 +1345,9 @@ export default function MonEspacePage() {
         cover_url: card.cover_url ?? "",
         primary_color: card.primary_color ?? "#ff6a3d",
         background_color: card.background_color ?? "#f5f1ef",
+        button_color: card.button_color ?? "#b11235",
+        button_text_color: card.button_text_color ?? "#ffffff",
+        button_border_color: card.button_border_color ?? "#b11235",
         theme: card.theme,
         language: card.language,
         is_public: card.is_public,
@@ -2302,6 +2314,33 @@ export default function MonEspacePage() {
                       card.primary_color
                     }
                   </span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Couleur bouton
+
+                <div>
+                  <input type="color" value={card.button_color} onChange={(e) => updateField("button_color", e.target.value)} />
+                  <span>{card.button_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Texte bouton
+
+                <div>
+                  <input type="color" value={card.button_text_color} onChange={(e) => updateField("button_text_color", e.target.value)} />
+                  <span>{card.button_text_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Cadre bouton
+
+                <div>
+                  <input type="color" value={card.button_border_color} onChange={(e) => updateField("button_border_color", e.target.value)} />
+                  <span>{card.button_border_color}</span>
                 </div>
               </label>
 
