@@ -37,6 +37,7 @@ type CardRow = {
   bio?: string;
   email?: string;
   phone?: string;
+  website?: string;
   address?: string;
   photo_url?: string;
   cover_url?: string;
@@ -177,6 +178,7 @@ function socialColor(type: SocialType) {
   if (type === "linkedin") return "#0A66C2";
   if (type === "youtube") return "#FF0000";
   if (type === "x") return "#111111";
+  if (type === "website") return "#2563EB";
   return "#E8B39B";
 }
 
@@ -246,6 +248,15 @@ function SocialIcon({ type }: { type: SocialType }) {
     return (
       <svg {...common}>
         <path d="M5 4h3.5l3.9 5.1L16.7 4h2l-5.3 6.5L19.4 20H16l-4.3-5.6L7.1 20H5l5.9-7.1L5 4Z" fill="white" />
+      </svg>
+    );
+  }
+
+  if (type === "website") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="8.5" stroke="white" strokeWidth="1.8" />
+        <path d="M3.8 12h16.4M12 3.5c2.15 2.3 3.25 5.15 3.25 8.5S14.15 18.2 12 20.5M12 3.5C9.85 5.8 8.75 8.65 8.75 12s1.1 6.2 3.25 8.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     );
   }
@@ -551,14 +562,35 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const buttonTextColor = card.button_text_color || "#ffffff";
   const buttonBorderColor = card.button_border_color || buttonColor;
 
-  const socials = (card.social_links || []).filter((item) =>
+  const baseSocials = (card.social_links || []).filter((item) =>
     (item.value || "").trim()
   );
 
+  // Compatibilité avec les anciennes cartes qui ont enregistré le site
+  // dans cards.website mais pas encore dans social_links.
+  const socials: SocialLink[] = [...baseSocials];
+  const storedWebsite = (card.website || "").trim();
+  if (storedWebsite && !socials.some((item) => item.type === "website")) {
+    socials.push({
+      id: "website-fallback",
+      type: "website",
+      label: lang === "en" ? "Website" : "Site web",
+      value: storedWebsite,
+    });
+  }
+
   const isProfile = card.entity_type === "profile";
   const profileWhatsapp = socials.find((item) => item.type === "whatsapp");
-  const profileSocials = socials.filter(
-    (item) => item.type !== "whatsapp" && item.type !== "website"
+  const profileSocials = socials.filter((item) => item.type !== "whatsapp");
+  const hasProfileMeta = Boolean(
+    (card.job_title || "").trim() ||
+      (card.company || "").trim() ||
+      (card.bio || "").trim()
+  );
+  const hasProfileContacts = Boolean(
+    (card.show_phone !== false && (card.phone || "").trim()) ||
+      profileWhatsapp ||
+      (card.show_email !== false && (card.email || "").trim())
   );
 
   const customs = (card.custom_links || []).filter(
@@ -635,7 +667,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             )}
           </div>
 
-          <div className="vcPublicIdentity">
+          <div className={`vcPublicIdentity ${isProfile && !hasProfileMeta ? "compactProfileIdentity" : ""}`}>
             <h1>{card.full_name || "VisiteCard"}</h1>
             {card.job_title ? <p>{card.job_title}</p> : null}
             {card.company ? <small>{card.company}</small> : null}
@@ -677,23 +709,25 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                 </div>
               ) : null}
 
-              <div className="profileContactCompact">
-                {card.show_phone !== false && card.phone ? (
-                  <a href={`tel:${card.phone}`} className="profileContactPill">
-                    <span>☎</span><strong>{t.call}</strong>
-                  </a>
-                ) : null}
-                {profileWhatsapp ? (
-                  <a href={socialHref(profileWhatsapp)} target="_blank" rel="noreferrer" className="profileContactPill whatsapp">
-                    <span className="miniSocial"><SocialIcon type="whatsapp" /></span><strong>WhatsApp</strong>
-                  </a>
-                ) : null}
-                {card.show_email !== false && card.email ? (
-                  <a href={`mailto:${card.email}`} className="profileContactPill">
-                    <span>✉</span><strong>{t.email}</strong>
-                  </a>
-                ) : null}
-              </div>
+              {hasProfileContacts ? (
+                <div className="profileContactCompact">
+                  {card.show_phone !== false && card.phone ? (
+                    <a href={`tel:${card.phone}`} className="profileContactPill">
+                      <span>☎</span><strong>{t.call}</strong>
+                    </a>
+                  ) : null}
+                  {profileWhatsapp ? (
+                    <a href={socialHref(profileWhatsapp)} target="_blank" rel="noreferrer" className="profileContactPill whatsapp">
+                      <span className="miniSocial"><SocialIcon type="whatsapp" /></span><strong>WhatsApp</strong>
+                    </a>
+                  ) : null}
+                  {card.show_email !== false && card.email ? (
+                    <a href={`mailto:${card.email}`} className="profileContactPill">
+                      <span>✉</span><strong>{t.email}</strong>
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -916,7 +950,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:inherit; font-weight:800; cursor:pointer; }
-        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 12px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800}.profileContactPill.whatsapp{border-color:rgba(37,211,102,.28)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
+        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 8px}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.compactProfileIdentity + .profileContactCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800}.profileContactPill.whatsapp{border-color:rgba(37,211,102,.28)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
                 .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
         .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{font-size:12px;font-weight:800;color:var(--accent)}
         @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
@@ -930,7 +964,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .vcPublicCoverFallback { background:radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 34%),linear-gradient(135deg,#111820,#25140f); }
         .vcPublicAvatar { width:126px; height:126px; margin:-63px auto 0; position:relative; z-index:2; display:grid; place-items:center; overflow:hidden; border:3px solid var(--accent); border-radius:50%; background:#eee; color:#222; font-size:40px; font-weight:900; }
         .vcPublicAvatar img { width:100%; height:100%; object-fit:cover; }
-        .vcPublicIdentity { padding:18px 24px 18px; text-align:center; }
+        .vcPublicIdentity { padding:18px 24px 10px; text-align:center; }
+        .vcPublicIdentity.compactProfileIdentity { padding-bottom:2px; }
         .vcPublicIdentity h1 { margin:0; font-size:clamp(34px,7vw,52px); letter-spacing:-.05em; }
         .vcPublicIdentity p,.vcPublicIdentity small,.bio { color:var(--muted); }
         .vcPublicIdentity p { margin:10px 0 0; }
