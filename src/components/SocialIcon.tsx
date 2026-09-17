@@ -25,7 +25,7 @@ export default function SocialIcon({
     whatsapp: "☎",
     linkedin: "in",
     youtube: "▶",
-    website: "↗",
+    website: "◎",
   };
 
   return (
