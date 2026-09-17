@@ -6,6 +6,7 @@ import {
   FormEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -32,6 +33,7 @@ type CustomLink = {
   id: string;
   label: string;
   url: string;
+  kind?: "link" | "location";
 };
 
 type CardData = {
@@ -738,6 +740,11 @@ export default function MonEspacePage() {
                       url:
                         item.url ||
                         "",
+
+                      kind:
+                        item.kind === "location"
+                          ? "location"
+                          : "link",
                     })
                   )
                 : [],
@@ -1008,6 +1015,7 @@ export default function MonEspacePage() {
             id: uid(),
             label: "",
             url: "",
+            kind: "link",
           },
         ],
       })
@@ -1053,6 +1061,89 @@ export default function MonEspacePage() {
           ),
       })
     );
+  }
+
+  function addLocation() {
+    setCard((previous) => ({
+      ...previous,
+      custom_links: [
+        ...previous.custom_links,
+        {
+          id: uid(),
+          label: "",
+          url: "",
+          kind: "location",
+        },
+      ],
+    }));
+  }
+
+  const imageDragRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  function clampCropPosition(value: number) {
+    return Math.max(-100, Math.min(100, value));
+  }
+
+  function handleImagePointerDown(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (!imageEditor) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+
+    imageDragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startX: imageEditor.x,
+      startY: imageEditor.y,
+      width: Math.max(bounds.width, 1),
+      height: Math.max(bounds.height, 1),
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleImagePointerMove(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    const drag = imageDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const dx = ((event.clientX - drag.startClientX) / drag.width) * 100;
+    const dy = ((event.clientY - drag.startClientY) / drag.height) * 100;
+
+    setImageEditor((previous) =>
+      previous
+        ? {
+            ...previous,
+            x: clampCropPosition(drag.startX + dx),
+            y: clampCropPosition(drag.startY + dy),
+          }
+        : previous
+    );
+  }
+
+  function handleImagePointerEnd(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    const drag = imageDragRef.current;
+
+    if (drag?.pointerId === event.pointerId) {
+      imageDragRef.current = null;
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    }
   }
 
   function readImage(
@@ -1206,6 +1297,7 @@ export default function MonEspacePage() {
           id: item.id || uid(),
           label: (item.label || "").trim(),
           url: (item.url || "").trim(),
+          kind: item.kind === "location" ? "location" : "link",
         }))
         .filter((item) => item.label || item.url);
 
@@ -1515,21 +1607,33 @@ export default function MonEspacePage() {
               <button type="button" onClick={() => setImageEditor(null)}>×</button>
             </div>
 
-            <div className={`imageCropFrame ${imageEditor.kind === "photo" ? "roundCrop" : "coverCrop"}`}>
+            <div
+              className={`imageCropFrame ${imageEditor.kind === "photo" ? "roundCrop" : "coverCrop"}`}
+              onPointerDown={handleImagePointerDown}
+              onPointerMove={handleImagePointerMove}
+              onPointerUp={handleImagePointerEnd}
+              onPointerCancel={handleImagePointerEnd}
+            >
               <img
                 src={imageEditor.src}
                 alt=""
                 draggable={false}
                 style={{
-                  transform: `translate(${imageEditor.x}px, ${imageEditor.y}px) scale(${imageEditor.zoom})`,
+                  transform: `scale(${imageEditor.zoom}) translate(${imageEditor.x / imageEditor.zoom}%, ${imageEditor.y / imageEditor.zoom}%)`,
                 }}
               />
+              <div className="cropMoveHint">Glissez l’image pour la cadrer</div>
             </div>
 
             <div className="imageEditorControls">
+              <div className="zoomLabel">
+                <strong>Zoom</strong>
+                <span>{Math.round(imageEditor.zoom * 100)}%</span>
+              </div>
+
               <div className="zoomRow">
                 <button type="button" onClick={() =>
-                  setImageEditor(v => v ? {...v, zoom: Math.max(1, v.zoom - .1)} : v)
+                  setImageEditor(v => v ? {...v, zoom: Math.max(1, Number((v.zoom - .1).toFixed(2)))} : v)
                 }>−</button>
                 <input
                   type="range" min="1" max="3" step="0.05"
@@ -1537,24 +1641,22 @@ export default function MonEspacePage() {
                   onChange={e => setImageEditor(v => v ? {...v, zoom: Number(e.target.value)} : v)}
                 />
                 <button type="button" onClick={() =>
-                  setImageEditor(v => v ? {...v, zoom: Math.min(3, v.zoom + .1)} : v)
+                  setImageEditor(v => v ? {...v, zoom: Math.min(3, Number((v.zoom + .1).toFixed(2)))} : v)
                 }>+</button>
               </div>
 
-              <label>Déplacer horizontalement
-                <input type="range" min="-100" max="100" value={imageEditor.x}
-                  onChange={e => setImageEditor(v => v ? {...v, x: Number(e.target.value)} : v)} />
-              </label>
-
-              <label>Déplacer verticalement
-                <input type="range" min="-100" max="100" value={imageEditor.y}
-                  onChange={e => setImageEditor(v => v ? {...v, y: Number(e.target.value)} : v)} />
-              </label>
+              <button
+                type="button"
+                className="resetCrop"
+                onClick={() => setImageEditor(v => v ? {...v, zoom: 1, x: 0, y: 0} : v)}
+              >
+                Réinitialiser le cadrage
+              </button>
 
               <div className="imageEditorActions">
                 <button type="button" onClick={() => setImageEditor(null)}>Annuler</button>
                 <button type="button" className="applyCrop" onClick={applyImageEditor}>
-                  Utiliser cette photo
+                  Valider le cadrage
                 </button>
               </div>
             </div>
@@ -1602,11 +1704,11 @@ export default function MonEspacePage() {
                   </strong>
 
                   <small>
-                    Photo principale ronde.
+                    Importez puis zoomez et déplacez la photo.
                   </small>
 
                   <label className="uploadButton">
-                    Choisir
+                    Choisir / Recadrer
 
                     <input
                       type="file"
@@ -1651,11 +1753,11 @@ export default function MonEspacePage() {
                   </strong>
 
                   <small>
-                    Elle apparaît en haut de la page publique.
+                    Importez, zoomez et choisissez exactement le cadrage.
                   </small>
 
                   <label className="uploadButton">
-                    Choisir
+                    Choisir / Recadrer
 
                     <input
                       type="file"
@@ -1759,22 +1861,83 @@ export default function MonEspacePage() {
                 />
               </label>
 
-              <label>
-                Adresse
+            </div>
 
-                <input
-                  value={
-                    card.address
-                  }
-                  onChange={(e) =>
-                    updateField(
-                      "address",
-                      e.target.value
-                    )
-                  }
-                  placeholder="Ville, adresse..."
-                />
-              </label>
+            <div className="locationManager">
+              <div className="locationManagerHead">
+                <div>
+                  <h3>Localisations</h3>
+                  <p>
+                    Dans Google Maps : Partager → Copier le lien, puis collez-le ici.
+                    Vous pouvez ajouter plusieurs adresses.
+                  </p>
+                </div>
+
+                <button type="button" className="addLocationButton" onClick={addLocation}>
+                  + Ajouter une adresse
+                </button>
+              </div>
+
+              <div className="locationList">
+                {card.custom_links.map((item, index) =>
+                  item.kind === "location" ? (
+                    <div className="locationCard" key={item.id}>
+                      <div className="locationPin" aria-hidden="true">⌖</div>
+
+                      <label>
+                        Nom du lieu
+                        <input
+                          value={item.label}
+                          onChange={(e) => updateCustomLink(index, "label", e.target.value)}
+                          placeholder="Ex. Salle principale, Bureau..."
+                        />
+                      </label>
+
+                      <label>
+                        Lien Google Maps
+                        <input
+                          value={item.url}
+                          onChange={(e) => updateCustomLink(index, "url", e.target.value)}
+                          placeholder="https://maps.app.goo.gl/..."
+                          inputMode="url"
+                        />
+                      </label>
+
+                      {item.url.trim() ? (
+                        <a
+                          className="testMapLink"
+                          href={normalizeUrl(item.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Tester
+                        </a>
+                      ) : (
+                        <span className="testMapLink disabled">Tester</span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="removeButton"
+                        onClick={() => removeCustomLink(index)}
+                        aria-label="Supprimer cette localisation"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : null
+                )}
+
+                {!card.custom_links.some((item) => item.kind === "location") ? (
+                  <div className="emptyLocations">
+                    <span>⌖</span>
+                    <div>
+                      <strong>Aucune localisation ajoutée</strong>
+                      <small>Collez simplement votre lien partagé depuis Google Maps.</small>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <label>
@@ -1975,7 +2138,8 @@ export default function MonEspacePage() {
                 (
                   item,
                   index
-                ) => (
+                ) =>
+                  item.kind !== "location" ? (
                   <div
                     className="customCard"
                     key={
@@ -2038,7 +2202,7 @@ export default function MonEspacePage() {
                       ×
                     </button>
                   </div>
-                )
+                ) : null
               )}
             </div>
 
@@ -2251,7 +2415,7 @@ export default function MonEspacePage() {
 
             <div className="toggleRow">
               <strong>
-                Afficher Adresse
+                Afficher Localisations
               </strong>
 
               <button
@@ -2574,6 +2738,29 @@ export default function MonEspacePage() {
                       </b>
                     </a>
                   ))}
+
+                {card.show_address
+                  ? card.custom_links
+                      .filter(
+                        (item) =>
+                          item.kind === "location" &&
+                          item.label.trim() &&
+                          item.url.trim()
+                      )
+                      .map((item) => (
+                        <a
+                          key={item.id}
+                          className={card.led_enabled ? "ledItem previewLocation" : "previewLocation"}
+                          href={normalizeUrl(item.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className="previewMapIcon">⌖</span>
+                          <b>{item.label}</b>
+                          <small>Itinéraire</small>
+                        </a>
+                      ))
+                  : null}
               </div>
 
               {card.show_qr &&
@@ -3083,6 +3270,42 @@ export default function MonEspacePage() {
           font-size: 12px;
         }
 
+        .locationManager {
+          margin: 22px 0;
+          padding: 18px;
+          border: 1px solid #e2e2df;
+          border-radius: 18px;
+          background: #fbfbfa;
+        }
+        .locationManagerHead {
+          display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;
+        }
+        .locationManagerHead h3 { margin:0;font-size:16px; }
+        .locationManagerHead p { max-width:560px;margin:6px 0 0;color:#7d8490;font-size:12px;line-height:1.5; }
+        .addLocationButton {
+          min-height:42px;flex:0 0 auto;padding:0 14px;border:0;border-radius:11px;background:#111827;color:#fff;font-weight:850;cursor:pointer;
+        }
+        .locationList { display:grid;gap:10px; }
+        .locationCard {
+          display:grid;grid-template-columns:46px minmax(0,.8fr) minmax(0,1.3fr) auto 38px;gap:10px;align-items:end;padding:12px;border:1px solid #e3e3e1;border-radius:15px;background:#fff;
+        }
+        .locationPin {
+          width:46px;height:46px;display:grid;place-items:center;align-self:end;border-radius:13px;background:#fff0eb;color:#ff4f23;font-size:24px;font-weight:900;
+        }
+        .testMapLink {
+          min-height:46px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;align-self:end;border:1px solid #d9d9d6;border-radius:11px;background:#fff;color:#111827;font-size:12px;font-weight:850;text-decoration:none;
+        }
+        .testMapLink.disabled { opacity:.4;pointer-events:none; }
+        .emptyLocations {
+          min-height:76px;padding:14px;display:flex;align-items:center;gap:12px;border:1px dashed #d5d5d1;border-radius:14px;color:#68707d;background:#fff;
+        }
+        .emptyLocations > span {
+          width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#f4f4f2;font-size:22px;
+        }
+        .emptyLocations div { display:grid;gap:3px; }
+        .emptyLocations strong { color:#242b35;font-size:13px; }
+        .emptyLocations small { font-size:11px; }
+
         .uploadButton {
           width: max-content;
           margin-top: 5px;
@@ -3493,6 +3716,11 @@ export default function MonEspacePage() {
           font-size: 12px;
         }
 
+        .previewMapIcon {
+          width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-size:21px;font-weight:900;
+        }
+        .previewLocation small { margin-left:auto;color:var(--accent);font-size:10px;font-weight:850; }
+
         .previewLinks {
           margin-top: 18px;
           padding: 0 14px;
@@ -3750,21 +3978,36 @@ export default function MonEspacePage() {
             margin: 0 12px;
           }
         }
+        @media (max-width: 760px) {
+          .locationManagerHead { display:grid; }
+          .addLocationButton { width:100%; }
+          .locationCard { grid-template-columns:42px 1fr 38px;align-items:start; }
+          .locationPin { width:42px;height:42px;grid-row:1 / span 2; }
+          .locationCard label { grid-column:2 / 4; }
+          .locationCard .testMapLink { grid-column:2 / 3;width:max-content;min-height:40px; }
+          .locationCard .removeButton { grid-column:3 / 4;align-self:end; }
+          .cropMoveHint { font-size:10px; }
+        }
+
         .imageEditorOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:16px}
         .imageEditorModal{width:min(560px,100%);max-height:94vh;overflow:auto;background:#fff;color:#171717;border-radius:22px;padding:18px}
         .imageEditorHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:18px}
         .imageEditorHeader button{width:36px;height:36px;border:0;border-radius:50%;font-size:24px;cursor:pointer}
-        .imageCropFrame{position:relative;margin:0 auto 20px;overflow:hidden;background:#111;display:grid;place-items:center}
+        .imageCropFrame{position:relative;margin:0 auto 20px;overflow:hidden;background:#111;display:grid;place-items:center;touch-action:none;cursor:grab}
+        .imageCropFrame:active{cursor:grabbing}
         .imageCropFrame.roundCrop{width:min(340px,78vw);aspect-ratio:1;border-radius:50%}
         .imageCropFrame.coverCrop{width:100%;aspect-ratio:1200/630;border-radius:16px}
-        .imageCropFrame img{width:100%;height:100%;object-fit:cover;user-select:none;transform-origin:center}
+        .imageCropFrame img{width:100%;height:100%;object-fit:cover;user-select:none;pointer-events:none;transform-origin:center;will-change:transform}
+        .cropMoveHint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);padding:7px 10px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none}
         .imageEditorControls{display:grid;gap:14px}
-        .imageEditorControls label{display:grid;gap:7px;font-size:13px;font-weight:700}
         .imageEditorControls input[type="range"]{width:100%;accent-color:#ff6a3d}
+        .zoomLabel{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}
+        .zoomLabel span{color:#ff6a3d;font-weight:900}
         .zoomRow{display:grid;grid-template-columns:42px 1fr 42px;gap:10px;align-items:center}
-        .zoomRow button{height:40px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:22px}
+        .zoomRow button{height:42px;border:1px solid #ddd;border-radius:11px;background:#fff;font-size:22px;cursor:pointer}
+        .resetCrop{min-height:40px;border:1px solid #e3e3df;border-radius:10px;background:#fafafa;color:#4b5563;font-weight:800;cursor:pointer}
         .imageEditorActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800}
+        .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800;cursor:pointer}
         .imageEditorActions .applyCrop{background:#ff6a3d;border-color:#ff6a3d;color:#fff}
       `}
 </style>
