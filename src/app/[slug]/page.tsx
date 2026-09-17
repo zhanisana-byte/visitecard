@@ -1,94 +1,219 @@
-import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import PublicCardClient from "./PublicCardClient";
 
-type CardMeta = {
-  full_name?: string | null;
-  job_title?: string | null;
-  company?: string | null;
-  bio?: string | null;
-  photo_url?: string | null;
-  cover_url?: string | null;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+type PageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
 };
 
-async function getCard(slug: string): Promise<CardMeta | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export default async function PublicCardPage({ params }: PageProps) {
+  const { slug } = await params;
 
-  if (!url || !key) return null;
+  /*
+   * ==========================================================
+   * 1. CHARGER LA CARTE
+   * ==========================================================
+   */
 
-  try {
-    const response = await fetch(
-      `${url}/rest/v1/cards?slug=eq.${encodeURIComponent(slug)}&is_public=eq.true&select=full_name,job_title,company,bio,photo_url,cover_url&limit=1`,
-      {
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${key}`,
-        },
-        cache: "no-store",
-      }
-    );
+  const { data: card, error } = await supabase
+    .from("cards")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
 
-    if (!response.ok) return null;
-    const rows = await response.json();
-    return rows?.[0] || null;
-  } catch {
-    return null;
+  if (error) {
+    console.error("Public card error:", error);
   }
-}
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const card = await getCard(slug);
+  if (!card) {
+    notFound();
+  }
 
-  const name = card?.full_name?.trim() || "VisiteCard";
-  const title = `${name} | VisiteCard`;
-  const description =
-    card?.bio?.trim() ||
-    [card?.job_title, card?.company].filter(Boolean).join(" · ") ||
-    "Découvrez ma carte digitale et tous mes liens.";
+  /*
+   * ==========================================================
+   * 2. SI SOCIÉTÉ
+   * ==========================================================
+   *
+   * Pas besoin de chercher profile_company_links.
+   * On conserve simplement le fonctionnement existant.
+   */
 
-  const image =
-    card?.cover_url?.startsWith("https://")
-      ? card.cover_url
-      : card?.photo_url?.startsWith("https://")
-      ? card.photo_url
-      : undefined;
+  if (card.entity_type !== "profile") {
+    return (
+      <PublicCardClient
+        card={card}
+        profileCompanies={[]}
+      />
+    );
+  }
 
-  return {
-    title,
-    description,
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL || "https://www.visitecard.com"
-    ),
-    alternates: { canonical: `/${slug}` },
-    openGraph: {
-      type: "profile",
-      title,
-      description,
-      url: `/${slug}`,
-      siteName: "VisiteCard",
-      ...(image ? { images: [{ url: image, alt: name }] } : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      ...(image ? { images: [image] } : {}),
-    },
-  };
-}
+  /*
+   * ==========================================================
+   * 3. SI PROFIL
+   *
+   * Charger les relations :
+   *
+   * Mohamed
+   *   -> Tawa Voyage
+   *   -> Edream
+   *   -> ...
+   * ==========================================================
+   */
 
-export default async function PublicCardPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  return <PublicCardClient slug={slug} />;
+  const { data: links, error: linksError } = await supabase
+    .from("profile_company_links")
+    .select(`
+      id,
+      profile_card_id,
+      company_card_id,
+      position_title,
+      created_at
+    `)
+    .eq("profile_card_id", card.id)
+    .order("created_at", {
+      ascending: true,
+    });
+
+  if (linksError) {
+    console.error(
+      "Profile company links error:",
+      linksError
+    );
+  }
+
+  const cleanLinks = links || [];
+
+  /*
+   * Aucun lien
+   */
+
+  if (cleanLinks.length === 0) {
+    return (
+      <PublicCardClient
+        card={card}
+        profileCompanies={[]}
+      />
+    );
+  }
+
+  /*
+   * ==========================================================
+   * 4. RÉCUPÉRER LES IDS DES SOCIÉTÉS
+   * ==========================================================
+   */
+
+  const companyIds = cleanLinks.map(
+    (link) => link.company_card_id
+  );
+
+  /*
+   * ==========================================================
+   * 5. CHARGER LES SOCIÉTÉS
+   *
+   * Seulement :
+   * entity_type = company
+   * is_public = true
+   * ==========================================================
+   */
+
+  const {
+    data: companies,
+    error: companiesError,
+  } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      slug,
+      full_name,
+      job_title,
+      company,
+      bio,
+      phone,
+      email,
+      whatsapp,
+      website,
+      facebook,
+      instagram,
+      tiktok,
+      linkedin,
+      photo_url,
+      cover_url,
+      address,
+      primary_color,
+      background_color,
+      theme,
+      language,
+      social_links,
+      custom_links,
+      entity_type,
+      is_public
+    `)
+    .in("id", companyIds)
+    .eq("entity_type", "company")
+    .eq("is_public", true);
+
+  if (companiesError) {
+    console.error(
+      "Profile companies error:",
+      companiesError
+    );
+  }
+
+  /*
+   * ==========================================================
+   * 6. FUSIONNER SOCIÉTÉ + POSTE
+   *
+   * Exemple résultat :
+   *
+   * {
+   *   id: "...",
+   *   full_name: "Tawa Voyage",
+   *   slug: "tawa-voyage-906fa3",
+   *   position_title: "Directeur général"
+   * }
+   * ==========================================================
+   */
+
+  const profileCompanies = cleanLinks
+    .map((link) => {
+      const company = (companies || []).find(
+        (item) =>
+          item.id === link.company_card_id
+      );
+
+      if (!company) {
+        return null;
+      }
+
+      return {
+        ...company,
+
+        link_id: link.id,
+
+        position_title:
+          link.position_title || "",
+      };
+    })
+    .filter(Boolean);
+
+  /*
+   * ==========================================================
+   * 7. ENVOYER AU DESIGN PUBLIC
+   * ==========================================================
+   */
+
+  return (
+    <PublicCardClient
+      card={card}
+      profileCompanies={profileCompanies}
+    />
+  );
 }
