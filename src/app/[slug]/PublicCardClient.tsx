@@ -123,6 +123,24 @@ function normalizeUrl(value: string) {
   return `https://${clean}`;
 }
 
+function isGoogleMapsUrl(value?: string | null) {
+  const url = (value || "").trim().toLowerCase();
+  if (!url) return false;
+
+  return (
+    url.includes("maps.app.goo.gl") ||
+    url.includes("google.com/maps") ||
+    url.includes("maps.google.") ||
+    url.includes("goo.gl/maps") ||
+    url.includes("googleusercontent.com/maps")
+  );
+}
+
+function isLocationLink(item?: Partial<CustomLink> | null) {
+  if (!item) return false;
+  return item.kind === "location" || isGoogleMapsUrl(item.url);
+}
+
 function socialHref(item: SocialLink) {
   const value = (item.value || "").trim();
   if (!value) return "";
@@ -318,12 +336,21 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               }))
             : [],
           custom_links: Array.isArray(row.custom_links)
-            ? row.custom_links.map((item: any): CustomLink => ({
-                id: item.id || crypto.randomUUID(),
-                label: item.label || item.name || "Lien",
-                url: item.url || "",
-                kind: item.kind === "location" ? "location" : "link",
-              }))
+            ? row.custom_links.map((item: any): CustomLink => {
+                const url = item.url || item.value || "";
+                return {
+                  id: item.id || crypto.randomUUID(),
+                  label:
+                    item.label ||
+                    item.name ||
+                    (isGoogleMapsUrl(url) ? "Localisation" : "Lien"),
+                  url,
+                  kind:
+                    item.kind === "location" || isGoogleMapsUrl(url)
+                      ? "location"
+                      : "link",
+                };
+              })
             : [],
         };
 
@@ -512,17 +539,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item.value || "").trim()
   );
 
-  const isLocationLink = (item: CustomLink) => {
-    const url = (item.url || "").trim().toLowerCase();
-    return (
-      item.kind === "location" ||
-      url.includes("maps.app.goo.gl") ||
-      url.includes("google.com/maps") ||
-      url.includes("maps.google.") ||
-      url.includes("goo.gl/maps")
-    );
-  };
-
   const customs = (card.custom_links || []).filter(
     (item) =>
       !isLocationLink(item) &&
@@ -531,10 +547,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   );
 
   const locations = (card.custom_links || []).filter(
-    (item) =>
-      isLocationLink(item) &&
-      (item.label || "").trim() &&
-      (item.url || "").trim()
+    (item) => isLocationLink(item) && (item.url || "").trim()
   );
 
   return (
