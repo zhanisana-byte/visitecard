@@ -55,6 +55,13 @@ type CardData = {
   button_color: string;
   button_text_color: string;
   button_border_color: string;
+  directions_button_color: string;
+  directions_text_color: string;
+  directions_border_color: string;
+  maps_button_color: string;
+  maps_text_color: string;
+  maps_border_color: string;
+  call_icon: string;
   theme: "light" | "dark";
   language: "fr" | "en";
   is_public: boolean;
@@ -109,6 +116,13 @@ const emptyCard: CardData = {
   button_color: "#b11235",
   button_text_color: "#ffffff",
   button_border_color: "#b11235",
+  directions_button_color: "#2563eb",
+  directions_text_color: "#ffffff",
+  directions_border_color: "#2563eb",
+  maps_button_color: "#16a34a",
+  maps_text_color: "#ffffff",
+  maps_border_color: "#16a34a",
+  call_icon: "phone",
   theme: "dark",
   language: "fr",
   is_public: true,
@@ -238,6 +252,16 @@ function socialColor(type: SocialType) {
   }
 
   return "#E8B39B";
+}
+
+function CallPreviewIcon({ variant }: { variant: string }) {
+  if (variant === "mobile") {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>;
+  }
+  if (variant === "circle") {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 8c2 5 3 6 8 8"/></svg>;
+  }
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.7 2.6a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.8.3 1.7.6 2.6.7a2 2 0 0 1 2 2.3Z"/></svg>;
 }
 
 function SocialIcon({
@@ -693,6 +717,13 @@ export default function MonEspacePage() {
             button_color: loaded.button_color ?? loaded.primary_color ?? "#b11235",
             button_text_color: loaded.button_text_color ?? "#ffffff",
             button_border_color: loaded.button_border_color ?? loaded.primary_color ?? "#b11235",
+            directions_button_color: loaded.directions_button_color ?? "#2563eb",
+            directions_text_color: loaded.directions_text_color ?? "#ffffff",
+            directions_border_color: loaded.directions_border_color ?? loaded.directions_button_color ?? "#2563eb",
+            maps_button_color: loaded.maps_button_color ?? "#16a34a",
+            maps_text_color: loaded.maps_text_color ?? "#ffffff",
+            maps_border_color: loaded.maps_border_color ?? loaded.maps_button_color ?? "#16a34a",
+            call_icon: loaded.call_icon ?? "phone",
 
             led_enabled:
               typeof loaded.led_enabled ===
@@ -1348,6 +1379,13 @@ export default function MonEspacePage() {
         button_color: card.button_color ?? "#b11235",
         button_text_color: card.button_text_color ?? "#ffffff",
         button_border_color: card.button_border_color ?? "#b11235",
+        directions_button_color: card.directions_button_color ?? "#2563eb",
+        directions_text_color: card.directions_text_color ?? "#ffffff",
+        directions_border_color: card.directions_border_color ?? "#2563eb",
+        maps_button_color: card.maps_button_color ?? "#16a34a",
+        maps_text_color: card.maps_text_color ?? "#ffffff",
+        maps_border_color: card.maps_border_color ?? "#16a34a",
+        call_icon: card.call_icon ?? "phone",
         theme: card.theme,
         language: card.language,
         is_public: card.is_public,
@@ -2344,6 +2382,65 @@ export default function MonEspacePage() {
                 </div>
               </label>
 
+
+              <label className="colorField">
+                Itinéraire · fond
+                <div>
+                  <input type="color" value={card.directions_button_color} onChange={(e) => updateField("directions_button_color", e.target.value)} />
+                  <span>{card.directions_button_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Itinéraire · texte
+                <div>
+                  <input type="color" value={card.directions_text_color} onChange={(e) => updateField("directions_text_color", e.target.value)} />
+                  <span>{card.directions_text_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Itinéraire · cadre
+                <div>
+                  <input type="color" value={card.directions_border_color} onChange={(e) => updateField("directions_border_color", e.target.value)} />
+                  <span>{card.directions_border_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Google Maps · fond
+                <div>
+                  <input type="color" value={card.maps_button_color} onChange={(e) => updateField("maps_button_color", e.target.value)} />
+                  <span>{card.maps_button_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Google Maps · texte
+                <div>
+                  <input type="color" value={card.maps_text_color} onChange={(e) => updateField("maps_text_color", e.target.value)} />
+                  <span>{card.maps_text_color}</span>
+                </div>
+              </label>
+
+              <label className="colorField">
+                Google Maps · cadre
+                <div>
+                  <input type="color" value={card.maps_border_color} onChange={(e) => updateField("maps_border_color", e.target.value)} />
+                  <span>{card.maps_border_color}</span>
+                </div>
+              </label>
+
+              <label className="field">
+                Icône Appeler
+                <select value={card.call_icon} onChange={(e) => updateField("call_icon", e.target.value)}>
+                  <option value="phone">Téléphone</option>
+                  <option value="call">Combiné</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="circle">Téléphone cercle</option>
+                </select>
+              </label>
+
               <label className="colorField">
                 Couleur LED
 
@@ -2684,6 +2781,24 @@ export default function MonEspacePage() {
 
                 ["--button-border" as any]:
                   card.button_border_color || card.button_color || card.primary_color,
+
+                ["--directions-bg" as any]:
+                  card.directions_button_color || "#2563eb",
+
+                ["--directions-text" as any]:
+                  card.directions_text_color || "#ffffff",
+
+                ["--directions-border" as any]:
+                  card.directions_border_color || card.directions_button_color || "#2563eb",
+
+                ["--maps-bg" as any]:
+                  card.maps_button_color || "#16a34a",
+
+                ["--maps-text" as any]:
+                  card.maps_text_color || "#ffffff",
+
+                ["--maps-border" as any]:
+                  card.maps_border_color || card.maps_button_color || "#16a34a",
               }}
             >
               <div className="previewCover">
@@ -2807,7 +2922,10 @@ export default function MonEspacePage() {
                         >
                           <span className="previewMapIcon">⌖</span>
                           <b>{item.label}</b>
-                          <small>Itinéraire</small>
+                          <span className="previewMapActions">
+                            <small className="previewDirectionsButton">Itinéraire</small>
+                            <small className="previewGoogleMapsButton">Voir sur Google Maps</small>
+                          </span>
                         </a>
                       ))
                   : null}
@@ -2816,7 +2934,7 @@ export default function MonEspacePage() {
               {card.entity_type === "profile" ? (
                 <div className="profilePreviewContacts">
                   {card.show_phone !== false && card.phone ? (
-                    <span>☎ Appeler</span>
+                    <span><CallPreviewIcon variant={card.call_icon} /> Appeler</span>
                   ) : null}
                   {card.social_links.some((item) => item.type === "whatsapp" && item.value.trim()) ? (
                     <span>WhatsApp</span>
@@ -3891,6 +4009,14 @@ export default function MonEspacePage() {
           }
         }
 
+
+        .previewMapActions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+        .previewDirectionsButton,.previewGoogleMapsButton{min-height:34px;display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:9px;font-weight:900}
+        .previewDirectionsButton{background:var(--directions-bg);color:var(--directions-text);border:2px solid var(--directions-border)}
+        .previewGoogleMapsButton{background:var(--maps-bg);color:var(--maps-text);border:2px solid var(--maps-border)}
+        .profilePreviewContacts span{display:flex;align-items:center;justify-content:center;gap:7px}
+        .profilePreviewContacts svg{width:17px;height:17px}
+
         @media (max-width: 760px) {
           .topbar {
             padding: 0 14px;
@@ -4050,6 +4176,14 @@ export default function MonEspacePage() {
             margin: 0 12px;
           }
         }
+
+        .previewMapActions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+        .previewDirectionsButton,.previewGoogleMapsButton{min-height:34px;display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:9px;font-weight:900}
+        .previewDirectionsButton{background:var(--directions-bg);color:var(--directions-text);border:2px solid var(--directions-border)}
+        .previewGoogleMapsButton{background:var(--maps-bg);color:var(--maps-text);border:2px solid var(--maps-border)}
+        .profilePreviewContacts span{display:flex;align-items:center;justify-content:center;gap:7px}
+        .profilePreviewContacts svg{width:17px;height:17px}
+
         @media (max-width: 760px) {
           .locationManagerHead { display:grid; }
           .addLocationButton { width:100%; }
