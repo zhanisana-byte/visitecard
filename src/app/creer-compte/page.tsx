@@ -3,8 +3,10 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseBrowser } from "@/app/lib/supabase";
 
+
+const supabase = getSupabaseBrowser();
 type EntityType = "profile" | "company";
 
 export default function CreerComptePage() {
