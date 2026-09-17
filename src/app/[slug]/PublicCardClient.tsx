@@ -318,7 +318,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               }))
             : [],
           custom_links: Array.isArray(row.custom_links)
-            ? row.custom_links.map((item: any) => ({
+            ? row.custom_links.map((item: any): CustomLink => ({
                 id: item.id || crypto.randomUUID(),
                 label: item.label || item.name || "Lien",
                 url: item.url || "",
@@ -512,16 +512,27 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item.value || "").trim()
   );
 
+  const isLocationLink = (item: CustomLink) => {
+    const url = (item.url || "").trim().toLowerCase();
+    return (
+      item.kind === "location" ||
+      url.includes("maps.app.goo.gl") ||
+      url.includes("google.com/maps") ||
+      url.includes("maps.google.") ||
+      url.includes("goo.gl/maps")
+    );
+  };
+
   const customs = (card.custom_links || []).filter(
     (item) =>
-      item.kind !== "location" &&
+      !isLocationLink(item) &&
       (item.label || "").trim() &&
       (item.url || "").trim()
   );
 
   const locations = (card.custom_links || []).filter(
     (item) =>
-      item.kind === "location" &&
+      isLocationLink(item) &&
       (item.label || "").trim() &&
       (item.url || "").trim()
   );
