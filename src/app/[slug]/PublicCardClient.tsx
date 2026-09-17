@@ -949,10 +949,10 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button { border:0; background:transparent; color:var(--muted); font-weight:900; cursor:pointer; }
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
-        .shareTools button { min-height:42px; padding:0 14px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:inherit; font-weight:800; cursor:pointer; }
-        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 8px}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.compactProfileIdentity + .profileContactCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800}.profileContactPill.whatsapp{border-color:rgba(37,211,102,.28)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
+        .shareTools button { min-height:42px; padding:0 14px; border:2px solid var(--button-border); border-radius:14px; background:var(--button-bg); color:var(--button-text); font-weight:800; cursor:pointer; }
+        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 8px}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.compactProfileIdentity + .profileContactCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:2px solid var(--button-border);border-radius:999px;background:var(--button-bg);color:var(--button-text);text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800;color:var(--button-text)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
                 .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
-        .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{font-size:12px;font-weight:800;color:var(--accent)}
+        .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{min-height:34px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--button-border);border-radius:10px;background:var(--button-bg);color:var(--button-text);font-size:12px;font-weight:800;white-space:nowrap}
         @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
         
         .vcPublicHero,.vcPublicQrSection,.reviewsSection { border:1px solid rgba(255,255,255,.09); border-radius:28px; background:rgba(255,255,255,.02); }
@@ -1249,10 +1249,10 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           margin-top:14px;
           min-height:46px;
           padding:0 16px;
-          border:0;
+          border:2px solid var(--button-border);
           border-radius:12px;
-          background:var(--accent);
-          color:#fff;
+          background:var(--button-bg);
+          color:var(--button-text);
           font-weight:900;
           cursor:pointer;
         }
@@ -1268,7 +1268,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .vcPublicQrCopy small { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.16em; }
         .vcPublicQrCopy h2 { margin:8px 0; font-size:clamp(28px,5vw,42px); }
         .vcPublicQrCopy p { max-width:420px; margin:0 0 18px; color:var(--muted); line-height:1.55; }
-        .vcPublicQrCopy button { min-height:46px; padding:0 16px; border:0; border-radius:13px; background:var(--accent); color:#fff; font-weight:900; cursor:pointer; }
+        .vcPublicQrCopy button { min-height:46px; padding:0 16px; border:2px solid var(--button-border); border-radius:13px; background:var(--button-bg); color:var(--button-text); font-weight:900; cursor:pointer; }
         .vcPublicQrBox { width:176px; height:176px; padding:10px; border-radius:16px; background:#fff; }
         .vcPublicQrBox img { width:100%; height:100%; object-fit:contain; }
         .thanksToast {
