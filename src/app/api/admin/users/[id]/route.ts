@@ -174,10 +174,9 @@ export async function PATCH(
 
     const authUpdates: {
       email?: string;
+      email_confirm?: boolean;
       password?: string;
-      user_metadata?: {
-        name: string;
-      };
+      user_metadata?: Record<string, any>;
     } = {};
 
     let newName:
@@ -221,9 +220,7 @@ export async function PATCH(
     ) {
       newEmail = String(
         body.email || ""
-      )
-        .trim()
-        .toLowerCase();
+      ).trim();
 
       if (!newEmail) {
         return NextResponse.json(
@@ -238,17 +235,17 @@ export async function PATCH(
       }
 
       const emailRegex =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
 
       if (
-        !emailRegex.test(
-          newEmail
-        )
+        /[^\x00-\x7F]/.test(newEmail) ||
+        newEmail.toLowerCase().includes("xn--") ||
+        !emailRegex.test(newEmail)
       ) {
         return NextResponse.json(
           {
             error:
-              "L'adresse e-mail n'est pas valide.",
+              "L'adresse e-mail n'est pas valide. Vérifiez chaque lettre.",
           },
           {
             status: 400,
@@ -256,8 +253,8 @@ export async function PATCH(
         );
       }
 
-      authUpdates.email =
-        newEmail;
+      authUpdates.email = newEmail;
+      authUpdates.email_confirm = true;
     }
 
     /* -----------------------------------------------------
@@ -329,15 +326,18 @@ export async function PATCH(
       const message =
         updateError.message || "";
 
+      const normalizedMessage = message.toLowerCase();
+
       if (
-        message
-          .toLowerCase()
-          .includes("already")
+        normalizedMessage.includes("already") ||
+        normalizedMessage.includes("registered") ||
+        normalizedMessage.includes("exists") ||
+        normalizedMessage.includes("duplicate")
       ) {
         return NextResponse.json(
           {
             error:
-              "Cette adresse e-mail est déjà utilisée.",
+              "Cette adresse e-mail est déjà utilisée par un autre compte.",
           },
           {
             status: 409,
@@ -345,7 +345,15 @@ export async function PATCH(
         );
       }
 
-      throw updateError;
+      return NextResponse.json(
+        {
+          error:
+            message || "Impossible de modifier l'adresse e-mail.",
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
     /* -----------------------------------------------------
@@ -392,6 +400,9 @@ export async function PATCH(
         console.error(
           "PROFILE UPDATE:",
           profileError
+        );
+        throw new Error(
+          "L'e-mail Auth a été modifié, mais la synchronisation du profil a échoué."
         );
       }
     }
@@ -443,6 +454,9 @@ export async function PATCH(
         console.error(
           "CARD UPDATE:",
           cardError
+        );
+        throw new Error(
+          "L'e-mail Auth a été modifié, mais la synchronisation de la carte a échoué."
         );
       }
     }
