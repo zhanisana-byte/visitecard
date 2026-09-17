@@ -2333,7 +2333,7 @@ export default function MonEspacePage() {
                     onChange={(e) => updateField("button_color", e.target.value)}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
-                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_color", defaultCard.button_color);
+                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_color", "#b11235");
                     }}
                     maxLength={7}
                     spellCheck={false}
@@ -2352,7 +2352,7 @@ export default function MonEspacePage() {
                     onChange={(e) => updateField("button_text_color", e.target.value)}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
-                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_text_color", defaultCard.button_text_color);
+                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_text_color", "#ffffff");
                     }}
                     maxLength={7}
                     spellCheck={false}
@@ -2371,7 +2371,7 @@ export default function MonEspacePage() {
                     onChange={(e) => updateField("button_border_color", e.target.value)}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
-                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_border_color", defaultCard.button_border_color);
+                      if (!/^#[0-9A-Fa-f]{6}$/.test(value)) updateField("button_border_color", "#b11235");
                     }}
                     maxLength={7}
                     spellCheck={false}
