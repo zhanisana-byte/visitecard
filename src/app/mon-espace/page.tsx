@@ -2212,7 +2212,10 @@ export default function MonEspacePage() {
           </section>
 
           {card.entity_type === "profile" && card.id ? (
-            <ProfileCompaniesEditor profileId={card.id} token={typeof window !== "undefined" ? localStorage.getItem("visitecard_access_token") || undefined : undefined} />
+            <ProfileCompaniesEditor
+              profileCardId={card.id}
+              language={card.language === "en" ? "en" : "fr"}
+            />
           ) : null}
 
           <section className="formSection">
