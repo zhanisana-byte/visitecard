@@ -165,33 +165,13 @@ export default function HomePage() {
           {fr ? "Conditions générales" : "Terms & Conditions"}
         </a>
 
-        <div className="vcContact">
-          <span className="vcContactLabel">
-            {fr ? "Nous contacter" : "Contact us"}
-          </span>
-
-          <div className="vcContactLinks">
-            <a
-              className="vcContactBtn"
-              href="mailto:zhanisana@gmail.com"
-              aria-label={fr ? "Nous contacter par e-mail" : "Contact us by email"}
-            >
-              <span className="vcContactIcon">✉</span>
-              <span>zhanisana@gmail.com</span>
-            </a>
-
-            <a
-              className="vcContactBtn"
-              href="https://wa.me/21620121521"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={fr ? "Nous contacter sur WhatsApp" : "Contact us on WhatsApp"}
-            >
-              <span className="vcContactIcon">◉</span>
-              <span>+216 20 121 521</span>
-            </a>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="vcContactTrigger"
+          onClick={() => setContactOpen(true)}
+        >
+          {fr ? "Contact" : "Contact"}
+        </button>
 
         <span>© 2026 VisiteCard</span>
 
@@ -199,6 +179,72 @@ export default function HomePage() {
           {fr ? "Un projet de Sana Zhani" : "A project by Sana Zhani"}
         </small>
       </footer>
+
+      {contactOpen && (
+        <div
+          className="vcContactOverlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setContactOpen(false);
+          }}
+        >
+          <div
+            className="vcContactModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-title"
+          >
+            <button
+              type="button"
+              className="vcContactClose"
+              onClick={() => setContactOpen(false)}
+              aria-label={fr ? "Fermer" : "Close"}
+            >
+              ×
+            </button>
+
+            <h2 id="contact-title">
+              {fr ? "Nous contacter" : "Contact us"}
+            </h2>
+            <p className="vcContactIntro">
+              {fr
+                ? "Une question ? Une suggestion ? Nous sommes là pour vous aider !"
+                : "A question? A suggestion? We are here to help!"}
+            </p>
+
+            <div className="vcContactOption">
+              <div className="vcContactRoundIcon vcMailIcon">✉</div>
+              <div className="vcContactInfo">
+                <strong>{fr ? "Par e-mail" : "By email"}</strong>
+                <span>zhanisana@gmail.com</span>
+              </div>
+              <a className="vcContactAction vcMailAction" href="mailto:zhanisana@gmail.com">
+                {fr ? "Envoyer un e-mail" : "Send an email"}
+              </a>
+            </div>
+
+            <div className="vcContactOption">
+              <div className="vcContactRoundIcon vcWhatsappIcon">◉</div>
+              <div className="vcContactInfo">
+                <strong>{fr ? "Par WhatsApp" : "By WhatsApp"}</strong>
+                <span>+216 20 121 521</span>
+              </div>
+              <a
+                className="vcContactAction vcWhatsappAction"
+                href="https://wa.me/21620121521"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {fr ? "Ouvrir WhatsApp" : "Open WhatsApp"}
+              </a>
+            </div>
+
+            <p className="vcContactBottom">
+              {fr ? "Nous vous répondons rapidement !" : "We reply quickly!"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .vcHome {
@@ -319,18 +365,170 @@ export default function HomePage() {
           background: #ff0000 !important;
         }
 
-        .vcFooter {
-          width: 100%;
-          padding: 24px 30px;
+        .vcContactTrigger {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          padding: 0;
+          color: #78808a;
+          font: inherit;
+          cursor: pointer;
+        }
+
+        .vcContactTrigger:hover {
+          color: #ff6437;
+        }
+
+        .vcContactOverlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-wrap: wrap;
-          gap: 18px 28px;
+          padding: 20px;
+          background: rgba(8, 21, 38, 0.68);
+          backdrop-filter: blur(3px);
+        }
+
+        .vcContactModal {
+          position: relative;
+          width: min(100%, 560px);
+          padding: 30px 26px 24px;
+          border: 1px solid #e7ebef;
+          border-radius: 24px;
+          background: #fff;
+          box-shadow: 0 28px 80px rgba(8, 21, 38, 0.28);
+          color: #081526;
+          animation: vcContactIn 0.2s ease-out;
+        }
+
+        @keyframes vcContactIn {
+          from { opacity: 0; transform: translateY(10px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .vcContactClose {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          width: 38px;
+          height: 38px;
+          border: 0;
+          border-radius: 50%;
+          background: #f1f3f5;
+          color: #081526;
+          font-size: 25px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .vcContactModal h2 {
+          margin: 0;
+          text-align: center;
+          font-size: 27px;
+          font-weight: 900;
+          letter-spacing: -0.5px;
+        }
+
+        .vcContactIntro {
+          max-width: 360px;
+          margin: 8px auto 22px;
+          color: #667085;
+          text-align: center;
+          font-size: 14px;
+          line-height: 1.45;
+        }
+
+        .vcContactOption {
+          display: grid;
+          grid-template-columns: 52px minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 14px;
+          margin-top: 12px;
+          padding: 15px 14px;
+          border: 1px solid #e6eaf0;
+          border-radius: 20px;
+        }
+
+        .vcContactRoundIcon {
+          width: 48px;
+          height: 48px;
+          display: grid;
+          place-items: center;
+          border-radius: 50%;
+          font-size: 22px;
+          font-weight: 900;
+        }
+
+        .vcMailIcon {
+          background: #ffe4df;
+          color: #ff5636;
+        }
+
+        .vcWhatsappIcon {
+          background: #dcfce7;
+          color: #16b956;
+        }
+
+        .vcContactInfo {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .vcContactInfo strong {
+          font-size: 15px;
+          font-weight: 900;
+        }
+
+        .vcContactInfo span {
+          overflow-wrap: anywhere;
+          color: #667085;
+          font-size: 13px;
+        }
+
+        .vcContactAction {
+          min-height: 42px;
+          padding: 0 17px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          color: #fff !important;
+          text-decoration: none !important;
+          font-size: 12px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .vcMailAction {
+          background: linear-gradient(135deg, #ff7a45, #ff3b30);
+        }
+
+        .vcWhatsappAction {
+          background: #22c55e;
+        }
+
+        .vcContactBottom {
+          margin: 20px 0 0;
+          text-align: center;
+          color: #667085;
+          font-size: 13px;
+        }
+
+        .vcFooter {
+          width: 100%;
+          min-height: 70px;
+          padding: 18px 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 30px;
           border-top: 1px solid #edf0f3;
           color: #78808a;
           font-size: 12px;
-          background: #ffffff;
         }
 
         .vcFooter a {
@@ -338,67 +536,12 @@ export default function HomePage() {
           text-decoration: none;
         }
 
-        .vcFooter > a:hover {
+        .vcFooter a:hover {
           color: #ff6437;
         }
 
         .vcFooter small {
           font-size: 12px;
-        }
-
-        .vcContact {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 7px 8px 7px 14px;
-          border: 1px solid #e7ebef;
-          border-radius: 999px;
-          background: #f8fafc;
-          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-        }
-
-        .vcContactLabel {
-          color: #081526;
-          font-size: 12px;
-          font-weight: 800;
-          white-space: nowrap;
-        }
-
-        .vcContactLinks {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .vcContactBtn {
-          min-height: 34px;
-          padding: 0 12px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          border-radius: 999px;
-          background: #ffffff;
-          border: 1px solid #e4e8ed;
-          color: #344054 !important;
-          font-size: 11px;
-          font-weight: 700;
-          transition:
-            transform 0.18s ease,
-            border-color 0.18s ease,
-            box-shadow 0.18s ease;
-        }
-
-        .vcContactBtn:hover {
-          transform: translateY(-1px);
-          border-color: #ff6437;
-          box-shadow: 0 5px 16px rgba(15, 23, 42, 0.07);
-        }
-
-        .vcContactIcon {
-          color: #ff6437;
-          font-size: 14px;
-          line-height: 1;
         }
 
         @media (max-width: 700px) {
@@ -446,31 +589,36 @@ export default function HomePage() {
             height: 26px !important;
           }
 
-          .vcFooter {
-            min-height: auto;
-            padding: 22px 15px 26px;
-            flex-direction: column;
-            gap: 10px;
-          }
-
-          .vcContact {
-            width: min(100%, 390px);
-            padding: 10px;
-            flex-direction: column;
+          .vcContactModal {
+            padding: 28px 16px 20px;
             border-radius: 20px;
           }
 
-          .vcContactLinks {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 7px;
+          .vcContactModal h2 {
+            font-size: 23px;
           }
 
-          .vcContactBtn {
+          .vcContactOption {
+            grid-template-columns: 46px minmax(0, 1fr);
+            gap: 11px;
+            padding: 13px;
+          }
+
+          .vcContactRoundIcon {
+            width: 44px;
+            height: 44px;
+          }
+
+          .vcContactAction {
+            grid-column: 1 / -1;
             width: 100%;
-            min-height: 40px;
-            padding: 0 10px;
+          }
+
+          .vcFooter {
+            min-height: auto;
+            padding: 21px 15px;
+            flex-direction: column;
+            gap: 7px;
           }
         }
 
