@@ -15,6 +15,7 @@ export default function CreerComptePage() {
   const [entityType, setEntityType] =
     useState<EntityType>("company");
 
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] =
@@ -22,6 +23,32 @@ export default function CreerComptePage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function slugify(value: string) {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 70);
+  }
+
+  async function createAvailableSlug(name: string, userId: string) {
+    const base = slugify(name) || (entityType === "profile" ? "profil" : "societe");
+
+    const { data: existing } = await supabase
+      .from("cards")
+      .select("slug")
+      .or(`slug.eq.${base},slug.like.${base}-%`);
+
+    const used = new Set((existing || []).map((item: { slug: string }) => item.slug));
+    if (!used.has(base)) return base;
+
+    // En cas de doublon uniquement, on ajoute un suffixe court et stable.
+    return `${base}-${userId.replace(/-/g, "").slice(0, 6)}`;
+  }
 
   function validateEmail(value: string) {
     /*
@@ -56,7 +83,17 @@ export default function CreerComptePage() {
 
       L'e-mail lui-même n'est PAS transformé.
     */
+    const cleanName = displayName.trim();
     const cleanEmail = email.trim();
+
+    if (!cleanName) {
+      setError(
+        entityType === "profile"
+          ? "Veuillez saisir votre nom complet."
+          : "Veuillez saisir le nom de la société."
+      );
+      return;
+    }
 
     if (!cleanEmail) {
       setError(
@@ -143,6 +180,7 @@ export default function CreerComptePage() {
         options: {
           data: {
             entity_type: entityType,
+            name: cleanName,
           },
         },
       });
@@ -157,10 +195,9 @@ export default function CreerComptePage() {
         );
       }
 
-      const temporarySlug =
-        entityType === "profile"
-          ? `profil-${data.user.id.slice(0, 6)}`
-          : `societe-${data.user.id.slice(0, 6)}`;
+      // Nouveau compte uniquement : le lien reprend le nom du profil / de la société.
+      // Les anciennes cartes en base ne sont jamais modifiées.
+      const temporarySlug = await createAvailableSlug(cleanName, data.user.id);
 
       const { error: cardError } =
         await supabase.from("cards").insert({
@@ -168,9 +205,9 @@ export default function CreerComptePage() {
 
           slug: temporarySlug,
 
-          full_name: "",
+          full_name: cleanName,
           job_title: "",
-          company: "",
+          company: entityType === "company" ? cleanName : "",
           bio: "",
 
           phone: "",
@@ -353,6 +390,29 @@ export default function CreerComptePage() {
           </div>
 
           <div className="fields">
+            <div className="field">
+              <label htmlFor="displayName">
+                {entityType === "profile" ? "Nom complet" : "Nom de la société"}
+              </label>
+
+              <input
+                id="displayName"
+                type="text"
+                autoComplete={entityType === "profile" ? "name" : "organization"}
+                placeholder={entityType === "profile" ? "Ex. Sana Zhani" : "Ex. Tunivet"}
+                value={displayName}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  if (error) setError("");
+                }}
+                required
+              />
+
+              <small className="emailHelp">
+                Votre lien sera créé à partir de ce nom, par exemple : visitecard.com/{slugify(displayName) || (entityType === "profile" ? "votre-nom" : "nom-societe")}
+              </small>
+            </div>
+
             <div className="field">
               <label htmlFor="email">
                 E-mail
