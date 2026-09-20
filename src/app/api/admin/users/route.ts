@@ -22,6 +22,26 @@ function makeSlug(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "card";
 }
 
+async function getUniqueSlug(supabase: ReturnType<typeof getSupabaseAdmin>, value: string) {
+  const base = makeSlug(value);
+  let candidate = base;
+  let suffix = 2;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("cards")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return candidate;
+
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+}
+
 export async function GET() {
   try {
     if (!(await isAdmin())) return NextResponse.json({ error: "Accès administrateur refusé." }, { status: 403 });
@@ -102,7 +122,7 @@ export async function POST(request: Request) {
 
     const user = data.user;
     await supabase.from("profiles").upsert({ id: user.id, name: name || email.split("@")[0], email, updated_at: new Date().toISOString() }, { onConflict: "id" });
-    const slug = `${entityType === "profile" ? "profil" : "societe"}-${makeSlug(name || email.split("@")[0])}-${user.id.replace(/-/g, "").slice(0, 6)}`;
+    const slug = await getUniqueSlug(supabase, name || email.split("@")[0]);
     const { error: cardError } = await supabase.from("cards").insert({
       user_id: user.id,
       slug,
