@@ -226,7 +226,14 @@ export default function HomePage() {
             </div>
 
             <div className="vcContactOption">
-              <div className="vcContactRoundIcon vcWhatsappIcon">◉</div>
+              <div className="vcContactRoundIcon vcWhatsappIcon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" className="vcWhatsappSvg">
+                  <path
+                    fill="currentColor"
+                    d="M16.02 3.2A12.62 12.62 0 0 0 5.3 22.48L3.5 29l6.68-1.75a12.62 12.62 0 1 0 5.84-24.05Zm0 22.94c-1.82 0-3.6-.48-5.16-1.38l-.37-.22-3.96 1.04 1.06-3.86-.24-.4a10.28 10.28 0 1 1 8.67 4.82Zm5.64-7.7c-.31-.16-1.83-.9-2.12-1-.28-.1-.49-.16-.69.16-.21.31-.8 1-.98 1.2-.18.21-.36.23-.67.08-.31-.16-1.3-.48-2.48-1.53a9.31 9.31 0 0 1-1.72-2.14c-.18-.31-.02-.48.14-.64.14-.14.31-.36.46-.54.16-.18.21-.31.31-.52.1-.2.05-.39-.03-.54-.08-.16-.7-1.68-.95-2.3-.25-.6-.51-.52-.7-.53h-.6c-.2 0-.54.08-.82.39-.28.31-1.08 1.05-1.08 2.56s1.1 2.97 1.26 3.18c.15.21 2.16 3.3 5.23 4.63.73.31 1.3.5 1.75.64.73.23 1.4.2 1.93.12.59-.09 1.83-.75 2.09-1.47.26-.72.26-1.34.18-1.47-.08-.13-.29-.21-.6-.36Z"
+                  />
+                </svg>
+              </div>
               <div className="vcContactInfo">
                 <strong>{fr ? "Par WhatsApp" : "By WhatsApp"}</strong>
                 <span>+216 20 121 521</span>
@@ -237,6 +244,12 @@ export default function HomePage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
+                <svg viewBox="0 0 32 32" className="vcWhatsappBtnSvg" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M16.02 3.2A12.62 12.62 0 0 0 5.3 22.48L3.5 29l6.68-1.75a12.62 12.62 0 1 0 5.84-24.05Zm0 22.94c-1.82 0-3.6-.48-5.16-1.38l-.37-.22-3.96 1.04 1.06-3.86-.24-.4a10.28 10.28 0 1 1 8.67 4.82Zm5.64-7.7c-.31-.16-1.83-.9-2.12-1-.28-.1-.49-.16-.69.16-.21.31-.8 1-.98 1.2-.18.21-.36.23-.67.08-.31-.16-1.3-.48-2.48-1.53a9.31 9.31 0 0 1-1.72-2.14c-.18-.31-.02-.48.14-.64.14-.14.31-.36.46-.54.16-.18.21-.31.31-.52.1-.2.05-.39-.03-.54-.08-.16-.7-1.68-.95-2.3-.25-.6-.51-.52-.7-.53h-.6c-.2 0-.54.08-.82.39-.28.31-1.08 1.05-1.08 2.56s1.1 2.97 1.26 3.18c.15.21 2.16 3.3 5.23 4.63.73.31 1.3.5 1.75.64.73.23 1.4.2 1.93.12.59-.09 1.83-.75 2.09-1.47.26-.72.26-1.34.18-1.47-.08-.13-.29-.21-.6-.36Z"
+                  />
+                </svg>
                 {fr ? "Ouvrir WhatsApp" : "Open WhatsApp"}
               </a>
             </div>
@@ -637,6 +650,49 @@ export default function HomePage() {
           .vcSocialCard {
             min-height: 101px;
           }
+        }
+
+        /* Accueil plus compact : les 6 réseaux restent visibles plus facilement au premier écran */
+        @media (min-width: 769px) {
+          .vcHeader {
+            min-height: 92px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+          }
+
+          .vcHero {
+            padding-top: 48px;
+            padding-bottom: 42px;
+          }
+
+          .vcHero h1 {
+            margin-bottom: 16px;
+          }
+
+          .vcSubtitle {
+            margin-bottom: 34px;
+          }
+
+          .vcSocialGrid {
+            gap: 14px;
+          }
+        }
+
+        .vcWhatsappSvg {
+          width: 29px;
+          height: 29px;
+          display: block;
+        }
+
+        .vcWhatsappBtnSvg {
+          width: 17px;
+          height: 17px;
+          display: block;
+          flex: 0 0 auto;
+        }
+
+        .vcWhatsappAction {
+          gap: 7px;
         }
       `}</style>
     </main>
