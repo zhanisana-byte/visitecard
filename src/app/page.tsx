@@ -165,6 +165,34 @@ export default function HomePage() {
           {fr ? "Conditions générales" : "Terms & Conditions"}
         </a>
 
+        <div className="vcContact">
+          <span className="vcContactLabel">
+            {fr ? "Nous contacter" : "Contact us"}
+          </span>
+
+          <div className="vcContactLinks">
+            <a
+              className="vcContactBtn"
+              href="mailto:zhanisana@gmail.com"
+              aria-label={fr ? "Nous contacter par e-mail" : "Contact us by email"}
+            >
+              <span className="vcContactIcon">✉</span>
+              <span>zhanisana@gmail.com</span>
+            </a>
+
+            <a
+              className="vcContactBtn"
+              href="https://wa.me/21620121521"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={fr ? "Nous contacter sur WhatsApp" : "Contact us on WhatsApp"}
+            >
+              <span className="vcContactIcon">◉</span>
+              <span>+216 20 121 521</span>
+            </a>
+          </div>
+        </div>
+
         <span>© 2026 VisiteCard</span>
 
         <small>
@@ -293,15 +321,16 @@ export default function HomePage() {
 
         .vcFooter {
           width: 100%;
-          min-height: 70px;
-          padding: 18px 30px;
+          padding: 24px 30px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 30px;
+          flex-wrap: wrap;
+          gap: 18px 28px;
           border-top: 1px solid #edf0f3;
           color: #78808a;
           font-size: 12px;
+          background: #ffffff;
         }
 
         .vcFooter a {
@@ -309,12 +338,67 @@ export default function HomePage() {
           text-decoration: none;
         }
 
-        .vcFooter a:hover {
+        .vcFooter > a:hover {
           color: #ff6437;
         }
 
         .vcFooter small {
           font-size: 12px;
+        }
+
+        .vcContact {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 7px 8px 7px 14px;
+          border: 1px solid #e7ebef;
+          border-radius: 999px;
+          background: #f8fafc;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .vcContactLabel {
+          color: #081526;
+          font-size: 12px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .vcContactLinks {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .vcContactBtn {
+          min-height: 34px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          border-radius: 999px;
+          background: #ffffff;
+          border: 1px solid #e4e8ed;
+          color: #344054 !important;
+          font-size: 11px;
+          font-weight: 700;
+          transition:
+            transform 0.18s ease,
+            border-color 0.18s ease,
+            box-shadow 0.18s ease;
+        }
+
+        .vcContactBtn:hover {
+          transform: translateY(-1px);
+          border-color: #ff6437;
+          box-shadow: 0 5px 16px rgba(15, 23, 42, 0.07);
+        }
+
+        .vcContactIcon {
+          color: #ff6437;
+          font-size: 14px;
+          line-height: 1;
         }
 
         @media (max-width: 700px) {
@@ -364,9 +448,29 @@ export default function HomePage() {
 
           .vcFooter {
             min-height: auto;
-            padding: 21px 15px;
+            padding: 22px 15px 26px;
             flex-direction: column;
+            gap: 10px;
+          }
+
+          .vcContact {
+            width: min(100%, 390px);
+            padding: 10px;
+            flex-direction: column;
+            border-radius: 20px;
+          }
+
+          .vcContactLinks {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 7px;
+          }
+
+          .vcContactBtn {
+            width: 100%;
+            min-height: 40px;
+            padding: 0 10px;
           }
         }
 
