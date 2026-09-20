@@ -114,6 +114,7 @@ function SocialLogo({ type }: { type: SocialType }) {
 }
 
 export default function HomePage() {
+  const [contactOpen, setContactOpen] = useState(false);
   const { lang } = useLanguage();
   const fr = lang === "fr";
 
