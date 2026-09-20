@@ -35,19 +35,37 @@ export default function CreerComptePage() {
       .slice(0, 70);
   }
 
-  async function createAvailableSlug(name: string, userId: string) {
-    const base = slugify(name) || (entityType === "profile" ? "profil" : "societe");
+  async function createAvailableSlug(name: string) {
+    const base =
+      slugify(name) ||
+      (entityType === "profile" ? "profil" : "societe");
 
-    const { data: existing } = await supabase
+    const { data: existing, error: slugError } = await supabase
       .from("cards")
       .select("slug")
       .or(`slug.eq.${base},slug.like.${base}-%`);
 
-    const used = new Set((existing || []).map((item: { slug: string }) => item.slug));
-    if (!used.has(base)) return base;
+    if (slugError) {
+      throw slugError;
+    }
 
-    // En cas de doublon uniquement, on ajoute un suffixe court et stable.
-    return `${base}-${userId.replace(/-/g, "").slice(0, 6)}`;
+    const used = new Set(
+      (existing || []).map((item: { slug: string }) => item.slug)
+    );
+
+    // Premier nom disponible : /tunivet
+    if (!used.has(base)) {
+      return base;
+    }
+
+    // Doublons : /tunivet-2, /tunivet-3, /tunivet-4...
+    let suffix = 2;
+
+    while (used.has(`${base}-${suffix}`)) {
+      suffix += 1;
+    }
+
+    return `${base}-${suffix}`;
   }
 
   function validateEmail(value: string) {
@@ -197,7 +215,7 @@ export default function CreerComptePage() {
 
       // Nouveau compte uniquement : le lien reprend le nom du profil / de la société.
       // Les anciennes cartes en base ne sont jamais modifiées.
-      const temporarySlug = await createAvailableSlug(cleanName, data.user.id);
+      const temporarySlug = await createAvailableSlug(cleanName);
 
       const { error: cardError } =
         await supabase.from("cards").insert({
