@@ -459,6 +459,12 @@ export default function MonEspacePage() {
   const [showSaveSuccess, setShowSaveSuccess] =
     useState(false);
 
+  const [draggedSocialId, setDraggedSocialId] =
+    useState<string | null>(null);
+
+  const [dragOverSocialId, setDragOverSocialId] =
+    useState<string | null>(null);
+
   const siteUrl =
     process.env
       .NEXT_PUBLIC_SITE_URL ||
@@ -936,6 +942,64 @@ export default function MonEspacePage() {
           ),
       })
     );
+  }
+
+  function reorderSocial(
+    sourceId: string,
+    targetId: string
+  ) {
+    if (sourceId === targetId) return;
+
+    setCard((previous) => {
+      const sourceIndex = previous.social_links.findIndex(
+        (item) => item.id === sourceId
+      );
+
+      const targetIndex = previous.social_links.findIndex(
+        (item) => item.id === targetId
+      );
+
+      if (sourceIndex < 0 || targetIndex < 0) {
+        return previous;
+      }
+
+      const next = [...previous.social_links];
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, moved);
+
+      return {
+        ...previous,
+        social_links: next,
+      };
+    });
+  }
+
+  function moveSocial(
+    index: number,
+    direction: -1 | 1
+  ) {
+    setCard((previous) => {
+      const targetIndex = index + direction;
+
+      if (
+        index < 0 ||
+        index >= previous.social_links.length ||
+        targetIndex < 0 ||
+        targetIndex >= previous.social_links.length
+      ) {
+        return previous;
+      }
+
+      const next = [...previous.social_links];
+      const current = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = current;
+
+      return {
+        ...previous,
+        social_links: next,
+      };
+    });
   }
 
   function addCustomLink() {
@@ -1898,7 +1962,7 @@ export default function MonEspacePage() {
                 </h2>
 
                 <p>
-                  Choisissez le vrai réseau, ajoutez le lien et le nom affiché.
+                  Choisissez vos réseaux puis glissez-les pour définir leur ordre d’affichage.
                 </p>
               </div>
 
@@ -1964,11 +2028,80 @@ export default function MonEspacePage() {
                   index
                 ) => (
                   <div
-                    className="linkerCard"
+                    className={`linkerCard ${
+                      dragOverSocialId === item.id &&
+                      draggedSocialId !== item.id
+                        ? "dragOver"
+                        : ""
+                    }`}
                     key={
                       item.id
                     }
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      setDragOverSocialId(item.id);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverSocialId === item.id) {
+                        setDragOverSocialId(null);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const sourceId =
+                        draggedSocialId ||
+                        event.dataTransfer.getData("text/plain");
+
+                      if (sourceId) {
+                        reorderSocial(sourceId, item.id);
+                      }
+
+                      setDraggedSocialId(null);
+                      setDragOverSocialId(null);
+                    }}
                   >
+                    <div className="socialOrderControls">
+                      <button
+                        type="button"
+                        className="dragHandle"
+                        draggable
+                        aria-label={`Déplacer ${networkName(item.type)}`}
+                        title="Glisser pour déplacer"
+                        onDragStart={(event) => {
+                          setDraggedSocialId(item.id);
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", item.id);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedSocialId(null);
+                          setDragOverSocialId(null);
+                        }}
+                      >
+                        <span>⋮⋮</span>
+                      </button>
+
+                      <div className="mobileOrderButtons">
+                        <button
+                          type="button"
+                          onClick={() => moveSocial(index, -1)}
+                          disabled={index === 0}
+                          aria-label={`Monter ${networkName(item.type)}`}
+                        >
+                          ↑
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => moveSocial(index, 1)}
+                          disabled={index === card.social_links.length - 1}
+                          aria-label={`Descendre ${networkName(item.type)}`}
+                        >
+                          ↓
+                        </button>
+                      </div>
+                    </div>
+
                     <div
                       className="socialLogo"
                       style={{
@@ -2048,6 +2181,7 @@ export default function MonEspacePage() {
                           index
                         )
                       }
+                      aria-label={`Supprimer ${networkName(item.type)}`}
                     >
                       ×
                     </button>
@@ -3260,13 +3394,58 @@ export default function MonEspacePage() {
 
         .linkerCard {
           display: grid;
-          grid-template-columns: 50px 115px 1fr 1fr 38px;
+          grid-template-columns: 38px 50px 115px 1fr 1fr 38px;
           gap: 9px;
           align-items: end;
           padding: 12px;
           border: 1px solid #e3e3e1;
           border-radius: 16px;
           background: #fcfcfb;
+          transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+        }
+
+        .linkerCard.dragOver {
+          border-color: #ff6a3d;
+          box-shadow: 0 0 0 3px rgba(255, 106, 61, .12);
+          transform: translateY(-1px);
+        }
+
+        .socialOrderControls {
+          width: 38px;
+          min-height: 46px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .dragHandle {
+          width: 34px;
+          height: 42px;
+          display: grid;
+          place-items: center;
+          border: 1px solid #e2e2df;
+          border-radius: 10px;
+          background: #fff;
+          color: #8b8f96;
+          cursor: grab;
+          user-select: none;
+          touch-action: none;
+        }
+
+        .dragHandle:active {
+          cursor: grabbing;
+        }
+
+        .dragHandle span {
+          display: block;
+          transform: rotate(90deg);
+          font-size: 18px;
+          font-weight: 900;
+          letter-spacing: -4px;
+        }
+
+        .mobileOrderButtons {
+          display: none;
         }
 
         .networkIdentity {
@@ -3842,26 +4021,64 @@ export default function MonEspacePage() {
           }
 
           .linkerCard {
-            grid-template-columns: 50px 1fr 38px;
+            grid-template-columns: 38px 50px 1fr 38px;
+            align-items: center;
+          }
+
+          .socialOrderControls {
+            grid-column: 1;
+            grid-row: 1;
+            width: 38px;
+            min-height: 52px;
+          }
+
+          .dragHandle {
+            display: none;
+          }
+
+          .mobileOrderButtons {
+            display: grid;
+            grid-template-rows: repeat(2, 24px);
+            gap: 3px;
+          }
+
+          .mobileOrderButtons button {
+            width: 32px;
+            height: 24px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            background: #fff;
+            color: #39414d;
+            font-size: 13px;
+            font-weight: 900;
+            cursor: pointer;
+          }
+
+          .mobileOrderButtons button:disabled {
+            opacity: .3;
+            cursor: default;
           }
 
           .socialLogo {
-            grid-column: 1;
-            grid-row: 1;
-          }
-
-          .networkIdentity {
             grid-column: 2;
             grid-row: 1;
           }
 
-          .linkerCard .removeButton {
+          .networkIdentity {
             grid-column: 3;
             grid-row: 1;
           }
 
+          .linkerCard .removeButton {
+            grid-column: 4;
+            grid-row: 1;
+          }
+
           .linkerCard > label {
-            grid-column: 1 / 4;
+            grid-column: 1 / 5;
           }
 
           .customCard {
