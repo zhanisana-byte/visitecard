@@ -35,6 +35,7 @@ type CustomLink = {
   label: string;
   url: string;
   kind?: "link" | "location";
+  image_url?: string;
 };
 
 type CardData = {
@@ -483,6 +484,8 @@ export default function MonEspacePage() {
     setShowNetworkPicker,
   ] = useState(false);
 
+  const [draggedSocialId, setDraggedSocialId] = useState<string | null>(null);
+
   const [error, setError] =
     useState("");
 
@@ -710,6 +713,11 @@ export default function MonEspacePage() {
                         item.kind === "location"
                           ? "location"
                           : "link",
+
+                      image_url:
+                        item.image_url ||
+                        item.image ||
+                        "",
                     })
                   )
                 : [],
@@ -972,6 +980,82 @@ export default function MonEspacePage() {
     );
   }
 
+  function moveSocialById(sourceId: string, targetId: string) {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+
+    setCard((previous) => {
+      const sourceIndex = previous.social_links.findIndex((item) => item.id === sourceId);
+      const targetIndex = previous.social_links.findIndex((item) => item.id === targetId);
+
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+        return previous;
+      }
+
+      const next = [...previous.social_links];
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, moved);
+
+      return {
+        ...previous,
+        social_links: next,
+      };
+    });
+  }
+
+  const socialDragRef = useRef<{
+    pointerId: number;
+    socialId: string;
+    lastTargetId: string;
+  } | null>(null);
+
+  function startSocialDrag(
+    event: React.PointerEvent<HTMLButtonElement>,
+    socialId: string
+  ) {
+    if (event.button !== 0 && event.pointerType !== "touch") return;
+
+    event.preventDefault();
+    socialDragRef.current = {
+      pointerId: event.pointerId,
+      socialId,
+      lastTargetId: socialId,
+    };
+    setDraggedSocialId(socialId);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveSocialDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = socialDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>("[data-social-id]");
+
+    const targetId = target?.dataset.socialId || "";
+    if (
+      targetId &&
+      targetId !== drag.socialId &&
+      targetId !== drag.lastTargetId
+    ) {
+      drag.lastTargetId = targetId;
+      moveSocialById(drag.socialId, targetId);
+    }
+  }
+
+  function endSocialDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = socialDragRef.current;
+
+    if (drag?.pointerId === event.pointerId) {
+      socialDragRef.current = null;
+      setDraggedSocialId(null);
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    }
+  }
+
   function addCustomLink() {
     setCard(
       (previous) => ({
@@ -1030,6 +1114,70 @@ export default function MonEspacePage() {
           ),
       })
     );
+  }
+
+  async function readCustomLinkImage(
+    event: ChangeEvent<HTMLInputElement>,
+    index: number
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Choisissez une image valide.");
+      return;
+    }
+
+    if (file.size > 5000000) {
+      setError("L’image du lien doit faire moins de 5 Mo.");
+      return;
+    }
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const image = new Image();
+
+          image.onload = () => {
+            const maxSize = 420;
+            const scale = Math.min(1, maxSize / Math.max(image.naturalWidth, image.naturalHeight));
+            const width = Math.max(1, Math.round(image.naturalWidth * scale));
+            const height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            if (!context) {
+              reject(new Error("Impossible de préparer l’image."));
+              return;
+            }
+
+            context.drawImage(image, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.86));
+          };
+
+          image.onerror = () => reject(new Error("Impossible de lire l’image."));
+          image.src = String(reader.result || "");
+        };
+
+        reader.onerror = () => reject(new Error("Impossible de lire l’image."));
+        reader.readAsDataURL(file);
+      });
+
+      updateCustomLink(index, "image_url", dataUrl);
+      setError("");
+    } catch (imageError: any) {
+      setError(imageError?.message || "Impossible de préparer l’image.");
+    }
+  }
+
+  function removeCustomLinkImage(index: number) {
+    updateCustomLink(index, "image_url", "");
   }
 
   function addLocation() {
@@ -1267,6 +1415,7 @@ export default function MonEspacePage() {
           label: (item.label || "").trim(),
           url: (item.url || "").trim(),
           kind: item.kind === "location" ? "location" : "link",
+          image_url: item.kind === "location" ? "" : (item.image_url || ""),
         }))
         .filter((item) => item.label || item.url);
 
@@ -1919,7 +2068,7 @@ export default function MonEspacePage() {
                 </h2>
 
                 <p>
-                  Choisissez le vrai réseau, ajoutez le lien et le nom affiché.
+                  Choisissez le vrai réseau, ajoutez le lien et le nom affiché. Glissez les poignées pour définir la priorité.
                 </p>
               </div>
 
@@ -1985,11 +2134,25 @@ export default function MonEspacePage() {
                   index
                 ) => (
                   <div
-                    className="linkerCard"
+                    className={`linkerCard ${draggedSocialId === item.id ? "isDragging" : ""}`}
                     key={
                       item.id
                     }
+                    data-social-id={item.id}
                   >
+                    <button
+                      type="button"
+                      className="socialDragHandle"
+                      aria-label="Glisser pour changer la priorité"
+                      title="Glisser pour changer la priorité"
+                      onPointerDown={(event) => startSocialDrag(event, item.id)}
+                      onPointerMove={moveSocialDrag}
+                      onPointerUp={endSocialDrag}
+                      onPointerCancel={endSocialDrag}
+                    >
+                      <span>⋮⋮</span>
+                    </button>
+
                     <div
                       className="socialLogo"
                       style={{
@@ -2080,9 +2243,14 @@ export default function MonEspacePage() {
 
           <section className="formSection">
             <div className="sectionTitle">
-              <h2>
-                Autres liens
-              </h2>
+              <div>
+                <h2>
+                  Autres liens
+                </h2>
+                <p>
+                  Ajoutez une image optionnelle. Sans image, l’icône lien s’affiche automatiquement.
+                </p>
+              </div>
             </div>
 
             <div className="customList">
@@ -2098,8 +2266,36 @@ export default function MonEspacePage() {
                       item.id
                     }
                   >
-                    <div className="customIcon">
-                      ↗
+                    <div className="customMediaEditor">
+                      <div className={`customIcon ${item.image_url ? "hasImage" : ""}`}>
+                        {item.image_url ? (
+                          <img src={item.image_url} alt="" />
+                        ) : (
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M10.6 13.4a2 2 0 0 0 2.8 0l3.2-3.2a2 2 0 1 0-2.8-2.8l-1.2 1.2" />
+                            <path d="M13.4 10.6a2 2 0 0 0-2.8 0l-3.2 3.2a2 2 0 1 0 2.8 2.8l1.2-1.2" />
+                          </svg>
+                        )}
+                      </div>
+
+                      <label className="customImageUpload">
+                        {item.image_url ? "Changer" : "Image"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => readCustomLinkImage(event, index)}
+                        />
+                      </label>
+
+                      {item.image_url ? (
+                        <button
+                          type="button"
+                          className="removeCustomImage"
+                          onClick={() => removeCustomLinkImage(index)}
+                        >
+                          Retirer
+                        </button>
+                      ) : null}
                     </div>
 
                     <label>
@@ -2770,6 +2966,35 @@ export default function MonEspacePage() {
                     </a>
                   ))}
 
+                {card.custom_links
+                  .filter(
+                    (item) =>
+                      item.kind !== "location" &&
+                      item.label.trim() &&
+                      item.url.trim()
+                  )
+                  .map((item) => (
+                    <a
+                      key={item.id}
+                      className={card.led_enabled ? "ledItem" : ""}
+                      href={normalizeUrl(item.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className={`previewCustomIcon ${item.image_url ? "hasImage" : ""}`}>
+                        {item.image_url ? (
+                          <img src={item.image_url} alt="" />
+                        ) : (
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M10.6 13.4a2 2 0 0 0 2.8 0l3.2-3.2a2 2 0 1 0-2.8-2.8l-1.2 1.2" />
+                            <path d="M13.4 10.6a2 2 0 0 0-2.8 0l-3.2 3.2a2 2 0 1 0 2.8 2.8l1.2-1.2" />
+                          </svg>
+                        )}
+                      </span>
+                      <b>{item.label}</b>
+                    </a>
+                  ))}
+
                 {card.entity_type !== "profile" && card.show_address
                   ? card.custom_links
                       .filter(
@@ -3379,13 +3604,46 @@ export default function MonEspacePage() {
 
         .linkerCard {
           display: grid;
-          grid-template-columns: 50px 115px 1fr 1fr 38px;
+          grid-template-columns: 28px 50px 115px 1fr 1fr 38px;
           gap: 9px;
           align-items: end;
           padding: 12px;
           border: 1px solid #e3e3e1;
           border-radius: 16px;
           background: #fcfcfb;
+        }
+
+        .socialDragHandle {
+          width: 28px;
+          height: 46px;
+          align-self: end;
+          display: grid;
+          place-items: center;
+          border: 0;
+          border-radius: 9px;
+          background: transparent;
+          color: #9aa0a8;
+          cursor: grab;
+          touch-action: none;
+          user-select: none;
+        }
+
+        .socialDragHandle:active {
+          cursor: grabbing;
+          background: #f0f0ed;
+          color: #111827;
+        }
+
+        .socialDragHandle span {
+          font-size: 18px;
+          letter-spacing: -4px;
+          transform: rotate(90deg);
+        }
+
+        .linkerCard.isDragging {
+          border-color: #111827;
+          box-shadow: 0 10px 24px rgba(17,24,39,.10);
+          background: #fff;
         }
 
         .networkIdentity {
@@ -3401,7 +3659,7 @@ export default function MonEspacePage() {
 
         .customCard {
           display: grid;
-          grid-template-columns: 50px 1fr 1fr 38px;
+          grid-template-columns: 74px 1fr 1fr 38px;
           gap: 9px;
           align-items: end;
           padding: 12px;
@@ -3424,6 +3682,64 @@ export default function MonEspacePage() {
         .customIcon {
           background: #e8b39b;
           color: #111;
+          overflow: hidden;
+        }
+
+        .customIcon svg,
+        .previewCustomIcon svg {
+          width: 23px;
+          height: 23px;
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 1.9;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
+        .customIcon.hasImage {
+          background: #fff;
+          border: 1px solid #e2e2df;
+        }
+
+        .customIcon.hasImage img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .customMediaEditor {
+          min-width: 0;
+          display: grid;
+          justify-items: center;
+          gap: 5px;
+          align-self: start;
+        }
+
+        .customImageUpload,
+        .removeCustomImage {
+          width: 100%;
+          min-height: 24px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #dededb;
+          border-radius: 7px;
+          background: #fff;
+          color: #515761;
+          font-size: 9px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .customImageUpload input {
+          display: none;
+        }
+
+        .removeCustomImage {
+          border-color: transparent;
+          background: transparent;
+          color: #9a4545;
         }
 
         .removeButton {
@@ -3766,6 +4082,29 @@ export default function MonEspacePage() {
           font-size: 12px;
         }
 
+        .previewCustomIcon {
+          width: 34px;
+          height: 34px;
+          display: grid;
+          place-items: center;
+          flex: 0 0 34px;
+          overflow: hidden;
+          border-radius: 10px;
+          background: #e8b39b;
+          color: #111;
+        }
+
+        .previewCustomIcon.hasImage {
+          background: #fff;
+        }
+
+        .previewCustomIcon.hasImage img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
         .previewMapIcon {
           width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-size:21px;font-weight:900;
         }
@@ -3975,30 +4314,35 @@ export default function MonEspacePage() {
           }
 
           .linkerCard {
-            grid-template-columns: 50px 1fr 38px;
+            grid-template-columns: 28px 50px 1fr 38px;
           }
 
-          .socialLogo {
+          .socialDragHandle {
             grid-column: 1;
             grid-row: 1;
           }
 
-          .networkIdentity {
+          .socialLogo {
             grid-column: 2;
             grid-row: 1;
           }
 
-          .linkerCard .removeButton {
+          .networkIdentity {
             grid-column: 3;
             grid-row: 1;
           }
 
+          .linkerCard .removeButton {
+            grid-column: 4;
+            grid-row: 1;
+          }
+
           .linkerCard > label {
-            grid-column: 1 / 4;
+            grid-column: 1 / 5;
           }
 
           .customCard {
-            grid-template-columns: 50px 1fr 38px;
+            grid-template-columns: 74px 1fr 38px;
           }
 
           .customCard > label {
@@ -4010,9 +4354,9 @@ export default function MonEspacePage() {
             grid-row: 1;
           }
 
-          .customCard .customIcon {
+          .customCard .customMediaEditor {
             grid-column: 1;
-            grid-row: 1;
+            grid-row: 1 / 3;
           }
 
           .customCard .removeButton {
