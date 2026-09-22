@@ -20,18 +20,18 @@ type SocialLink = {
   value: string;
 };
 
+type WifiPosition = "bottom-left" | "bottom-center" | "bottom-right";
+
 type CustomLink = {
   id: string;
   label: string;
   url: string;
   kind?: "link" | "location" | "wifi";
   image_url?: string;
-  wifi_ssid?: string;
-  wifi_password?: string;
-  wifi_security?: "WPA" | "WEP" | "nopass";
-  wifi_hidden?: boolean;
-  wifi_enabled?: boolean;
-  wifi_show_password?: boolean;
+  enabled?: boolean;
+  ssid?: string;
+  password?: string;
+  wifi_position?: WifiPosition;
 };
 
 type CardRow = {
@@ -275,28 +275,6 @@ function SocialIcon({ type }: { type: SocialType }) {
   );
 }
 
-function WifiIcon({ size = 23 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path d="M4.5 9.5a11 11 0 0 1 15 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M7.5 13a6.8 6.8 0 0 1 9 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M10.4 16.4a2.6 2.6 0 0 1 3.2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="12" cy="19" r="1.15" fill="currentColor" />
-    </svg>
-  );
-}
-
-function escapeWifiValue(value: string) {
-  return value.replace(/([\\;,:"])/g, "\\$1");
-}
-
 export default function PublicCardClient({ slug }: { slug: string }) {
 
   const [card, setCard] = useState<CardRow | null>(null);
@@ -314,7 +292,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [thanksMessage, setThanksMessage] = useState("");
   const [profileCompanies, setProfileCompanies] = useState<ProfileCompany[]>([]);
   const [wifiOpen, setWifiOpen] = useState(false);
-  const [wifiCopied, setWifiCopied] = useState(false);
+  const [wifiCopied, setWifiCopied] = useState<"ssid" | "password" | null>(null);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -400,22 +378,23 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                       : item.kind === "location" || isGoogleMapsUrl(url)
                         ? "location"
                         : "link",
-                  image_url: item.image_url || item.image || "",
-                  wifi_ssid: item.wifi_ssid || "",
-                  wifi_password: item.wifi_password || "",
-                  wifi_security:
-                    item.wifi_security === "WEP" || item.wifi_security === "nopass"
-                      ? item.wifi_security
-                      : "WPA",
-                  wifi_hidden: Boolean(item.wifi_hidden),
-                  wifi_enabled:
-                    typeof item.wifi_enabled === "boolean"
-                      ? item.wifi_enabled
-                      : true,
-                  wifi_show_password:
-                    typeof item.wifi_show_password === "boolean"
-                      ? item.wifi_show_password
-                      : true,
+                  image_url: item.kind === "wifi" ? "" : item.image_url || item.image || "",
+                  enabled: item.kind === "wifi"
+                    ? typeof item.enabled === "boolean"
+                      ? item.enabled
+                      : typeof item.wifi_enabled === "boolean"
+                        ? item.wifi_enabled
+                        : true
+                    : undefined,
+                  ssid: item.kind === "wifi" ? String(item.ssid || item.login || item.wifi_ssid || "") : undefined,
+                  password: item.kind === "wifi" ? String(item.password || item.wifi_password || "") : undefined,
+                  wifi_position:
+                    item.kind === "wifi" &&
+                    ["bottom-left", "bottom-center", "bottom-right"].includes(item.wifi_position)
+                      ? item.wifi_position
+                      : item.kind === "wifi"
+                        ? "bottom-right"
+                        : undefined,
                 };
               })
             : [],
@@ -599,6 +578,27 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     );
   }
 
+  async function copyWifiValue(value: string, field: "ssid" | "password") {
+    if (!value) return;
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setWifiCopied(field);
+      window.setTimeout(() => setWifiCopied(null), 1600);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = value;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setWifiCopied(field);
+      window.setTimeout(() => setWifiCopied(null), 1600);
+    }
+  }
+
   const dark = (card.theme || "dark") === "dark";
   const accent = card.primary_color || "#ff6a3d";
   const ledColor = card.led_color || accent;
@@ -654,40 +654,13 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item) => item.kind !== "wifi" && isLocationLink(item) && (item.url || "").trim()
   );
 
-  const wifi = (card.custom_links || []).find(
-    (item) =>
-      item.kind === "wifi" &&
-      item.wifi_enabled !== false &&
-      (item.wifi_ssid || "").trim()
+  const wifiConfig = (card.custom_links || []).find(
+    (item) => item.kind === "wifi" && item.enabled !== false && (item.ssid || "").trim()
   );
-
-  const wifiSecurity = wifi?.wifi_security || "WPA";
-  const wifiPayload = wifi
-    ? `WIFI:T:${wifiSecurity};S:${escapeWifiValue(wifi.wifi_ssid || "")};${
-        wifiSecurity === "nopass"
-          ? ""
-          : `P:${escapeWifiValue(wifi.wifi_password || "")};`
-      }H:${wifi.wifi_hidden ? "true" : "false"};;`
-    : "";
-  const wifiQrUrl = wifiPayload
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=12&format=png&data=${encodeURIComponent(wifiPayload)}`
-    : "";
-
-  async function copyWifiPassword() {
-    if (!wifi || wifiSecurity === "nopass") return;
-
-    try {
-      await navigator.clipboard.writeText(wifi.wifi_password || "");
-      setWifiCopied(true);
-      window.setTimeout(() => setWifiCopied(false), 1600);
-    } catch {
-      setWifiCopied(false);
-    }
-  }
 
   return (
     <main
-      className="vcPublicPage"
+      className={`vcPublicPage ${wifiConfig ? "hasWifiAction" : ""}`}
       style={{
         background: pageBg,
         color: text,
@@ -810,7 +783,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                 </div>
               ) : null}
 
-              {customs.length || wifi ? (
+              {customs.length ? (
                 <div className="profileCustomLinks">
                   {customs.map((item) => (
                     <a
@@ -833,21 +806,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                       <strong>{item.label}</strong>
                     </a>
                   ))}
-
-                  {wifi ? (
-                    <button
-                      type="button"
-                      className={ledOn ? "linkCard wifiLinkCard ledSoft" : "linkCard wifiLinkCard"}
-                      onClick={() => setWifiOpen(true)}
-                    >
-                      <span className="vcPublicSocialIcon wifiIcon"><WifiIcon /></span>
-                      <span className="wifiLinkCopy">
-                        <strong>{wifi.label || "Wi-Fi"}</strong>
-                        <small>{wifi.wifi_ssid}</small>
-                      </span>
-                      <span className="wifiChevron">›</span>
-                    </button>
-                  ) : null}
                 </div>
               ) : null}
             </>
@@ -890,22 +848,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                     <strong>{item.label}</strong>
                   </a>
                 ))}
-
-
-                {wifi ? (
-                  <button
-                    type="button"
-                    className={ledOn ? "linkCard wifiLinkCard ledSoft" : "linkCard wifiLinkCard"}
-                    onClick={() => setWifiOpen(true)}
-                  >
-                    <span className="vcPublicSocialIcon wifiIcon"><WifiIcon /></span>
-                    <span className="wifiLinkCopy">
-                      <strong>{wifi.label || "Wi-Fi"}</strong>
-                      <small>{wifi.wifi_ssid}</small>
-                    </span>
-                    <span className="wifiChevron">›</span>
-                  </button>
-                ) : null}
               </div>
 
               {card.show_address !== false && locations.length ? (
@@ -977,75 +919,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               ))}
             </div>
           </section>
-        ) : null}
-
-        {wifiOpen && wifi ? (
-          <div className="wifiModalBackdrop" onClick={() => setWifiOpen(false)}>
-            <div
-              className="wifiModal"
-              onClick={(event) => event.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label={lang === "en" ? "Wi-Fi access" : "Accès Wi-Fi"}
-            >
-              <div className="wifiModalHead">
-                <div className="wifiModalTitle">
-                  <span><WifiIcon size={25} /></span>
-                  <div>
-                    <small>{lang === "en" ? "WI-FI ACCESS" : "ACCÈS WI-FI"}</small>
-                    <h3>{wifi.label || "Wi-Fi"}</h3>
-                  </div>
-                </div>
-                <button type="button" className="wifiClose" onClick={() => setWifiOpen(false)} aria-label="Fermer">×</button>
-              </div>
-
-              <div className="wifiCredentials">
-                <div>
-                  <small>{lang === "en" ? "Network name" : "Nom du réseau"}</small>
-                  <strong>{wifi.wifi_ssid}</strong>
-                </div>
-
-                {wifiSecurity !== "nopass" ? (
-                  <div>
-                    <small>{lang === "en" ? "Password" : "Mot de passe"}</small>
-                    <strong className="wifiPassword">
-                      {wifi.wifi_show_password !== false
-                        ? wifi.wifi_password || "—"
-                        : "••••••••••"}
-                    </strong>
-                  </div>
-                ) : (
-                  <div>
-                    <small>{lang === "en" ? "Security" : "Sécurité"}</small>
-                    <strong>{lang === "en" ? "Open network" : "Réseau ouvert"}</strong>
-                  </div>
-                )}
-              </div>
-
-              {wifiQrUrl ? (
-                <div className="wifiQrBox">
-                  <img src={wifiQrUrl} alt="QR Code Wi-Fi" />
-                  <div>
-                    <strong>{lang === "en" ? "Scan to join" : "Scannez pour vous connecter"}</strong>
-                    <small>{lang === "en" ? "Use your phone camera." : "Utilisez l’appareil photo de votre téléphone."}</small>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="wifiModalActions">
-                {wifiSecurity !== "nopass" ? (
-                  <button type="button" className="wifiCopyButton" onClick={copyWifiPassword}>
-                    {wifiCopied
-                      ? (lang === "en" ? "✓ Copied" : "✓ Copié")
-                      : (lang === "en" ? "Copy password" : "Copier le mot de passe")}
-                  </button>
-                ) : null}
-                <button type="button" className="wifiDoneButton" onClick={() => setWifiOpen(false)}>
-                  {lang === "en" ? "Close" : "Fermer"}
-                </button>
-              </div>
-            </div>
-          </div>
         ) : null}
 
         {!isProfile && reviewOpen && card.show_reviews !== false ? (
@@ -1155,9 +1028,128 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         ) : null}
       </div>
 
+      {wifiConfig ? (
+        <>
+          <button
+            type="button"
+            className={`wifiFloatingAction ${wifiConfig.wifi_position || "bottom-right"}`}
+            onClick={() => setWifiOpen(true)}
+            aria-label={lang === "en" ? "Wi-Fi access" : "Accès Wi-Fi"}
+          >
+            <span className="wifiFloatingIcon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 9.5a11.2 11.2 0 0 1 15 0" />
+                <path d="M7.6 12.7a6.8 6.8 0 0 1 8.8 0" />
+                <path d="M10.5 15.8a2.5 2.5 0 0 1 3 0" />
+                <circle cx="12" cy="19" r="1" />
+              </svg>
+            </span>
+            <span className="wifiFloatingCopy">
+              <small>{lang === "en" ? "GUEST ACCESS" : "ACCÈS INVITÉ"}</small>
+              <strong>Wi-Fi</strong>
+            </span>
+            <span className="wifiPulse" aria-hidden="true" />
+          </button>
+
+          {wifiOpen ? (
+            <div className="wifiSheetBackdrop" onClick={() => setWifiOpen(false)}>
+              <section
+                className="wifiSheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label={lang === "en" ? "Wi-Fi access" : "Accès Wi-Fi"}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="wifiSheetHead">
+                  <div className="wifiSheetBrand">
+                    <span className="wifiSheetIcon">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4.5 9.5a11.2 11.2 0 0 1 15 0" />
+                        <path d="M7.6 12.7a6.8 6.8 0 0 1 8.8 0" />
+                        <path d="M10.5 15.8a2.5 2.5 0 0 1 3 0" />
+                        <circle cx="12" cy="19" r="1" />
+                      </svg>
+                    </span>
+                    <div>
+                      <small>{lang === "en" ? "GUEST ACCESS" : "ACCÈS INVITÉ"}</small>
+                      <h3>Wi-Fi</h3>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="wifiSheetClose"
+                    onClick={() => setWifiOpen(false)}
+                    aria-label={lang === "en" ? "Close" : "Fermer"}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="wifiCredential">
+                  <div>
+                    <small>{lang === "en" ? "Wi-Fi name" : "Nom du Wi-Fi"}</small>
+                    <strong>{wifiConfig.ssid}</strong>
+                  </div>
+                  <button type="button" onClick={() => copyWifiValue(wifiConfig.ssid || "", "ssid")}>
+                    {wifiCopied === "ssid" ? (lang === "en" ? "Copied" : "Copié") : (lang === "en" ? "Copy" : "Copier")}
+                  </button>
+                </div>
+
+                {(wifiConfig.password || "").length ? (
+                  <div className="wifiCredential">
+                    <div>
+                      <small>{lang === "en" ? "Password" : "Mot de passe"}</small>
+                      <strong className="wifiPassword">{wifiConfig.password}</strong>
+                    </div>
+                    <button type="button" onClick={() => copyWifiValue(wifiConfig.password || "", "password")}>
+                      {wifiCopied === "password" ? (lang === "en" ? "Copied" : "Copié") : (lang === "en" ? "Copy" : "Copier")}
+                    </button>
+                  </div>
+                ) : null}
+
+                <p className="wifiHint">
+                  {lang === "en"
+                    ? "Use these details to connect to the guest Wi-Fi network."
+                    : "Utilisez ces informations pour vous connecter au réseau Wi-Fi invité."}
+                </p>
+              </section>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
       <style jsx>{`
         * { box-sizing: border-box; }
         .vcPublicPage { min-height:100dvh; padding:28px 18px 46px; font-family:Inter,system-ui,sans-serif; }
+        .vcPublicPage.hasWifiAction { padding-bottom:112px; }
+        .wifiFloatingAction { position:fixed;z-index:850;bottom:20px;min-height:58px;padding:7px 14px 7px 7px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(7,17,28,.94);color:#fff;box-shadow:0 16px 48px rgba(0,0,0,.32);backdrop-filter:blur(14px);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease; }
+        .wifiFloatingAction:hover { transform:translateY(-2px);box-shadow:0 20px 56px rgba(0,0,0,.4); }
+        .wifiFloatingAction.bottom-left { left:20px; }
+        .wifiFloatingAction.bottom-center { left:50%;transform:translateX(-50%); }
+        .wifiFloatingAction.bottom-center:hover { transform:translate(-50%,-2px); }
+        .wifiFloatingAction.bottom-right { right:20px; }
+        .wifiFloatingIcon,.wifiSheetIcon { width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#2f6df6,#1646be);box-shadow:0 8px 20px rgba(47,109,246,.28); }
+        .wifiFloatingIcon svg,.wifiSheetIcon svg { width:23px;height:23px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round; }
+        .wifiFloatingCopy { display:grid;text-align:left;line-height:1.05; }
+        .wifiFloatingCopy small { color:#9fb8ff;font-size:8px;font-weight:900;letter-spacing:.12em; }
+        .wifiFloatingCopy strong { margin-top:4px;font-size:14px; }
+        .wifiPulse { width:7px;height:7px;margin-left:2px;border-radius:50%;background:#41d17d;box-shadow:0 0 0 5px rgba(65,209,125,.12); }
+        .wifiSheetBackdrop { position:fixed;inset:0;z-index:1200;padding:18px;display:grid;place-items:center;background:rgba(0,0,0,.68);backdrop-filter:blur(9px); }
+        .wifiSheet { width:min(430px,100%);padding:20px;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:#101d27;color:#fff;box-shadow:0 30px 90px rgba(0,0,0,.5); }
+        .wifiSheetHead { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px; }
+        .wifiSheetBrand { display:flex;align-items:center;gap:12px; }
+        .wifiSheetBrand > div { display:grid;gap:3px; }
+        .wifiSheetBrand small { color:#9fb8ff;font-size:9px;font-weight:900;letter-spacing:.13em; }
+        .wifiSheetBrand h3 { margin:0;font-size:24px; }
+        .wifiSheetClose { width:38px;height:38px;border:1px solid rgba(255,255,255,.13);border-radius:11px;background:rgba(255,255,255,.05);color:#fff;font-size:24px;cursor:pointer; }
+        .wifiCredential { margin-top:10px;padding:13px 13px 13px 15px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid rgba(255,255,255,.09);border-radius:15px;background:#0a151e; }
+        .wifiCredential > div { min-width:0;display:grid;gap:5px; }
+        .wifiCredential small { color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.08em; }
+        .wifiCredential strong { overflow-wrap:anywhere;font-size:15px; }
+        .wifiCredential button { min-height:38px;padding:0 12px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.07);color:#fff;font-weight:850;cursor:pointer; }
+        .wifiPassword { font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em; }
+        .wifiHint { margin:14px 2px 0;color:#9ea9b5;font-size:11px;line-height:1.5; }
         .vcPublicShell { width:min(800px,100%); margin:auto; }
         .topTools { margin-bottom:14px; display:flex; justify-content:space-between; gap:12px; }
         .langSwitch,.shareTools { display:flex; align-items:center; gap:8px; }
@@ -1221,13 +1213,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         }
 
         .vcPublicLinks { padding:0 24px; display:grid; gap:10px; }
-        .linkCard { width:100%; min-height:72px; padding:11px 18px; display:flex; align-items:center; gap:14px; border:1px solid rgba(255,255,255,.08); border-radius:19px; background:var(--panel); color:inherit; text-decoration:none; font:inherit; text-align:left; }
-        button.linkCard { cursor:pointer; }
-        .wifiIcon { background:#2563eb; color:#fff; }
-        .wifiLinkCopy { min-width:0; display:grid; gap:3px; }
-        .wifiLinkCopy strong { font-size:14px; }
-        .wifiLinkCopy small { color:var(--muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .wifiChevron { margin-left:auto; color:var(--accent); font-size:26px; line-height:1; }
+        .linkCard { min-height:72px; padding:11px 18px; display:flex; align-items:center; gap:14px; border:1px solid rgba(255,255,255,.08); border-radius:19px; background:var(--panel); color:inherit; text-decoration:none; }
         .vcPublicSocialIcon { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:14px; color:#fff; }
         .customIcon { background:#e8b39b; color:#111; overflow:hidden; }
         .customIcon svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
@@ -1320,37 +1306,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .vcPublicContactRow { padding:14px 24px 24px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
         .vcPublicContact { min-height:56px; display:flex; align-items:center; justify-content:center; border:2px solid var(--button-border); border-radius:16px; background:var(--button-bg); color:var(--button-text); text-decoration:none; font-weight:900; }
         .vcPublicContact.primary { background:var(--button-bg); color:var(--button-text); border-color:var(--button-border); }
-
-        .wifiModalBackdrop {
-          position:fixed; inset:0; z-index:1100; padding:18px; display:grid; place-items:center;
-          background:rgba(0,0,0,.75); backdrop-filter:blur(9px);
-        }
-        .wifiModal {
-          width:min(470px,100%); max-height:calc(100dvh - 36px); overflow:auto; padding:20px;
-          border:1px solid rgba(255,255,255,.12); border-radius:24px; background:#101d27; color:#fff;
-          box-shadow:0 30px 90px rgba(0,0,0,.5);
-        }
-        .wifiModalHead { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:16px; }
-        .wifiModalTitle { display:flex; align-items:center; gap:11px; }
-        .wifiModalTitle > span { width:48px; height:48px; display:grid; place-items:center; border-radius:15px; background:#2563eb; color:#fff; }
-        .wifiModalTitle div { display:grid; gap:3px; }
-        .wifiModalTitle small { color:#7fb2ff; font-size:9px; font-weight:900; letter-spacing:.14em; }
-        .wifiModalTitle h3 { margin:0; font-size:23px; }
-        .wifiClose { width:38px; height:38px; flex:0 0 38px; border:1px solid rgba(255,255,255,.14); border-radius:11px; background:rgba(255,255,255,.05); color:#fff; font-size:24px; cursor:pointer; }
-        .wifiCredentials { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-        .wifiCredentials > div { min-width:0; padding:13px; display:grid; gap:5px; border:1px solid rgba(255,255,255,.1); border-radius:15px; background:rgba(255,255,255,.04); }
-        .wifiCredentials small { color:#9eacba; font-size:10px; }
-        .wifiCredentials strong { overflow-wrap:anywhere; font-size:14px; }
-        .wifiPassword { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.02em; }
-        .wifiQrBox { padding:14px; display:grid; grid-template-columns:150px 1fr; gap:15px; align-items:center; border-radius:18px; background:#fff; color:#111827; }
-        .wifiQrBox img { width:150px; height:150px; display:block; border-radius:10px; }
-        .wifiQrBox div { display:grid; gap:5px; }
-        .wifiQrBox strong { font-size:15px; }
-        .wifiQrBox small { color:#667085; font-size:11px; line-height:1.45; }
-        .wifiModalActions { margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-        .wifiModalActions button { min-height:46px; border-radius:13px; font-weight:900; cursor:pointer; }
-        .wifiCopyButton { border:0; background:var(--accent); color:#fff; }
-        .wifiDoneButton { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#fff; }
 
         .reviewModalBackdrop {
           position:fixed;
@@ -1564,13 +1519,15 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         @keyframes spin { to { transform:rotate(360deg); } }
         @media (max-width:620px) {
           .vcPublicPage { padding:12px 10px 28px; }
+          .vcPublicPage.hasWifiAction { padding-bottom:108px; }
+          .wifiFloatingAction { bottom:14px; }
+          .wifiFloatingAction.bottom-left { left:14px; }
+          .wifiFloatingAction.bottom-right { right:14px; }
+          .wifiSheetBackdrop { padding:10px;place-items:end center; }
+          .wifiSheet { border-radius:24px 24px 18px 18px; }
           .shareTools button { padding:0 10px; font-size:12px; }
           .vcPublicCover { height:180px; }
           .vcPublicLinks { padding:0 14px; }
-          .wifiCredentials { grid-template-columns:1fr; }
-          .wifiQrBox { grid-template-columns:118px 1fr; }
-          .wifiQrBox img { width:118px; height:118px; }
-          .wifiModalActions { grid-template-columns:1fr; }
           .vcPublicContactRow { padding:14px; grid-template-columns:1fr; }
           .vcPublicQrSection { grid-template-columns:1fr; }
           .vcPublicQrBox { width:160px; height:160px; }
