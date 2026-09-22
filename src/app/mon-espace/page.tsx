@@ -34,8 +34,14 @@ type CustomLink = {
   id: string;
   label: string;
   url: string;
-  kind?: "link" | "location";
+  kind?: "link" | "location" | "wifi";
   image_url?: string;
+  wifi_ssid?: string;
+  wifi_password?: string;
+  wifi_security?: "WPA" | "WEP" | "nopass";
+  wifi_hidden?: boolean;
+  wifi_enabled?: boolean;
+  wifi_show_password?: boolean;
 };
 
 type CardData = {
@@ -444,6 +450,24 @@ async function getValidAccessToken(
   };
 }
 
+function WifiIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M4.5 9.5a11 11 0 0 1 15 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M7.5 13a6.8 6.8 0 0 1 9 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M10.4 16.4a2.6 2.6 0 0 1 3.2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.15" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function MonEspacePage() {
   const router = useRouter();
 
@@ -525,6 +549,11 @@ export default function MonEspacePage() {
           : "",
       [publicUrl]
     );
+
+  const wifiLink = useMemo(
+    () => card.custom_links.find((item) => item.kind === "wifi"),
+    [card.custom_links]
+  );
 
   useEffect(() => {
     async function init() {
@@ -712,12 +741,30 @@ export default function MonEspacePage() {
                       kind:
                         item.kind === "location"
                           ? "location"
-                          : "link",
+                          : item.kind === "wifi"
+                            ? "wifi"
+                            : "link",
 
                       image_url:
                         item.image_url ||
                         item.image ||
                         "",
+
+                      wifi_ssid: item.wifi_ssid || "",
+                      wifi_password: item.wifi_password || "",
+                      wifi_security:
+                        item.wifi_security === "WEP" || item.wifi_security === "nopass"
+                          ? item.wifi_security
+                          : "WPA",
+                      wifi_hidden: Boolean(item.wifi_hidden),
+                      wifi_enabled:
+                        typeof item.wifi_enabled === "boolean"
+                          ? item.wifi_enabled
+                          : true,
+                      wifi_show_password:
+                        typeof item.wifi_show_password === "boolean"
+                          ? item.wifi_show_password
+                          : true,
                     })
                   )
                 : [],
@@ -1195,6 +1242,62 @@ export default function MonEspacePage() {
     }));
   }
 
+  function toggleWifi() {
+    setCard((previous) => {
+      const existing = previous.custom_links.find((item) => item.kind === "wifi");
+
+      if (existing) {
+        return {
+          ...previous,
+          custom_links: previous.custom_links.map((item) =>
+            item.id === existing.id
+              ? { ...item, wifi_enabled: item.wifi_enabled === false }
+              : item
+          ),
+        };
+      }
+
+      return {
+        ...previous,
+        custom_links: [
+          ...previous.custom_links,
+          {
+            id: uid(),
+            label: "Wi-Fi",
+            url: "",
+            kind: "wifi",
+            wifi_ssid: "",
+            wifi_password: "",
+            wifi_security: "WPA",
+            wifi_hidden: false,
+            wifi_enabled: true,
+            wifi_show_password: true,
+          },
+        ],
+      };
+    });
+  }
+
+  function updateWifiField(
+    field:
+      | "label"
+      | "wifi_ssid"
+      | "wifi_password"
+      | "wifi_security"
+      | "wifi_hidden"
+      | "wifi_show_password",
+    value: string | boolean
+  ) {
+    setCard((previous) => ({
+      ...previous,
+      custom_links: previous.custom_links.map((item) =>
+        item.kind === "wifi"
+          ? ({ ...item, [field]: value } as CustomLink)
+          : item
+      ),
+    }));
+  }
+
   const imageDragRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -1410,14 +1513,39 @@ export default function MonEspacePage() {
         .filter((item) => item.value.length > 0);
 
       const cleanCustomLinks: CustomLink[] = card.custom_links
-        .map((item): CustomLink => ({
-          id: item.id || uid(),
-          label: (item.label || "").trim(),
-          url: (item.url || "").trim(),
-          kind: item.kind === "location" ? "location" : "link",
-          image_url: item.kind === "location" ? "" : (item.image_url || ""),
-        }))
-        .filter((item) => item.label || item.url);
+        .map((item): CustomLink => {
+          if (item.kind === "wifi") {
+            return {
+              id: item.id || uid(),
+              label: (item.label || "Wi-Fi").trim() || "Wi-Fi",
+              url: "",
+              kind: "wifi",
+              image_url: "",
+              wifi_ssid: (item.wifi_ssid || "").trim(),
+              wifi_password: item.wifi_security === "nopass" ? "" : (item.wifi_password || ""),
+              wifi_security:
+                item.wifi_security === "WEP" || item.wifi_security === "nopass"
+                  ? item.wifi_security
+                  : "WPA",
+              wifi_hidden: Boolean(item.wifi_hidden),
+              wifi_enabled: item.wifi_enabled !== false,
+              wifi_show_password: item.wifi_show_password !== false,
+            };
+          }
+
+          return {
+            id: item.id || uid(),
+            label: (item.label || "").trim(),
+            url: (item.url || "").trim(),
+            kind: item.kind === "location" ? "location" : "link",
+            image_url: item.kind === "location" ? "" : (item.image_url || ""),
+          };
+        })
+        .filter((item) =>
+          item.kind === "wifi"
+            ? Boolean(item.wifi_ssid) || item.wifi_enabled !== false
+            : Boolean(item.label || item.url)
+        );
 
       const baseSlug =
         card.slug ||
@@ -2244,6 +2372,119 @@ export default function MonEspacePage() {
           <section className="formSection">
             <div className="sectionTitle">
               <div>
+                <h2>Wi-Fi</h2>
+                <p>
+                  Affichez le réseau Wi-Fi comme un lien sur la carte publique. Le client peut voir le nom, copier le mot de passe et scanner le QR Wi-Fi.
+                </p>
+              </div>
+            </div>
+
+            <div className="toggleRow">
+              <div>
+                <strong>Afficher le Wi-Fi</strong>
+                <small>Active ou masque le Wi-Fi sur la page publique.</small>
+              </div>
+
+              <button
+                type="button"
+                className={`switch ${wifiLink?.wifi_enabled ? "active" : ""}`}
+                onClick={toggleWifi}
+              >
+                <span />
+              </button>
+            </div>
+
+            {wifiLink ? (
+              <div className={`wifiManager ${wifiLink.wifi_enabled ? "active" : ""}`}>
+                <div className="wifiManagerIcon"><WifiIcon size={28} /></div>
+
+                <div className="wifiFields">
+                  <div className="grid two">
+                    <label>
+                      Nom affiché
+                      <input
+                        value={wifiLink.label || "Wi-Fi"}
+                        onChange={(e) => updateWifiField("label", e.target.value)}
+                        placeholder="Wi-Fi"
+                      />
+                    </label>
+
+                    <label>
+                      Nom du réseau (SSID)
+                      <input
+                        value={wifiLink.wifi_ssid || ""}
+                        onChange={(e) => updateWifiField("wifi_ssid", e.target.value)}
+                        placeholder="Ex. E-Dream Clients"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid two">
+                    <label>
+                      Sécurité
+                      <select
+                        value={wifiLink.wifi_security || "WPA"}
+                        onChange={(e) => updateWifiField("wifi_security", e.target.value)}
+                      >
+                        <option value="WPA">WPA / WPA2</option>
+                        <option value="WEP">WEP</option>
+                        <option value="nopass">Sans mot de passe</option>
+                      </select>
+                    </label>
+
+                    {wifiLink.wifi_security !== "nopass" ? (
+                      <label>
+                        Mot de passe Wi-Fi
+                        <input
+                          value={wifiLink.wifi_password || ""}
+                          onChange={(e) => updateWifiField("wifi_password", e.target.value)}
+                          placeholder="Mot de passe"
+                          autoComplete="off"
+                        />
+                      </label>
+                    ) : (
+                      <div className="wifiNoPassword">Réseau ouvert : aucun mot de passe nécessaire.</div>
+                    )}
+                  </div>
+
+                  <div className="wifiOptions">
+                    <div className="toggleRow">
+                      <div>
+                        <strong>Afficher le mot de passe</strong>
+                        <small>Sinon il reste masqué, mais peut être copié et utilisé dans le QR.</small>
+                      </div>
+                      <button
+                        type="button"
+                        className={`switch ${wifiLink.wifi_show_password !== false ? "active" : ""}`}
+                        onClick={() => updateWifiField("wifi_show_password", wifiLink.wifi_show_password === false)}
+                        disabled={wifiLink.wifi_security === "nopass"}
+                      >
+                        <span />
+                      </button>
+                    </div>
+
+                    <div className="toggleRow">
+                      <div>
+                        <strong>Réseau masqué</strong>
+                        <small>Activez uniquement si le SSID n’est pas diffusé par le routeur.</small>
+                      </div>
+                      <button
+                        type="button"
+                        className={`switch ${wifiLink.wifi_hidden ? "active" : ""}`}
+                        onClick={() => updateWifiField("wifi_hidden", !wifiLink.wifi_hidden)}
+                      >
+                        <span />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="formSection">
+            <div className="sectionTitle">
+              <div>
                 <h2>
                   Autres liens
                 </h2>
@@ -2259,7 +2500,7 @@ export default function MonEspacePage() {
                   item,
                   index
                 ) =>
-                  item.kind !== "location" ? (
+                  item.kind !== "location" && item.kind !== "wifi" ? (
                   <div
                     className="customCard"
                     key={
@@ -2970,6 +3211,7 @@ export default function MonEspacePage() {
                   .filter(
                     (item) =>
                       item.kind !== "location" &&
+                      item.kind !== "wifi" &&
                       item.label.trim() &&
                       item.url.trim()
                   )
@@ -2994,6 +3236,20 @@ export default function MonEspacePage() {
                       <b>{item.label}</b>
                     </a>
                   ))}
+
+                {wifiLink?.wifi_enabled && (wifiLink.wifi_ssid || "").trim() ? (
+                  <button
+                    type="button"
+                    className={card.led_enabled ? "previewWifi ledItem" : "previewWifi"}
+                    title="Aperçu Wi-Fi"
+                  >
+                    <span className="previewWifiIcon"><WifiIcon size={20} /></span>
+                    <span className="previewWifiCopy">
+                      <b>{wifiLink.label || "Wi-Fi"}</b>
+                      <small>{wifiLink.wifi_ssid}</small>
+                    </span>
+                  </button>
+                ) : null}
 
                 {card.entity_type !== "profile" && card.show_address
                   ? card.custom_links
@@ -3544,6 +3800,43 @@ export default function MonEspacePage() {
           color: #8b919b;
           font-size: 12px;
         }
+
+        .wifiManager {
+          margin-top: 14px;
+          padding: 16px;
+          display: grid;
+          grid-template-columns: 56px 1fr;
+          gap: 14px;
+          border: 1px solid #e2e2df;
+          border-radius: 18px;
+          background: #fbfbfa;
+          opacity: .72;
+        }
+        .wifiManager.active { opacity: 1; }
+        .wifiManagerIcon {
+          width: 56px;
+          height: 56px;
+          display: grid;
+          place-items: center;
+          border-radius: 16px;
+          background: #eaf4ff;
+          color: #2563eb;
+        }
+        .wifiFields { display: grid; gap: 12px; min-width: 0; }
+        .wifiOptions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+        .wifiOptions .toggleRow { margin-top: 0; background: #fff; }
+        .wifiNoPassword {
+          min-height: 74px;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          border: 1px dashed #d5d5d1;
+          border-radius: 12px;
+          color: #667085;
+          font-size: 12px;
+          background: #fff;
+        }
+        .switch:disabled { opacity: .45; cursor: not-allowed; }
 
         .locationManager {
           margin: 22px 0;
@@ -4126,7 +4419,8 @@ export default function MonEspacePage() {
           gap: 8px;
         }
 
-        .previewLinks a {
+        .previewLinks a,
+        .previewLinks button {
           min-height: 56px;
           padding: 8px 11px;
           display: flex;
@@ -4138,6 +4432,14 @@ export default function MonEspacePage() {
           color: inherit;
           text-decoration: none;
         }
+
+        .previewLinks button { width: 100%; text-align: left; cursor: default; font: inherit; }
+        .previewWifiIcon {
+          width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center;
+          border-radius: 11px; background: #2563eb; color: #fff;
+        }
+        .previewWifiCopy { min-width: 0; display: grid; gap: 2px; }
+        .previewWifiCopy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .62; font-size: 9px; }
 
         .ledItem {
           border-color:
@@ -4387,6 +4689,9 @@ export default function MonEspacePage() {
           }
         }
         @media (max-width: 760px) {
+          .wifiManager { grid-template-columns: 1fr; }
+          .wifiManagerIcon { width: 48px; height: 48px; }
+          .wifiOptions { grid-template-columns: 1fr; }
           .locationManagerHead { display:grid; }
           .addLocationButton { width:100%; }
           .locationCard { grid-template-columns:42px 1fr 38px;align-items:start; }
