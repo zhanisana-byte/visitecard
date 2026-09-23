@@ -2485,7 +2485,7 @@ export default function MonEspacePage() {
                     {card.catalog_show_secondary_currency ? <>
                       <label>Deuxième devise<select value={card.catalog_secondary_currency} onChange={e => updateField("catalog_secondary_currency", e.target.value)}><option>TND</option><option>EUR</option><option>USD</option><option>GBP</option><option>CAD</option><option>AED</option><option>SAR</option></select></label>
                       <label className="toggleLabel">Calcul automatique<button type="button" className={`switch ${card.catalog_auto_convert ? "active" : ""}`} onClick={() => updateField("catalog_auto_convert", !card.catalog_auto_convert)}><span /></button></label>
-                      {card.catalog_auto_convert ? <label>Taux de conversion<input type="number" min="0" step="0.000001" value={card.catalog_exchange_rate} onChange={e => updateField("catalog_exchange_rate", e.target.value)} placeholder={`1 ${card.catalog_primary_currency} = ? ${card.catalog_secondary_currency}`} /><small>Vous pouvez changer le taux à tout moment.</small></label> : null}
+                      {card.catalog_auto_convert ? <label>Taux de conversion<input type="number" min="0" step="0.000001" value={card.catalog_exchange_rate ?? ""} onChange={e => updateField("catalog_exchange_rate", e.target.value === "" ? null : Number(e.target.value))} placeholder={`1 ${card.catalog_primary_currency} = ? ${card.catalog_secondary_currency}`} /><small>Vous pouvez changer le taux à tout moment.</small></label> : null}
                     </> : null}
                   </div>
                 </div>
