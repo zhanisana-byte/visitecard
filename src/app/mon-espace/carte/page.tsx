@@ -102,6 +102,11 @@ type CardData = {
   google_rating: number | null;
   google_reviews_count: number | null;
   google_reviews_synced_at: string | null;
+  catalog_mode: "manual" | "external" | "file";
+  catalog_external_url: string;
+  catalog_file_url: string;
+  catalog_file_type: "pdf" | "image" | null;
+  catalog_file_name: string;
   catalog_enabled: boolean;
   catalog_label_fr: string;
   catalog_label_en: string;
@@ -176,6 +181,11 @@ const emptyCard: CardData = {
   google_rating: null,
   google_reviews_count: null,
   google_reviews_synced_at: null,
+  catalog_mode: "manual",
+  catalog_external_url: "",
+  catalog_file_url: "",
+  catalog_file_type: null,
+  catalog_file_name: "",
   catalog_enabled: false,
   catalog_label_fr: "Nos services",
   catalog_label_en: "Our services",
@@ -2509,6 +2519,70 @@ export default function MonEspacePage() {
                   <h2>Catalogue / Catégories</h2>
                   <p>Créez vos services, produits, soins, menu ou prestations en français et en anglais.</p>
                 </div>
+              <div className="catalogModeChooser">
+                <label>Type de catalogue</label>
+                <div className="catalogModeGrid">
+                  <button type="button" className={card.catalog_mode === "manual" ? "active" : ""} onClick={() => updateField("catalog_mode", "manual")}>
+                    <strong>Créer sur VisiteCard</strong><span>Catégories, produits, services et prix</span>
+                  </button>
+                  <button type="button" className={card.catalog_mode === "external" ? "active" : ""} onClick={() => updateField("catalog_mode", "external")}>
+                    <strong>Lien externe</strong><span>Site, menu ou catalogue déjà en ligne</span>
+                  </button>
+                  <button type="button" className={card.catalog_mode === "file" ? "active" : ""} onClick={() => updateField("catalog_mode", "file")}>
+                    <strong>PDF / Image</strong><span>Importer un catalogue existant</span>
+                  </button>
+                </div>
+
+                {card.catalog_mode === "external" ? (
+                  <label className="catalogModeField">
+                    Lien du catalogue
+                    <input type="url" value={card.catalog_external_url} onChange={e => updateField("catalog_external_url", e.target.value)} placeholder="https://..." />
+                  </label>
+                ) : null}
+
+                {card.catalog_mode === "file" ? (
+                  <div className="catalogModeField">
+                    <label>PDF ou image du catalogue</label>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file || !card.id) return;
+                        const isPdf = file.type === "application/pdf";
+                        const isImage = ["image/jpeg","image/png","image/webp"].includes(file.type);
+                        if (!isPdf && !isImage) {
+                          alert("Format accepté : PDF, JPG, PNG ou WEBP.");
+                          e.currentTarget.value = "";
+                          return;
+                        }
+                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                        const path = `${card.id}/catalog/${Date.now()}-${safeName}`;
+                        const { error: uploadError } = await supabase.storage.from("card-assets").upload(path, file, { upsert: true, contentType: file.type });
+                        if (uploadError) {
+                          alert(uploadError.message);
+                          return;
+                        }
+                        const { data } = supabase.storage.from("card-assets").getPublicUrl(path);
+                        setCard(prev => ({
+                          ...prev,
+                          catalog_file_url: data.publicUrl,
+                          catalog_file_type: isPdf ? "pdf" : "image",
+                          catalog_file_name: file.name,
+                        }));
+                      }}
+                    />
+                    {card.catalog_file_url ? (
+                      <div className="catalogUploadedFile">
+                        <span>{card.catalog_file_type === "pdf" ? "PDF" : "IMAGE"} · {card.catalog_file_name || "Catalogue"}</span>
+                        <a href={card.catalog_file_url} target="_blank" rel="noreferrer">Voir</a>
+                        <button type="button" onClick={() => setCard(prev => ({...prev, catalog_file_url:"", catalog_file_type:null, catalog_file_name:""}))}>Supprimer</button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
                 <button type="button" className={`switch ${card.catalog_enabled ? "active" : ""}`} onClick={() => updateField("catalog_enabled", !card.catalog_enabled)}><span /></button>
               </div>
 
@@ -4542,6 +4616,16 @@ export default function MonEspacePage() {
         .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800;cursor:pointer}
         .imageEditorActions .applyCrop{background:#ff6a3d;border-color:#ff6a3d;color:#fff}
         .catalogHeader p,.currencyTitle span{margin:5px 0 0;color:#777;font-size:13px}.catalogSettings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.catalogSettings label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}.catalogSettings input,.catalogSettings select,.catalogSettings textarea{width:100%;box-sizing:border-box}.catalogSettings input[type="color"]{height:44px;padding:4px}.catalogSettings textarea{min-height:84px;resize:vertical}.currencyBox{margin-top:18px;padding:16px;border:1px solid #e9e2de;border-radius:18px;background:#faf8f7}.currencyTitle{display:flex;flex-direction:column;margin-bottom:14px}.toggleLabel{justify-content:space-between}.catalogToolbar,.catalogCategoryTop,.catalogItemTop,.catalogItemsTitle{display:flex;align-items:center;gap:10px}.catalogToolbar{justify-content:space-between;margin:22px 0 12px}.catalogCategory{border:1px solid #e6dfdb;border-radius:20px;padding:16px;margin-bottom:14px;background:#fff}.catalogCategoryTop,.catalogItemTop{margin-bottom:14px}.catalogCategoryTop strong,.catalogItemTop strong{flex:1}.catalogItemsTitle{justify-content:space-between;margin:18px 0 10px}.catalogItemsTitle button,.orderButtons button,.miniState{border:1px solid #ddd;border-radius:10px;background:#fff;padding:7px 10px;cursor:pointer}.orderButtons{display:flex;gap:5px}.miniState.on{background:#eaf8ef;border-color:#b8e2c5;color:#147a38}.staticRemove{position:static!important}.catalogItem{border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px;background:#fcfcfc}@media(max-width:760px){.catalogSettings{grid-template-columns:1fr}.catalogToolbar{align-items:flex-start;gap:12px}.catalogCategoryTop,.catalogItemTop{flex-wrap:wrap}}
+
+        .catalogModeChooser{margin:18px 0;padding:16px;border:1px solid rgba(127,127,127,.18);border-radius:18px}
+        .catalogModeChooser>label,.catalogModeField>label{display:block;font-weight:700;margin-bottom:10px}
+        .catalogModeGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+        .catalogModeGrid button{border:1px solid rgba(127,127,127,.22);border-radius:14px;padding:14px;text-align:left;background:transparent;color:inherit;cursor:pointer}
+        .catalogModeGrid button.active{outline:2px solid currentColor}
+        .catalogModeGrid strong,.catalogModeGrid span{display:block}.catalogModeGrid span{font-size:12px;opacity:.7;margin-top:4px}
+        .catalogModeField{display:block;margin-top:12px}.catalogModeField input[type="url"]{width:100%}
+        .catalogUploadedFile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:13px}
+        @media(max-width:720px){.catalogModeGrid{grid-template-columns:1fr}}
       `}
       </style>
     </main>
