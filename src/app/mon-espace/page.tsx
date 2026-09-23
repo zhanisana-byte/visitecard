@@ -2532,14 +2532,13 @@ export default function MonEspacePage() {
               </label>
             </div>
           </section>
+          ) : null}
 
           {card.entity_type === "profile" && card.id ? (
             <ProfileCompaniesEditor
               profileCardId={card.id}
               language={card.language === "en" ? "en" : "fr"}
             />
-          ) : null}
-
           ) : null}
 
           <section className="formSection">
