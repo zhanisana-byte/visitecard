@@ -2490,6 +2490,7 @@ export default function MonEspacePage() {
           </section>
 
           {card.entity_type === "company" ? (
+            <>
             <section className="cardSection googleReviewsSection">
                 <div className="catalogHeader">
                   <h2>Avis Google</h2>
@@ -2647,6 +2648,7 @@ export default function MonEspacePage() {
                 </div>
               </> : null}
             </section>
+            </>
           ) : null}
 
           <section className="formSection">
