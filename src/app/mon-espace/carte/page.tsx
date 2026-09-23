@@ -4496,9 +4496,8 @@ export default function MonEspacePage() {
         .imageEditorActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800;cursor:pointer}
         .imageEditorActions .applyCrop{background:#ff6a3d;border-color:#ff6a3d;color:#fff}
-      `}
-
         .catalogHeader p,.currencyTitle span{margin:5px 0 0;color:#777;font-size:13px}.catalogSettings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.catalogSettings label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}.catalogSettings input,.catalogSettings select,.catalogSettings textarea{width:100%;box-sizing:border-box}.catalogSettings input[type="color"]{height:44px;padding:4px}.catalogSettings textarea{min-height:84px;resize:vertical}.currencyBox{margin-top:18px;padding:16px;border:1px solid #e9e2de;border-radius:18px;background:#faf8f7}.currencyTitle{display:flex;flex-direction:column;margin-bottom:14px}.toggleLabel{justify-content:space-between}.catalogToolbar,.catalogCategoryTop,.catalogItemTop,.catalogItemsTitle{display:flex;align-items:center;gap:10px}.catalogToolbar{justify-content:space-between;margin:22px 0 12px}.catalogCategory{border:1px solid #e6dfdb;border-radius:20px;padding:16px;margin-bottom:14px;background:#fff}.catalogCategoryTop,.catalogItemTop{margin-bottom:14px}.catalogCategoryTop strong,.catalogItemTop strong{flex:1}.catalogItemsTitle{justify-content:space-between;margin:18px 0 10px}.catalogItemsTitle button,.orderButtons button,.miniState{border:1px solid #ddd;border-radius:10px;background:#fff;padding:7px 10px;cursor:pointer}.orderButtons{display:flex;gap:5px}.miniState.on{background:#eaf8ef;border-color:#b8e2c5;color:#147a38}.staticRemove{position:static!important}.catalogItem{border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px;background:#fcfcfc}@media(max-width:760px){.catalogSettings{grid-template-columns:1fr}.catalogToolbar{align-items:flex-start;gap:12px}.catalogCategoryTop,.catalogItemTop{flex-wrap:wrap}}
+      `}
       </style>
     </main>
   );
