@@ -36,6 +36,37 @@ type CustomLink = {
   kind?: "link" | "location";
 };
 
+type CatalogItem = {
+  id: string;
+  title_fr: string;
+  title_en: string;
+  description_fr: string;
+  description_en: string;
+  visual_type: "none" | "icon" | "image";
+  image_url: string;
+  icon: string;
+  price: string;
+  price_mode: "fixed" | "from" | "range" | "hidden";
+  currency: string;
+  secondary_price: string;
+  secondary_currency: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+type CatalogCategory = {
+  id: string;
+  title_fr: string;
+  title_en: string;
+  visual_type: "color" | "image";
+  image_url: string;
+  background_color: string;
+  text_color: string;
+  sort_order: number;
+  is_active: boolean;
+  items: CatalogItem[];
+};
+
 type CardData = {
   id?: string;
   user_id?: string;
@@ -59,6 +90,20 @@ type CardData = {
   show_phone: boolean;
   show_address: boolean;
   show_reviews: boolean;
+  entity_type: "profile" | "company";
+  catalog_enabled: boolean;
+  catalog_label_fr: string;
+  catalog_label_en: string;
+  catalog_icon: string;
+  catalog_button_color: string;
+  catalog_button_text_color: string;
+  catalog_default_language: "fr" | "en";
+  catalog_languages: string[];
+  catalog_primary_currency: string;
+  catalog_secondary_currency: string;
+  catalog_show_secondary_currency: boolean;
+  catalog_auto_convert: boolean;
+  catalog_exchange_rate: string;
   led_enabled: boolean;
   led_color: string;
   social_links: SocialLink[];
@@ -108,6 +153,20 @@ const emptyCard: CardData = {
   show_phone: true,
   show_address: true,
   show_reviews: true,
+  entity_type: "company",
+  catalog_enabled: false,
+  catalog_label_fr: "Nos services",
+  catalog_label_en: "Our services",
+  catalog_icon: "grid",
+  catalog_button_color: "#b11235",
+  catalog_button_text_color: "#ffffff",
+  catalog_default_language: "fr",
+  catalog_languages: ["fr", "en"],
+  catalog_primary_currency: "TND",
+  catalog_secondary_currency: "EUR",
+  catalog_show_secondary_currency: false,
+  catalog_auto_convert: false,
+  catalog_exchange_rate: "",
   led_enabled: true,
   led_color: "#ff6a3d",
   social_links: [],
@@ -465,6 +524,8 @@ export default function MonEspacePage() {
   const [dragOverSocialId, setDragOverSocialId] =
     useState<string | null>(null);
 
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+
   const siteUrl =
     process.env
       .NEXT_PUBLIC_SITE_URL ||
@@ -657,6 +718,9 @@ export default function MonEspacePage() {
                   )
                 : [],
 
+            catalog_exchange_rate: loaded.catalog_exchange_rate == null ? "" : String(loaded.catalog_exchange_rate),
+            catalog_languages: Array.isArray(loaded.catalog_languages) ? loaded.catalog_languages : ["fr", "en"],
+            catalog_secondary_currency: loaded.catalog_secondary_currency || "EUR",
             custom_links:
               Array.isArray(
                 loaded.custom_links
@@ -692,6 +756,10 @@ export default function MonEspacePage() {
           setCoverPreview(
             loaded.cover_url || ""
           );
+
+          if (loaded.entity_type === "company") {
+            await loadCatalog(loaded.id, supabaseUrl, supabaseKey, accessToken);
+          }
 
           setLoading(false);
           return;
@@ -840,6 +908,186 @@ export default function MonEspacePage() {
 
     init();
   }, [router]);
+
+  async function loadCatalog(cardId: string, supabaseUrl: string, supabaseKey: string, accessToken: string) {
+    const categoriesResponse = await fetch(
+      `${supabaseUrl}/rest/v1/card_catalog_categories?card_id=eq.${encodeURIComponent(cardId)}&select=*&order=sort_order.asc`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
+    );
+    if (!categoriesResponse.ok) return;
+    const categories = await categoriesResponse.json();
+    if (!Array.isArray(categories) || !categories.length) {
+      setCatalogCategories([]);
+      return;
+    }
+    const ids = categories.map((category: any) => category.id).join(",");
+    const itemsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/card_catalog_items?category_id=in.(${ids})&select=*&order=sort_order.asc`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
+    );
+    const items = itemsResponse.ok ? await itemsResponse.json() : [];
+    setCatalogCategories(categories.map((category: any, categoryIndex: number) => ({
+      id: category.id,
+      title_fr: category.title_fr || "",
+      title_en: category.title_en || "",
+      visual_type: category.visual_type === "image" ? "image" : "color",
+      image_url: category.image_url || "",
+      background_color: category.background_color || "#f4f4f5",
+      text_color: category.text_color || "#111827",
+      sort_order: category.sort_order ?? categoryIndex,
+      is_active: category.is_active !== false,
+      items: (Array.isArray(items) ? items : []).filter((item: any) => item.category_id === category.id).map((item: any, itemIndex: number) => ({
+        id: item.id,
+        title_fr: item.title_fr || "",
+        title_en: item.title_en || "",
+        description_fr: item.description_fr || "",
+        description_en: item.description_en || "",
+        visual_type: item.visual_type || "icon",
+        image_url: item.image_url || "",
+        icon: item.icon || "sparkles",
+        price: item.price == null ? "" : String(item.price),
+        price_mode: item.price_mode || "fixed",
+        currency: item.currency || "TND",
+        secondary_price: item.secondary_price == null ? "" : String(item.secondary_price),
+        secondary_currency: item.secondary_currency || "",
+        sort_order: item.sort_order ?? itemIndex,
+        is_active: item.is_active !== false,
+      })),
+    })));
+  }
+
+  function addCatalogCategory() {
+    setCatalogCategories(previous => [...previous, {
+      id: `new-${uid()}`, title_fr: "", title_en: "", visual_type: "color", image_url: "",
+      background_color: "#f4f4f5", text_color: "#111827", sort_order: previous.length, is_active: true, items: [],
+    }]);
+  }
+
+  function updateCatalogCategory(index: number, field: keyof CatalogCategory, value: any) {
+    setCatalogCategories(previous => previous.map((category, i) => i === index ? { ...category, [field]: value } : category));
+  }
+
+  function removeCatalogCategory(index: number) {
+    setCatalogCategories(previous => previous.filter((_, i) => i !== index));
+  }
+
+  function moveCatalogCategory(index: number, direction: -1 | 1) {
+    setCatalogCategories(previous => {
+      const next = [...previous];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return previous;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function addCatalogItem(categoryIndex: number) {
+    setCatalogCategories(previous => previous.map((category, i) => i !== categoryIndex ? category : {
+      ...category,
+      items: [...category.items, {
+        id: `new-${uid()}`, title_fr: "", title_en: "", description_fr: "", description_en: "",
+        visual_type: "icon", image_url: "", icon: "sparkles", price: "", price_mode: "fixed",
+        currency: card.catalog_primary_currency || "TND", secondary_price: "", secondary_currency: card.catalog_secondary_currency || "",
+        sort_order: category.items.length, is_active: true,
+      }],
+    }));
+  }
+
+  function updateCatalogItem(categoryIndex: number, itemIndex: number, field: keyof CatalogItem, value: any) {
+    setCatalogCategories(previous => previous.map((category, i) => i !== categoryIndex ? category : {
+      ...category, items: category.items.map((item, j) => j === itemIndex ? { ...item, [field]: value } : item),
+    }));
+  }
+
+  function removeCatalogItem(categoryIndex: number, itemIndex: number) {
+    setCatalogCategories(previous => previous.map((category, i) => i !== categoryIndex ? category : {
+      ...category, items: category.items.filter((_, j) => j !== itemIndex),
+    }));
+  }
+
+  function moveCatalogItem(categoryIndex: number, itemIndex: number, direction: -1 | 1) {
+    setCatalogCategories(previous => previous.map((category, i) => {
+      if (i !== categoryIndex) return category;
+      const items = [...category.items];
+      const target = itemIndex + direction;
+      if (target < 0 || target >= items.length) return category;
+      [items[itemIndex], items[target]] = [items[target], items[itemIndex]];
+      return { ...category, items };
+    }));
+  }
+
+  function calculateSecondaryPrice(price: string) {
+    const amount = Number(price);
+    const rate = Number(card.catalog_exchange_rate);
+    if (!Number.isFinite(amount) || !Number.isFinite(rate) || rate <= 0) return "";
+    return (amount * rate).toFixed(2);
+  }
+
+  async function imageToDataUrl(file: File) {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Impossible de lire l’image."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function saveCatalog(cardId: string, supabaseUrl: string, supabaseKey: string, accessToken: string) {
+    const commonHeaders = { apikey: supabaseKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
+    const existingResponse = await fetch(`${supabaseUrl}/rest/v1/card_catalog_categories?card_id=eq.${encodeURIComponent(cardId)}&select=id`, { headers: commonHeaders });
+    const existing = existingResponse.ok ? await existingResponse.json() : [];
+    const existingIds = new Set((Array.isArray(existing) ? existing : []).map((row: any) => row.id));
+    const keptIds = new Set<string>();
+
+    for (let categoryIndex = 0; categoryIndex < catalogCategories.length; categoryIndex++) {
+      const category = catalogCategories[categoryIndex];
+      const isNew = category.id.startsWith("new-");
+      const categoryPayload = {
+        card_id: cardId, title_fr: category.title_fr.trim(), title_en: category.title_en.trim(), visual_type: category.visual_type,
+        image_url: category.image_url || null, background_color: category.background_color, text_color: category.text_color,
+        sort_order: categoryIndex, is_active: category.is_active, updated_at: new Date().toISOString(),
+      };
+      let categoryId = category.id;
+      const categoryResponse = await fetch(
+        isNew ? `${supabaseUrl}/rest/v1/card_catalog_categories` : `${supabaseUrl}/rest/v1/card_catalog_categories?id=eq.${encodeURIComponent(category.id)}`,
+        { method: isNew ? "POST" : "PATCH", headers: { ...commonHeaders, Prefer: "return=representation" }, body: JSON.stringify(categoryPayload) }
+      );
+      if (!categoryResponse.ok) throw new Error(await categoryResponse.text() || "Impossible d’enregistrer une catégorie.");
+      const categoryRows = await categoryResponse.json();
+      if (isNew) categoryId = categoryRows?.[0]?.id;
+      keptIds.add(categoryId);
+
+      const oldItemsResponse = await fetch(`${supabaseUrl}/rest/v1/card_catalog_items?category_id=eq.${encodeURIComponent(categoryId)}&select=id`, { headers: commonHeaders });
+      const oldItems = oldItemsResponse.ok ? await oldItemsResponse.json() : [];
+      const keptItemIds = new Set<string>();
+      for (let itemIndex = 0; itemIndex < category.items.length; itemIndex++) {
+        const item = category.items[itemIndex];
+        const itemIsNew = item.id.startsWith("new-");
+        const secondaryPrice = card.catalog_show_secondary_currency && card.catalog_auto_convert ? calculateSecondaryPrice(item.price) : item.secondary_price;
+        const itemPayload = {
+          category_id: categoryId, title_fr: item.title_fr.trim(), title_en: item.title_en.trim(), description_fr: item.description_fr.trim(), description_en: item.description_en.trim(),
+          visual_type: item.visual_type, image_url: item.image_url || null, icon: item.icon || "sparkles",
+          price: item.price === "" ? null : Number(item.price), price_mode: item.price_mode, currency: item.currency || card.catalog_primary_currency,
+          secondary_price: secondaryPrice === "" ? null : Number(secondaryPrice), secondary_currency: card.catalog_show_secondary_currency ? (item.secondary_currency || card.catalog_secondary_currency || null) : null,
+          sort_order: itemIndex, is_active: item.is_active, updated_at: new Date().toISOString(),
+        };
+        const itemResponse = await fetch(
+          itemIsNew ? `${supabaseUrl}/rest/v1/card_catalog_items` : `${supabaseUrl}/rest/v1/card_catalog_items?id=eq.${encodeURIComponent(item.id)}`,
+          { method: itemIsNew ? "POST" : "PATCH", headers: { ...commonHeaders, Prefer: "return=representation" }, body: JSON.stringify(itemPayload) }
+        );
+        if (!itemResponse.ok) throw new Error(await itemResponse.text() || "Impossible d’enregistrer un élément.");
+        const itemRows = await itemResponse.json();
+        keptItemIds.add(itemIsNew ? itemRows?.[0]?.id : item.id);
+      }
+      for (const oldItem of Array.isArray(oldItems) ? oldItems : []) {
+        if (!keptItemIds.has(oldItem.id)) await fetch(`${supabaseUrl}/rest/v1/card_catalog_items?id=eq.${encodeURIComponent(oldItem.id)}`, { method: "DELETE", headers: commonHeaders });
+      }
+    }
+    for (const oldId of existingIds) {
+      if (!keptIds.has(String(oldId))) await fetch(`${supabaseUrl}/rest/v1/card_catalog_categories?id=eq.${encodeURIComponent(String(oldId))}`, { method: "DELETE", headers: commonHeaders });
+    }
+    await loadCatalog(cardId, supabaseUrl, supabaseKey, accessToken);
+  }
 
   function updateField<
     K extends keyof CardData
@@ -1335,6 +1583,20 @@ export default function MonEspacePage() {
         show_phone: card.show_phone,
         show_address: card.show_address,
         show_reviews: card.show_reviews,
+        catalog_enabled: card.entity_type === "company" ? card.catalog_enabled : false,
+        catalog_label_fr: card.catalog_label_fr,
+        catalog_label_en: card.catalog_label_en,
+        catalog_icon: card.catalog_icon,
+        catalog_button_color: card.catalog_button_color,
+        catalog_button_text_color: card.catalog_button_text_color,
+        catalog_default_language: card.catalog_default_language,
+        catalog_languages: card.catalog_languages,
+        catalog_primary_currency: card.catalog_primary_currency,
+        catalog_secondary_currency: card.catalog_show_secondary_currency ? card.catalog_secondary_currency || null : null,
+        catalog_show_secondary_currency: card.catalog_show_secondary_currency,
+        catalog_auto_convert: card.catalog_show_secondary_currency ? card.catalog_auto_convert : false,
+        catalog_exchange_rate: card.catalog_show_secondary_currency && card.catalog_auto_convert && card.catalog_exchange_rate ? Number(card.catalog_exchange_rate) : null,
+        catalog_exchange_rate_updated_at: card.catalog_show_secondary_currency && card.catalog_auto_convert && card.catalog_exchange_rate ? new Date().toISOString() : null,
         led_enabled: card.led_enabled,
         led_color: card.led_color ?? "#ff6a3d",
         social_links: cleanSocialLinks,
@@ -1373,6 +1635,10 @@ export default function MonEspacePage() {
         } catch {}
 
         throw new Error(message);
+      }
+
+      if (card.entity_type === "company" && card.id) {
+        await saveCatalog(card.id, supabaseUrl, supabaseKey, session.accessToken);
       }
 
       setCard((previous) => ({
@@ -2190,6 +2456,79 @@ export default function MonEspacePage() {
               )}
             </div>
           </section>
+
+          {card.entity_type === "company" ? (
+            <section className="formSection catalogSection">
+              <div className="sectionTitle catalogHeader">
+                <div>
+                  <h2>Catalogue / Catégories</h2>
+                  <p>Créez vos services, produits, soins, menu ou prestations en français et en anglais.</p>
+                </div>
+                <button type="button" className={`switch ${card.catalog_enabled ? "active" : ""}`} onClick={() => updateField("catalog_enabled", !card.catalog_enabled)}><span /></button>
+              </div>
+
+              {card.catalog_enabled ? <>
+                <div className="catalogSettings">
+                  <label>Nom du bouton FR<input value={card.catalog_label_fr} onChange={e => updateField("catalog_label_fr", e.target.value)} placeholder="Nos services" /></label>
+                  <label>Nom du bouton EN<input value={card.catalog_label_en} onChange={e => updateField("catalog_label_en", e.target.value)} placeholder="Our services" /></label>
+                  <label>Langue par défaut<select value={card.catalog_default_language} onChange={e => updateField("catalog_default_language", e.target.value as "fr" | "en")}><option value="fr">Français</option><option value="en">English</option></select></label>
+                  <label>Icône du bouton<select value={card.catalog_icon} onChange={e => updateField("catalog_icon", e.target.value)}><option value="grid">Catégories</option><option value="menu">Menu</option><option value="sparkles">Services</option><option value="bag">Produits</option></select></label>
+                  <label>Couleur bouton<input type="color" value={card.catalog_button_color} onChange={e => updateField("catalog_button_color", e.target.value)} /></label>
+                  <label>Couleur texte<input type="color" value={card.catalog_button_text_color} onChange={e => updateField("catalog_button_text_color", e.target.value)} /></label>
+                </div>
+
+                <div className="currencyBox">
+                  <div className="currencyTitle"><strong>Prix et devises</strong><span>Une devise principale + une deuxième devise facultative.</span></div>
+                  <div className="catalogSettings">
+                    <label>Devise principale<select value={card.catalog_primary_currency} onChange={e => updateField("catalog_primary_currency", e.target.value)}><option>TND</option><option>EUR</option><option>USD</option><option>GBP</option><option>CAD</option><option>AED</option><option>SAR</option></select></label>
+                    <label className="toggleLabel">Deuxième devise<button type="button" className={`switch ${card.catalog_show_secondary_currency ? "active" : ""}`} onClick={() => updateField("catalog_show_secondary_currency", !card.catalog_show_secondary_currency)}><span /></button></label>
+                    {card.catalog_show_secondary_currency ? <>
+                      <label>Deuxième devise<select value={card.catalog_secondary_currency} onChange={e => updateField("catalog_secondary_currency", e.target.value)}><option>TND</option><option>EUR</option><option>USD</option><option>GBP</option><option>CAD</option><option>AED</option><option>SAR</option></select></label>
+                      <label className="toggleLabel">Calcul automatique<button type="button" className={`switch ${card.catalog_auto_convert ? "active" : ""}`} onClick={() => updateField("catalog_auto_convert", !card.catalog_auto_convert)}><span /></button></label>
+                      {card.catalog_auto_convert ? <label>Taux de conversion<input type="number" min="0" step="0.000001" value={card.catalog_exchange_rate} onChange={e => updateField("catalog_exchange_rate", e.target.value)} placeholder={`1 ${card.catalog_primary_currency} = ? ${card.catalog_secondary_currency}`} /><small>Vous pouvez changer le taux à tout moment.</small></label> : null}
+                    </> : null}
+                  </div>
+                </div>
+
+                <div className="catalogToolbar"><strong>Catégories</strong><button type="button" className="addNetworkMain" onClick={addCatalogCategory}>+ Ajouter une catégorie</button></div>
+                <div className="catalogCategories">
+                  {catalogCategories.map((category, categoryIndex) => (
+                    <div className="catalogCategory" key={category.id}>
+                      <div className="catalogCategoryTop">
+                        <div className="orderButtons"><button type="button" onClick={() => moveCatalogCategory(categoryIndex,-1)} disabled={categoryIndex===0}>↑</button><button type="button" onClick={() => moveCatalogCategory(categoryIndex,1)} disabled={categoryIndex===catalogCategories.length-1}>↓</button></div>
+                        <strong>Catégorie {categoryIndex + 1}</strong>
+                        <button type="button" className={`miniState ${category.is_active ? "on" : ""}`} onClick={() => updateCatalogCategory(categoryIndex,"is_active",!category.is_active)}>{category.is_active ? "Visible" : "Masquée"}</button>
+                        <button type="button" className="removeButton staticRemove" onClick={() => removeCatalogCategory(categoryIndex)}>×</button>
+                      </div>
+                      <div className="catalogSettings">
+                        <label>Titre FR<input value={category.title_fr} onChange={e => updateCatalogCategory(categoryIndex,"title_fr",e.target.value)} /></label>
+                        <label>Titre EN<input value={category.title_en} onChange={e => updateCatalogCategory(categoryIndex,"title_en",e.target.value)} /></label>
+                        <label>Fond<select value={category.visual_type} onChange={e => updateCatalogCategory(categoryIndex,"visual_type",e.target.value)}><option value="color">Couleur</option><option value="image">Photo</option></select></label>
+                        {category.visual_type === "color" ? <><label>Couleur de fond<input type="color" value={category.background_color} onChange={e => updateCatalogCategory(categoryIndex,"background_color",e.target.value)} /></label><label>Couleur texte<input type="color" value={category.text_color} onChange={e => updateCatalogCategory(categoryIndex,"text_color",e.target.value)} /></label></> : <label>Photo<input type="file" accept="image/*" onChange={async e => { const file=e.target.files?.[0]; if(file) updateCatalogCategory(categoryIndex,"image_url",await imageToDataUrl(file)); }} /></label>}
+                      </div>
+                      <div className="catalogItemsTitle"><strong>Éléments / Services</strong><button type="button" onClick={() => addCatalogItem(categoryIndex)}>+ Ajouter</button></div>
+                      {category.items.map((item,itemIndex) => (
+                        <div className="catalogItem" key={item.id}>
+                          <div className="catalogItemTop"><div className="orderButtons"><button type="button" onClick={() => moveCatalogItem(categoryIndex,itemIndex,-1)} disabled={itemIndex===0}>↑</button><button type="button" onClick={() => moveCatalogItem(categoryIndex,itemIndex,1)} disabled={itemIndex===category.items.length-1}>↓</button></div><strong>Élément {itemIndex+1}</strong><button type="button" className={`miniState ${item.is_active ? "on" : ""}`} onClick={() => updateCatalogItem(categoryIndex,itemIndex,"is_active",!item.is_active)}>{item.is_active ? "Visible" : "Masqué"}</button><button type="button" className="removeButton staticRemove" onClick={() => removeCatalogItem(categoryIndex,itemIndex)}>×</button></div>
+                          <div className="catalogSettings">
+                            <label>Titre FR<input value={item.title_fr} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"title_fr",e.target.value)} /></label>
+                            <label>Titre EN<input value={item.title_en} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"title_en",e.target.value)} /></label>
+                            <label>Description FR<textarea value={item.description_fr} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"description_fr",e.target.value)} /></label>
+                            <label>Description EN<textarea value={item.description_en} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"description_en",e.target.value)} /></label>
+                            <label>Visuel<select value={item.visual_type} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"visual_type",e.target.value)}><option value="icon">Icône</option><option value="image">Image</option><option value="none">Aucun</option></select></label>
+                            {item.visual_type === "image" ? <label>Image<input type="file" accept="image/*" onChange={async e => { const file=e.target.files?.[0]; if(file) updateCatalogItem(categoryIndex,itemIndex,"image_url",await imageToDataUrl(file)); }} /></label> : item.visual_type === "icon" ? <label>Icône<select value={item.icon} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"icon",e.target.value)}><option value="sparkles">✦ Service</option><option value="bag">▣ Produit</option><option value="food">◉ Menu</option><option value="heart">♥ Soin</option><option value="star">★ Premium</option></select></label> : null}
+                            <label>Affichage du prix<select value={item.price_mode} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"price_mode",e.target.value)}><option value="fixed">Prix</option><option value="from">À partir de</option><option value="range">Fourchette</option><option value="hidden">Masquer le prix</option></select></label>
+                            {item.price_mode !== "hidden" ? <><label>Prix<input type="number" min="0" step="0.001" value={item.price} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"price",e.target.value)} /></label><label>Devise<select value={item.currency || card.catalog_primary_currency} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"currency",e.target.value)}><option>TND</option><option>EUR</option><option>USD</option><option>GBP</option><option>CAD</option><option>AED</option><option>SAR</option></select></label>{card.catalog_show_secondary_currency ? <label>Prix {card.catalog_secondary_currency}<input type="number" min="0" step="0.001" disabled={card.catalog_auto_convert} value={card.catalog_auto_convert ? calculateSecondaryPrice(item.price) : item.secondary_price} onChange={e => updateCatalogItem(categoryIndex,itemIndex,"secondary_price",e.target.value)} placeholder={card.catalog_auto_convert ? "Calculé automatiquement" : "Prix manuel"} /></label> : null}</> : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  {!catalogCategories.length ? <div className="emptyLocations"><span>▦</span><div><strong>Aucune catégorie</strong><small>Ajoutez votre première catégorie : services, produits, soins, menu…</small></div></div> : null}
+                </div>
+              </> : null}
+            </section>
+          ) : null}
 
           <section className="formSection">
             <div className="sectionTitle">
@@ -4158,7 +4497,9 @@ export default function MonEspacePage() {
         .imageEditorActions button{min-height:44px;border-radius:12px;border:1px solid #ddd;background:#fff;font-weight:800;cursor:pointer}
         .imageEditorActions .applyCrop{background:#ff6a3d;border-color:#ff6a3d;color:#fff}
       `}
-</style>
+
+        .catalogHeader p,.currencyTitle span{margin:5px 0 0;color:#777;font-size:13px}.catalogSettings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.catalogSettings label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}.catalogSettings input,.catalogSettings select,.catalogSettings textarea{width:100%;box-sizing:border-box}.catalogSettings input[type="color"]{height:44px;padding:4px}.catalogSettings textarea{min-height:84px;resize:vertical}.currencyBox{margin-top:18px;padding:16px;border:1px solid #e9e2de;border-radius:18px;background:#faf8f7}.currencyTitle{display:flex;flex-direction:column;margin-bottom:14px}.toggleLabel{justify-content:space-between}.catalogToolbar,.catalogCategoryTop,.catalogItemTop,.catalogItemsTitle{display:flex;align-items:center;gap:10px}.catalogToolbar{justify-content:space-between;margin:22px 0 12px}.catalogCategory{border:1px solid #e6dfdb;border-radius:20px;padding:16px;margin-bottom:14px;background:#fff}.catalogCategoryTop,.catalogItemTop{margin-bottom:14px}.catalogCategoryTop strong,.catalogItemTop strong{flex:1}.catalogItemsTitle{justify-content:space-between;margin:18px 0 10px}.catalogItemsTitle button,.orderButtons button,.miniState{border:1px solid #ddd;border-radius:10px;background:#fff;padding:7px 10px;cursor:pointer}.orderButtons{display:flex;gap:5px}.miniState.on{background:#eaf8ef;border-color:#b8e2c5;color:#147a38}.staticRemove{position:static!important}.catalogItem{border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px;background:#fcfcfc}@media(max-width:760px){.catalogSettings{grid-template-columns:1fr}.catalogToolbar{align-items:flex-start;gap:12px}.catalogCategoryTop,.catalogItemTop{flex-wrap:wrap}}
+      </style>
     </main>
   );
 }
