@@ -66,7 +66,20 @@ type CardRow = {
   social_links?: SocialLink[];
   custom_links?: CustomLink[];
   entity_type?: "profile" | "company";
+  google_reviews_enabled?: boolean;
+  google_reviews_url?: string;
+  google_reviews_button_mode?: "view" | "write";
+  google_reviews_label_fr?: string;
+  google_reviews_label_en?: string;
+  google_reviews_button_color?: string;
+  google_reviews_text_color?: string;
+  google_rating?: number | null;
+  google_reviews_count?: number | null;
   catalog_enabled?: boolean;
+  catalog_mode?: "manual" | "external" | "file";
+  catalog_external_url?: string | null;
+  catalog_file_url?: string | null;
+  catalog_file_type?: "pdf" | "image" | "video" | null;
   catalog_label_fr?: string;
   catalog_label_en?: string;
   catalog_icon?: string;
@@ -911,20 +924,83 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           ) : (
             <>
               <div className="vcPublicLinks">
-                {card.catalog_enabled ? (
-                  <button
-                    type="button"
-                    className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
-                    onClick={() => setCatalogOpen(true)}
+                {card.google_reviews_enabled && card.google_reviews_url ? (
+                  <a
+                    className="linkCard googleReviewsPublicButton"
+                    href={card.google_reviews_url}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
-                      background: card.catalog_button_color || buttonColor,
-                      color: card.catalog_button_text_color || buttonTextColor,
-                      borderColor: card.catalog_button_color || buttonBorderColor,
+                      background: card.google_reviews_button_color || "#ffffff",
+                      color: card.google_reviews_text_color || "#111827",
+                      borderColor: card.google_reviews_button_color || "#ffffff",
                     }}
                   >
-                    <span className="vcPublicSocialIcon catalogIcon">▦</span>
-                    <strong>{catalogLabel}</strong>
-                  </button>
+                    <span className="vcPublicSocialIcon googleReviewsIcon">★</span>
+                    <span className="googleReviewsCopy">
+                      <strong>
+                        {lang === "en"
+                          ? card.google_reviews_label_en || (card.google_reviews_button_mode === "write" ? "Leave a Google review" : "View our Google reviews")
+                          : card.google_reviews_label_fr || (card.google_reviews_button_mode === "write" ? "Donner un avis Google" : "Voir nos avis Google")}
+                      </strong>
+                      {(card.google_rating != null || card.google_reviews_count != null) ? (
+                        <small>
+                          Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}
+                          {card.google_reviews_count != null ? ` · ${card.google_reviews_count} ${lang === "en" ? "reviews" : "avis"}` : ""}
+                        </small>
+                      ) : null}
+                    </span>
+                  </a>
+                ) : null}
+
+                {card.entity_type === "company" && card.catalog_enabled ? (
+                  card.catalog_mode === "external" && card.catalog_external_url ? (
+                    <a
+                      className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
+                      href={card.catalog_external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        background: card.catalog_button_color || buttonColor,
+                        color: card.catalog_button_text_color || buttonTextColor,
+                        borderColor: card.catalog_button_color || buttonBorderColor,
+                      }}
+                    >
+                      <span className="vcPublicSocialIcon catalogIcon">▦</span>
+                      <strong>{catalogLabel}</strong>
+                    </a>
+                  ) : card.catalog_mode === "file" && card.catalog_file_url ? (
+                    <a
+                      className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
+                      href={card.catalog_file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        background: card.catalog_button_color || buttonColor,
+                        color: card.catalog_button_text_color || buttonTextColor,
+                        borderColor: card.catalog_button_color || buttonBorderColor,
+                      }}
+                    >
+                      <span className="vcPublicSocialIcon catalogIcon">
+                        {card.catalog_file_type === "video" ? "▶" : card.catalog_file_type === "pdf" ? "PDF" : "▧"}
+                      </span>
+                      <strong>{catalogLabel}</strong>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
+                      onClick={() => setCatalogOpen(true)}
+                      style={{
+                        background: card.catalog_button_color || buttonColor,
+                        color: card.catalog_button_text_color || buttonTextColor,
+                        borderColor: card.catalog_button_color || buttonBorderColor,
+                      }}
+                    >
+                      <span className="vcPublicSocialIcon catalogIcon">▦</span>
+                      <strong>{catalogLabel}</strong>
+                    </button>
+                  )
                 ) : null}
 
                 {socials.map((item) => (
@@ -1741,7 +1817,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           .vcPublicQrSection { grid-template-columns:1fr; }
           .vcPublicQrBox { width:160px; height:160px; }
         }
-      `}</style>
+.googleReviewsPublicButton{align-items:center}.googleReviewsIcon{display:grid;place-items:center;font-size:18px}.googleReviewsCopy{display:flex;flex-direction:column;align-items:flex-start;gap:3px}.googleReviewsCopy small{font-size:11px;opacity:.72;font-weight:600}
+              `}</style>
     </main>
   );
 }
