@@ -254,11 +254,11 @@ export default function CreerComptePage() {
           language: "fr",
 
           show_qr: true,
-          show_reviews: true,
+          show_reviews: false,
 
           show_email: true,
           show_phone: true,
-          show_address: true,
+          show_address: entityType === "company",
 
           led_enabled: true,
           led_color: "#6D4AFF",
@@ -271,6 +271,21 @@ export default function CreerComptePage() {
           is_public: true,
 
           entity_type: entityType,
+
+          catalog_enabled: false,
+          catalog_label_fr: "Nos services",
+          catalog_label_en: "Our services",
+          catalog_icon: "grid",
+          catalog_button_color: "#b11235",
+          catalog_button_text_color: "#ffffff",
+          catalog_default_language: "fr",
+          catalog_languages: ["fr", "en"],
+          catalog_primary_currency: entityType === "company" ? "TND" : "TND",
+          catalog_secondary_currency: null,
+          catalog_show_secondary_currency: false,
+          catalog_auto_convert: false,
+          catalog_exchange_rate: null,
+          catalog_exchange_rate_updated_at: null,
         });
 
       if (cardError) {
