@@ -1,4 +1,4 @@
-import { ChevronRight, UserPlus } from "lucide-react";
+import { ChevronRight, Grid3X3, UserPlus } from "lucide-react";
 import QrVisual from "./QrVisual";
 import SocialIcon, { type SocialKind } from "./SocialIcon";
 
@@ -27,6 +27,7 @@ export default function PhonePreview() {
             <span className="coverCircle one" />
             <span className="coverCircle two" />
           </div>
+
           <div className="avatar">SZ</div>
           <h2>Sana Zhani</h2>
           <p>Fondatrice · Digital</p>
@@ -39,6 +40,12 @@ export default function PhonePreview() {
                 <ChevronRight size={16} />
               </div>
             ))}
+
+            <div className="socialRow">
+              <Grid3X3 size={19} />
+              <strong>Nos services</strong>
+              <ChevronRight size={16} />
+            </div>
           </div>
 
           <div className="contactButton">
