@@ -2491,30 +2491,7 @@ export default function MonEspacePage() {
 
           {card.entity_type === "company" ? (
             <>
-            <section className="cardSection googleReviewsSection">
-                <div className="catalogHeader">
-                  <h2>Avis Google</h2>
-                  <p>Affichez un accès direct à vos avis Google sur la page publique de la société.</p>
-                </div>
-                <div className="catalogSettings">
-                  <label className="toggleLabel">Activer Avis Google<button type="button" className={`switch ${card.google_reviews_enabled ? "active" : ""}`} onClick={() => updateField("google_reviews_enabled", !card.google_reviews_enabled)}><span /></button></label>
-                  {card.google_reviews_enabled ? <>
-                    <label>Lien Google<input type="url" value={card.google_reviews_url} onChange={e => updateField("google_reviews_url", e.target.value)} placeholder="https://..." /></label>
-                    <label>Action du bouton<select value={card.google_reviews_button_mode} onChange={e => updateField("google_reviews_button_mode", e.target.value as "view" | "write")}><option value="view">Voir les avis</option><option value="write">Donner un avis</option></select></label>
-                    <label>Libellé FR<input value={card.google_reviews_label_fr} onChange={e => updateField("google_reviews_label_fr", e.target.value)} /></label>
-                    <label>Label EN<input value={card.google_reviews_label_en} onChange={e => updateField("google_reviews_label_en", e.target.value)} /></label>
-                    <label>Couleur bouton<input type="color" value={card.google_reviews_button_color} onChange={e => updateField("google_reviews_button_color", e.target.value)} /></label>
-                    <label>Couleur texte<input type="color" value={card.google_reviews_text_color} onChange={e => updateField("google_reviews_text_color", e.target.value)} /></label>
-                    <label>Google Place ID<input value={card.google_place_id} onChange={e => updateField("google_place_id", e.target.value)} placeholder="Optionnel pour synchronisation automatique" /></label>
-                    <div className="googleReviewsPreview">
-                      <strong>Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}</strong>
-                      <span>{card.google_reviews_count != null ? `${card.google_reviews_count} avis` : "Nombre d’avis disponible après synchronisation"}</span>
-                    </div>
-                  </> : null}
-                </div>
-              </section>
-
-              <section className="formSection catalogSection">
+            <section className="formSection catalogSection">
               <div className="sectionTitle catalogHeader">
                 <div>
                   <h2>Catalogue / Catégories</h2>
@@ -2961,7 +2938,101 @@ export default function MonEspacePage() {
                 <span />
               </button>
             </div>
-          </section>
+                      {card.entity_type === "company" ? (
+              <>
+                <div className="toggleRow">
+                  <strong>Afficher Avis Google</strong>
+                  <button
+                    type="button"
+                    className={`switch ${card.google_reviews_enabled ? "active" : ""}`}
+                    onClick={() => updateField("google_reviews_enabled", !card.google_reviews_enabled)}
+                  >
+                    <span />
+                  </button>
+                </div>
+
+                {card.google_reviews_enabled ? (
+                  <div className="googleReviewsContactSettings">
+                    <label>
+                      Lien Google
+                      <input
+                        type="url"
+                        value={card.google_reviews_url}
+                        onChange={(e) => updateField("google_reviews_url", e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </label>
+
+                    <label>
+                      Action du bouton
+                      <select
+                        value={card.google_reviews_button_mode}
+                        onChange={(e) => updateField("google_reviews_button_mode", e.target.value as "view" | "write")}
+                      >
+                        <option value="view">Voir les avis</option>
+                        <option value="write">Donner un avis</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Libellé FR
+                      <input
+                        value={card.google_reviews_label_fr}
+                        onChange={(e) => updateField("google_reviews_label_fr", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Label EN
+                      <input
+                        value={card.google_reviews_label_en}
+                        onChange={(e) => updateField("google_reviews_label_en", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Couleur bouton
+                      <input
+                        type="color"
+                        value={card.google_reviews_button_color}
+                        onChange={(e) => updateField("google_reviews_button_color", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Couleur texte
+                      <input
+                        type="color"
+                        value={card.google_reviews_text_color}
+                        onChange={(e) => updateField("google_reviews_text_color", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Google Place ID
+                      <input
+                        value={card.google_place_id}
+                        onChange={(e) => updateField("google_place_id", e.target.value)}
+                        placeholder="Optionnel pour synchronisation automatique"
+                      />
+                    </label>
+
+                    <div className="googleReviewsPreview">
+                      <strong>
+                        Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}
+                      </strong>
+                      <span>
+                        {card.google_reviews_count != null
+                          ? `${card.google_reviews_count} avis`
+                          : "Nombre d’avis disponible après synchronisation"}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+</section>
 
           <section className="formSection">
             <div className="sectionTitle">
@@ -4630,7 +4701,7 @@ export default function MonEspacePage() {
         .catalogUploadedFile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:13px}
         @media(max-width:720px){.catalogModeGrid{grid-template-columns:1fr}}
       `}
-      </style>
+      .googleReviewsContactSettings{margin-top:12px;padding:16px;border:1px solid #e5e7eb;border-radius:16px;background:#fafafa;display:grid;grid-template-columns:1fr 1fr;gap:14px}.googleReviewsContactSettings label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}.googleReviewsContactSettings input,.googleReviewsContactSettings select{width:100%;min-height:44px;border:1px solid #dfe2e8;border-radius:10px;background:#fff;padding:10px 12px;font:inherit}.googleReviewsContactSettings input[type="color"]{padding:5px;height:44px}.googleReviewsPreview{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:12px;background:#fff;border:1px solid #e5e7eb}.googleReviewsPreview span{color:#737985}@media(max-width:700px){.googleReviewsContactSettings{grid-template-columns:1fr}.googleReviewsPreview{flex-direction:column}}</style>
     </main>
   );
 }
