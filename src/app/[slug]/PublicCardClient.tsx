@@ -66,9 +66,55 @@ type CardRow = {
   social_links?: SocialLink[];
   custom_links?: CustomLink[];
   entity_type?: "profile" | "company";
+  catalog_enabled?: boolean;
+  catalog_label_fr?: string;
+  catalog_label_en?: string;
+  catalog_icon?: string;
+  catalog_button_color?: string;
+  catalog_button_text_color?: string;
+  catalog_default_language?: "fr" | "en";
+  catalog_languages?: string[];
+  catalog_primary_currency?: string;
+  catalog_secondary_currency?: string;
+  catalog_show_secondary_currency?: boolean;
+  catalog_auto_convert?: boolean;
+  catalog_exchange_rate?: number | null;
 };
 
 type ProfileCompany = { id:string; position_title:string; company?: { id:string; full_name:string; slug:string; photo_url?:string; job_title?:string; bio?:string } };
+
+type CatalogItem = {
+  id: string;
+  category_id: string;
+  title_fr: string;
+  title_en: string;
+  description_fr?: string;
+  description_en?: string;
+  visual_type?: "none" | "icon" | "image";
+  image_url?: string;
+  icon?: string;
+  price?: number | null;
+  price_mode?: "fixed" | "from" | "range" | "hidden";
+  currency?: string;
+  secondary_price?: number | null;
+  secondary_currency?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+};
+
+type CatalogCategory = {
+  id: string;
+  card_id: string;
+  title_fr: string;
+  title_en: string;
+  visual_type?: "color" | "image";
+  image_url?: string;
+  background_color?: string;
+  text_color?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  items: CatalogItem[];
+};
 
 type Review = {
   id: string;
@@ -293,6 +339,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [profileCompanies, setProfileCompanies] = useState<ProfileCompany[]>([]);
   const [wifiOpen, setWifiOpen] = useState(false);
   const [wifiCopied, setWifiCopied] = useState<"ssid" | "password" | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -401,7 +449,34 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         };
 
         setCard(normalized);
-        setLang(normalized.language === "en" ? "en" : "fr");
+        setLang(
+          normalized.catalog_enabled && normalized.catalog_default_language === "en"
+            ? "en"
+            : normalized.language === "en"
+              ? "en"
+              : "fr"
+        );
+
+        if (normalized.entity_type === "company" && normalized.catalog_enabled && normalized.id) {
+          Promise.all([
+            fetch(`${supabaseUrl}/rest/v1/card_catalog_categories?card_id=eq.${normalized.id}&is_active=eq.true&select=*&order=sort_order.asc`, {
+              headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store"
+            }),
+            fetch(`${supabaseUrl}/rest/v1/card_catalog_items?is_active=eq.true&select=*&order=sort_order.asc`, {
+              headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store"
+            })
+          ]).then(async ([categoriesResponse, itemsResponse]) => {
+            if (!categoriesResponse.ok || !itemsResponse.ok) return;
+            const categoryRows = await categoriesResponse.json();
+            const itemRows = await itemsResponse.json();
+            const categories = Array.isArray(categoryRows) ? categoryRows : [];
+            const items = Array.isArray(itemRows) ? itemRows : [];
+            setCatalogCategories(categories.map((category: any) => ({
+              ...category,
+              items: items.filter((item: any) => item.category_id === category.id)
+            })));
+          }).catch(() => {});
+        }
 
         if (normalized.entity_type === "profile" && normalized.id) {
           fetch(`${supabaseUrl}/rest/v1/profile_company_links?profile_card_id=eq.${normalized.id}&select=id,position_title,company:cards!profile_company_links_company_card_id_fkey(id,full_name,slug,photo_url,job_title,bio)`, {
@@ -658,6 +733,28 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item) => item.kind === "wifi" && item.enabled !== false && (item.ssid || "").trim()
   );
 
+  const catalogLabel = lang === "en"
+    ? (card.catalog_label_en || "Our services")
+    : (card.catalog_label_fr || "Nos services");
+
+  function catalogText(fr?: string, en?: string) {
+    return lang === "en" ? (en || fr || "") : (fr || en || "");
+  }
+
+  function formatCatalogPrice(item: CatalogItem) {
+    if (item.price_mode === "hidden" || item.price == null) return "";
+    const prefix = item.price_mode === "from" ? (lang === "en" ? "From " : "À partir de ") : "";
+    const primaryCurrency = item.currency || card.catalog_primary_currency || "TND";
+    const primary = `${prefix}${Number(item.price).toLocaleString(lang === "fr" ? "fr-FR" : "en-US")} ${primaryCurrency}`;
+    if (!card.catalog_show_secondary_currency || !card.catalog_secondary_currency) return primary;
+    let secondary = item.secondary_price;
+    if (card.catalog_auto_convert && card.catalog_exchange_rate && Number(card.catalog_exchange_rate) > 0) {
+      secondary = Number(item.price) * Number(card.catalog_exchange_rate);
+    }
+    if (secondary == null) return primary;
+    return `${primary} · ${Number(secondary).toLocaleString(lang === "fr" ? "fr-FR" : "en-US", { maximumFractionDigits: 2 })} ${item.secondary_currency || card.catalog_secondary_currency}`;
+  }
+
   return (
     <main
       className={`vcPublicPage ${wifiConfig ? "hasWifiAction" : ""}`}
@@ -812,6 +909,22 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           ) : (
             <>
               <div className="vcPublicLinks">
+                {card.catalog_enabled ? (
+                  <button
+                    type="button"
+                    className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
+                    onClick={() => setCatalogOpen(true)}
+                    style={{
+                      background: card.catalog_button_color || buttonColor,
+                      color: card.catalog_button_text_color || buttonTextColor,
+                      borderColor: card.catalog_button_color || buttonBorderColor,
+                    }}
+                  >
+                    <span className="vcPublicSocialIcon catalogIcon">▦</span>
+                    <strong>{catalogLabel}</strong>
+                  </button>
+                ) : null}
+
                 {socials.map((item) => (
                   <a
                     key={item.id}
@@ -905,6 +1018,65 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             </>
           )}
         </section>
+
+        {!isProfile && catalogOpen && card.catalog_enabled ? (
+          <div className="catalogModalBackdrop" onClick={() => setCatalogOpen(false)}>
+            <div className="catalogModal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+              <div className="catalogModalHead">
+                <div>
+                  <small>{lang === "en" ? "CATALOG" : "CATALOGUE"}</small>
+                  <h2>{catalogLabel}</h2>
+                </div>
+                <div className="catalogHeadActions">
+                  <div className="catalogLangSwitch">
+                    <button type="button" className={lang === "fr" ? "active" : ""} onClick={() => setLang("fr")}>FR</button>
+                    <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
+                  </div>
+                  <button type="button" className="catalogClose" onClick={() => setCatalogOpen(false)}>×</button>
+                </div>
+              </div>
+
+              {catalogCategories.length ? (
+                <div className="catalogCategories">
+                  {catalogCategories.map((category) => (
+                    <section key={category.id} className="catalogCategory">
+                      <div
+                        className={`catalogCategoryHero ${category.visual_type === "image" && category.image_url ? "hasImage" : ""}`}
+                        style={{
+                          background: category.visual_type === "image" && category.image_url
+                            ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)),url(${category.image_url}) center/cover`
+                            : (category.background_color || "#f4f4f5"),
+                          color: category.text_color || "#111827",
+                        }}
+                      >
+                        <h3>{catalogText(category.title_fr, category.title_en)}</h3>
+                        <span>{category.items.length} {lang === "en" ? "items" : "éléments"}</span>
+                      </div>
+                      <div className="catalogItems">
+                        {category.items.map((item) => (
+                          <article key={item.id} className="catalogItem">
+                            {item.visual_type === "image" && item.image_url ? (
+                              <img className="catalogItemImage" src={item.image_url} alt="" />
+                            ) : item.visual_type !== "none" ? (
+                              <div className="catalogItemIcon">{item.icon === "sparkles" ? "✦" : "◆"}</div>
+                            ) : null}
+                            <div className="catalogItemCopy">
+                              <strong>{catalogText(item.title_fr, item.title_en)}</strong>
+                              {catalogText(item.description_fr, item.description_en) ? <p>{catalogText(item.description_fr, item.description_en)}</p> : null}
+                              {formatCatalogPrice(item) ? <span>{formatCatalogPrice(item)}</span> : null}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <div className="catalogEmpty">{lang === "en" ? "No item available yet." : "Aucun élément disponible pour le moment."}</div>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {card.entity_type === "profile" && profileCompanies.length ? (
           <section className="profileCompaniesPublic">
@@ -1376,6 +1548,36 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           gap:12px;
         }
 
+        .catalogMainButton { width:100%; cursor:pointer; font:inherit; text-align:left; }
+        .catalogIcon { display:grid; place-items:center; font-size:22px; background:rgba(255,255,255,.18); color:inherit; }
+        .catalogModalBackdrop { position:fixed; inset:0; z-index:1800; padding:24px; display:grid; place-items:center; background:rgba(0,0,0,.72); backdrop-filter:blur(8px); }
+        .catalogModal { width:min(820px,100%); max-height:92dvh; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:26px; background:#07131c; color:#fff; box-shadow:0 28px 90px rgba(0,0,0,.45); }
+        .catalogModalHead { position:sticky; top:0; z-index:3; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px; background:rgba(7,19,28,.94); backdrop-filter:blur(14px); border-bottom:1px solid rgba(255,255,255,.08); }
+        .catalogModalHead small { color:var(--accent); font-weight:900; letter-spacing:.14em; }
+        .catalogModalHead h2 { margin:4px 0 0; font-size:26px; }
+        .catalogHeadActions,.catalogLangSwitch { display:flex; align-items:center; gap:8px; }
+        .catalogLangSwitch { padding:4px; border-radius:12px; background:rgba(255,255,255,.07); }
+        .catalogLangSwitch button,.catalogClose { border:0; color:#fff; cursor:pointer; font-weight:900; }
+        .catalogLangSwitch button { min-width:38px; height:34px; border-radius:9px; background:transparent; }
+        .catalogLangSwitch button.active { background:var(--accent); }
+        .catalogClose { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.09); font-size:24px; }
+        .catalogCategories { display:grid; gap:18px; padding:18px; }
+        .catalogCategory { overflow:hidden; border:1px solid rgba(255,255,255,.09); border-radius:22px; background:rgba(255,255,255,.025); }
+        .catalogCategoryHero { min-height:120px; padding:22px; display:flex; flex-direction:column; justify-content:flex-end; }
+        .catalogCategoryHero.hasImage { color:#fff !important; }
+        .catalogCategoryHero h3 { margin:0; font-size:26px; line-height:1.05; }
+        .catalogCategoryHero span { margin-top:7px; font-size:12px; font-weight:800; opacity:.82; }
+        .catalogItems { display:grid; gap:10px; padding:12px; }
+        .catalogItem { min-height:88px; display:flex; gap:13px; align-items:center; padding:11px; border-radius:16px; background:rgba(255,255,255,.055); }
+        .catalogItemImage,.catalogItemIcon { width:68px; height:68px; flex:0 0 68px; border-radius:14px; }
+        .catalogItemImage { object-fit:cover; }
+        .catalogItemIcon { display:grid; place-items:center; background:rgba(255,255,255,.09); color:var(--accent); font-size:25px; }
+        .catalogItemCopy { min-width:0; flex:1; }
+        .catalogItemCopy strong { display:block; font-size:16px; }
+        .catalogItemCopy p { margin:5px 0 7px; color:rgba(255,255,255,.65); font-size:13px; line-height:1.4; }
+        .catalogItemCopy span { display:block; color:var(--accent); font-weight:900; }
+        .catalogEmpty { padding:46px 20px; text-align:center; color:rgba(255,255,255,.62); }
+
         .reviewFormHead span {
           color:var(--accent);
           font-weight:900;
@@ -1525,6 +1727,11 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           .wifiFloatingAction.bottom-right { right:14px; }
           .wifiSheetBackdrop { padding:10px;place-items:end center; }
           .wifiSheet { border-radius:24px 24px 18px 18px; }
+          .catalogModalBackdrop { padding:0; place-items:end center; }
+          .catalogModal { width:100%; max-height:94dvh; border-radius:26px 26px 0 0; }
+          .catalogModalHead { padding:16px; }
+          .catalogCategoryHero { min-height:105px; }
+          .catalogItemImage,.catalogItemIcon { width:60px; height:60px; flex-basis:60px; }
           .shareTools button { padding:0 10px; font-size:12px; }
           .vcPublicCover { height:180px; }
           .vcPublicLinks { padding:0 14px; }
