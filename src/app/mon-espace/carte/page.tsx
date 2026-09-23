@@ -91,6 +91,17 @@ type CardData = {
   show_address: boolean;
   show_reviews: boolean;
   entity_type: "profile" | "company";
+  google_reviews_enabled: boolean;
+  google_reviews_url: string;
+  google_reviews_button_mode: "view" | "write";
+  google_reviews_label_fr: string;
+  google_reviews_label_en: string;
+  google_reviews_button_color: string;
+  google_reviews_text_color: string;
+  google_place_id: string;
+  google_rating: number | null;
+  google_reviews_count: number | null;
+  google_reviews_synced_at: string | null;
   catalog_enabled: boolean;
   catalog_label_fr: string;
   catalog_label_en: string;
@@ -154,6 +165,17 @@ const emptyCard: CardData = {
   show_address: true,
   show_reviews: true,
   entity_type: "company",
+  google_reviews_enabled: false,
+  google_reviews_url: "",
+  google_reviews_button_mode: "view",
+  google_reviews_label_fr: "Voir nos avis Google",
+  google_reviews_label_en: "View our Google reviews",
+  google_reviews_button_color: "#ffffff",
+  google_reviews_text_color: "#111827",
+  google_place_id: "",
+  google_rating: null,
+  google_reviews_count: null,
+  google_reviews_synced_at: null,
   catalog_enabled: false,
   catalog_label_fr: "Nos services",
   catalog_label_en: "Our services",
@@ -2458,7 +2480,30 @@ export default function MonEspacePage() {
           </section>
 
           {card.entity_type === "company" ? (
-            <section className="formSection catalogSection">
+            <section className="cardSection googleReviewsSection">
+                <div className="catalogHeader">
+                  <h2>Avis Google</h2>
+                  <p>Affichez un accès direct à vos avis Google sur la page publique de la société.</p>
+                </div>
+                <div className="catalogSettings">
+                  <label className="toggleLabel">Activer Avis Google<button type="button" className={`switch ${card.google_reviews_enabled ? "active" : ""}`} onClick={() => updateField("google_reviews_enabled", !card.google_reviews_enabled)}><span /></button></label>
+                  {card.google_reviews_enabled ? <>
+                    <label>Lien Google<input type="url" value={card.google_reviews_url} onChange={e => updateField("google_reviews_url", e.target.value)} placeholder="https://..." /></label>
+                    <label>Action du bouton<select value={card.google_reviews_button_mode} onChange={e => updateField("google_reviews_button_mode", e.target.value as "view" | "write")}><option value="view">Voir les avis</option><option value="write">Donner un avis</option></select></label>
+                    <label>Libellé FR<input value={card.google_reviews_label_fr} onChange={e => updateField("google_reviews_label_fr", e.target.value)} /></label>
+                    <label>Label EN<input value={card.google_reviews_label_en} onChange={e => updateField("google_reviews_label_en", e.target.value)} /></label>
+                    <label>Couleur bouton<input type="color" value={card.google_reviews_button_color} onChange={e => updateField("google_reviews_button_color", e.target.value)} /></label>
+                    <label>Couleur texte<input type="color" value={card.google_reviews_text_color} onChange={e => updateField("google_reviews_text_color", e.target.value)} /></label>
+                    <label>Google Place ID<input value={card.google_place_id} onChange={e => updateField("google_place_id", e.target.value)} placeholder="Optionnel pour synchronisation automatique" /></label>
+                    <div className="googleReviewsPreview">
+                      <strong>Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}</strong>
+                      <span>{card.google_reviews_count != null ? `${card.google_reviews_count} avis` : "Nombre d’avis disponible après synchronisation"}</span>
+                    </div>
+                  </> : null}
+                </div>
+              </section>
+
+              <section className="formSection catalogSection">
               <div className="sectionTitle catalogHeader">
                 <div>
                   <h2>Catalogue / Catégories</h2>
