@@ -470,7 +470,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               : "fr"
         );
 
-        if (normalized.entity_type === "company" && normalized.catalog_enabled && normalized.id) {
+        if (normalized.entity_type !== "profile" && normalized.catalog_enabled && normalized.id) {
           Promise.all([
             fetch(`${supabaseUrl}/rest/v1/card_catalog_categories?card_id=eq.${normalized.id}&is_active=eq.true&select=*&order=sort_order.asc`, {
               headers: { apikey: supabaseKey, Accept: "application/json" }, cache: "no-store"
@@ -953,7 +953,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                   </a>
                 ) : null}
 
-                {card.entity_type === "company" && card.catalog_enabled ? (
+                {!isProfile && card.catalog_enabled ? (
                   card.catalog_mode === "external" && card.catalog_external_url ? (
                     <a
                       className={ledOn ? "linkCard catalogMainButton ledSoft" : "linkCard catalogMainButton"}
