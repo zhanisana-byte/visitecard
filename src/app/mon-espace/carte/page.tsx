@@ -100,7 +100,7 @@ type CardData = {
   catalog_default_language: "fr" | "en";
   catalog_languages: string[];
   catalog_primary_currency: string;
-  catalog_secondary_currency: string;
+  catalog_secondary_currency: string | null;
   catalog_show_secondary_currency: boolean;
   catalog_auto_convert: boolean;
   catalog_exchange_rate: string;
