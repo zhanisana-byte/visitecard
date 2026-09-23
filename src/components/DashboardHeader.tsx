@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { clearLegacyAuthStorage, getSupabaseBrowser } from "@/app/lib/supabase";
 
@@ -13,6 +13,30 @@ export default function DashboardHeader() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showCatalogue, setShowCatalogue] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function checkCompany() {
+      try {
+        const supabase = getSupabaseBrowser();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from("cards")
+          .select("entity_type")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (mounted) setShowCatalogue(data?.entity_type === "company");
+      } catch {
+        if (mounted) setShowCatalogue(false);
+      }
+    }
+    checkCompany();
+    return () => { mounted = false; };
+  }, []);
 
   const fr = lang === "fr";
 
@@ -32,6 +56,11 @@ export default function DashboardHeader() {
       fr: "Avis",
       en: "Reviews",
     },
+    ...(showCatalogue ? [{
+      href: "/mon-espace/catalogue",
+      fr: "Catalogue",
+      en: "Catalog",
+    }] : []),
     {
       href: "/mon-espace/profil",
       fr: "Profil",
