@@ -166,7 +166,7 @@ const emptyCard: CardData = {
   catalog_secondary_currency: "EUR",
   catalog_show_secondary_currency: false,
   catalog_auto_convert: false,
-  catalog_exchange_rate: "",
+  catalog_exchange_rate: null,
   led_enabled: true,
   led_color: "#ff6a3d",
   social_links: [],
@@ -718,7 +718,7 @@ export default function MonEspacePage() {
                   )
                 : [],
 
-            catalog_exchange_rate: loaded.catalog_exchange_rate == null ? "" : String(loaded.catalog_exchange_rate),
+            catalog_exchange_rate: loaded.catalog_exchange_rate == null ? null : Number(loaded.catalog_exchange_rate),
             catalog_languages: Array.isArray(loaded.catalog_languages) ? loaded.catalog_languages : ["fr", "en"],
             catalog_secondary_currency: loaded.catalog_secondary_currency || "EUR",
             custom_links:
