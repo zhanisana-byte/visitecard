@@ -2559,12 +2559,13 @@ export default function MonEspacePage() {
                         }
                         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
                         const path = `${card.id}/catalog/${Date.now()}-${safeName}`;
-                        const { error: uploadError } = await supabase.storage.from("card-assets").upload(path, file, { upsert: true, contentType: file.type });
+                        const storageClient = getSupabaseBrowser();
+                        const { error: uploadError } = await storageClient.storage.from("card-assets").upload(path, file, { upsert: true, contentType: file.type });
                         if (uploadError) {
                           alert(uploadError.message);
                           return;
                         }
-                        const { data } = supabase.storage.from("card-assets").getPublicUrl(path);
+                        const { data } = storageClient.storage.from("card-assets").getPublicUrl(path);
                         setCard(prev => ({
                           ...prev,
                           catalog_file_url: data.publicUrl,
