@@ -743,16 +743,18 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
   function formatCatalogPrice(item: CatalogItem) {
     if (item.price_mode === "hidden" || item.price == null) return "";
+    const currentCard = card;
+    if (!currentCard) return "";
     const prefix = item.price_mode === "from" ? (lang === "en" ? "From " : "À partir de ") : "";
-    const primaryCurrency = item.currency || card.catalog_primary_currency || "TND";
+    const primaryCurrency = item.currency || currentCard.catalog_primary_currency || "TND";
     const primary = `${prefix}${Number(item.price).toLocaleString(lang === "fr" ? "fr-FR" : "en-US")} ${primaryCurrency}`;
-    if (!card.catalog_show_secondary_currency || !card.catalog_secondary_currency) return primary;
+    if (!currentCard.catalog_show_secondary_currency || !currentCard.catalog_secondary_currency) return primary;
     let secondary = item.secondary_price;
-    if (card.catalog_auto_convert && card.catalog_exchange_rate && Number(card.catalog_exchange_rate) > 0) {
-      secondary = Number(item.price) * Number(card.catalog_exchange_rate);
+    if (currentCard.catalog_auto_convert && currentCard.catalog_exchange_rate && Number(currentCard.catalog_exchange_rate) > 0) {
+      secondary = Number(item.price) * Number(currentCard.catalog_exchange_rate);
     }
     if (secondary == null) return primary;
-    return `${primary} · ${Number(secondary).toLocaleString(lang === "fr" ? "fr-FR" : "en-US", { maximumFractionDigits: 2 })} ${item.secondary_currency || card.catalog_secondary_currency}`;
+    return `${primary} · ${Number(secondary).toLocaleString(lang === "fr" ? "fr-FR" : "en-US", { maximumFractionDigits: 2 })} ${item.secondary_currency || currentCard.catalog_secondary_currency}`;
   }
 
   return (
