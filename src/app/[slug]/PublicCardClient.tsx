@@ -189,6 +189,37 @@ const texts = {
   },
 };
 
+const catalogIconMap: Record<string, string> = {
+  grid: "▦",
+  menu: "☰",
+  fork: "🍴",
+  bag: "🛍️",
+  sparkles: "✦",
+  heart: "♥",
+  star: "★",
+  book: "▤",
+  coffee: "☕",
+  pizza: "🍕",
+  cake: "🍰",
+  drink: "🥤",
+  scissors: "✂",
+  beauty: "💅",
+  fitness: "🏋️",
+  medical: "✚",
+  car: "🚗",
+  home: "⌂",
+  tools: "🧰",
+  camera: "📷",
+  music: "♫",
+  gift: "🎁",
+  ticket: "🎟",
+  calendar: "▣",
+};
+
+function getCatalogIcon(key?: string) {
+  return catalogIconMap[key || "grid"] || catalogIconMap.grid;
+}
+
 function normalizeUrl(value: string) {
   const clean = (value || "").trim();
   if (!clean) return "";
@@ -212,6 +243,74 @@ function isGoogleMapsUrl(value?: string | null) {
 function isLocationLink(item?: Partial<CustomLink> | null) {
   if (!item) return false;
   return item.kind === "location" || isGoogleMapsUrl(item.url);
+}
+
+
+function extractGoogleMapsCoordinates(value?: string | null) {
+  const raw = (value || "").trim();
+  if (!raw) return null;
+
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {}
+
+  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    return { lat: atMatch[1], lng: atMatch[2] };
+  }
+
+  const queryMatch = decoded.match(/[?&](?:q|query|ll|center)=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i);
+  if (queryMatch) {
+    return { lat: queryMatch[1], lng: queryMatch[2] };
+  }
+
+  const dataLatLng = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (dataLatLng) {
+    return { lat: dataLatLng[1], lng: dataLatLng[2] };
+  }
+
+  const dataLngLat = decoded.match(/!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/);
+  if (dataLngLat) {
+    return { lat: dataLngLat[2], lng: dataLngLat[1] };
+  }
+
+  return null;
+}
+
+function extractGoogleMapsPlaceName(value?: string | null) {
+  const raw = (value || "").trim();
+  if (!raw) return "";
+
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {}
+
+  const placeMatch = decoded.match(/\/maps\/place\/([^/?#]+)/i);
+  if (placeMatch?.[1]) {
+    return placeMatch[1].replace(/\+/g, " ").trim();
+  }
+
+  const queryMatch = decoded.match(/[?&](?:q|query)=([^&#]+)/i);
+  if (queryMatch?.[1]) {
+    return queryMatch[1].replace(/\+/g, " ").trim();
+  }
+
+  return "";
+}
+
+function getGoogleMapsEmbedUrl(item: CustomLink, fallbackName?: string) {
+  const coordinates = extractGoogleMapsCoordinates(item.url);
+
+  if (coordinates) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(`${coordinates.lat},${coordinates.lng}`)}&z=17&output=embed`;
+  }
+
+  const placeName = extractGoogleMapsPlaceName(item.url);
+  const query = placeName || item.label || fallbackName || "";
+
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`;
 }
 
 function socialHref(item: SocialLink) {
@@ -498,8 +597,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           }).then(async r => { if (r.ok) { const data = await r.json(); setProfileCompanies(Array.isArray(data) ? data : []); } }).catch(() => {});
         }
 
-        // Afficher la carte immédiatement. Les avis se chargent ensuite
-        // sans bloquer toute la page publique.
         setLoading(false);
 
         if (normalized.show_reviews !== false && normalized.id) {
@@ -704,8 +801,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
     (item.value || "").trim()
   );
 
-  // Compatibilité avec les anciennes cartes qui ont enregistré le site
-  // dans cards.website mais pas encore dans social_links.
   const socials: SocialLink[] = [...baseSocials];
   const storedWebsite = (card.website || "").trim();
   if (storedWebsite && !socials.some((item) => item.type === "website")) {
@@ -834,6 +929,37 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             )}
           </div>
 
+          {!isProfile && card.google_reviews_enabled && card.google_reviews_url ? (
+            <div className="googleReviewsUnderLogoWrap">
+              <a
+                className="googleReviewsUnderLogo"
+                href={card.google_reviews_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: card.google_reviews_button_color || "#ffffff",
+                  color: card.google_reviews_text_color || "#111827",
+                  borderColor: card.google_reviews_button_color || "#ffffff",
+                }}
+              >
+                <span className="googleReviewsUnderLogoStar">★</span>
+                <span className="googleReviewsUnderLogoText">
+                  <strong>Google</strong>
+                  <small>
+                    {card.google_rating != null
+                      ? `${Number(card.google_rating).toFixed(1)} ★`
+                      : lang === "en"
+                        ? card.google_reviews_label_en || (card.google_reviews_button_mode === "write" ? "Leave a review" : "View reviews")
+                        : card.google_reviews_label_fr || (card.google_reviews_button_mode === "write" ? "Donner un avis" : "Voir les avis")}
+                    {card.google_reviews_count != null
+                      ? ` · ${card.google_reviews_count} ${lang === "en" ? "reviews" : "avis"}`
+                      : ""}
+                  </small>
+                </span>
+              </a>
+            </div>
+          ) : null}
+
           <div className={`vcPublicIdentity ${isProfile && !hasProfileMeta ? "compactProfileIdentity" : ""}`}>
             <h1>{card.full_name || "VisiteCard"}</h1>
             {card.job_title ? <p>{card.job_title}</p> : null}
@@ -925,35 +1051,6 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           ) : (
             <>
               <div className="vcPublicLinks">
-                {card.google_reviews_enabled && card.google_reviews_url ? (
-                  <a
-                    className="linkCard googleReviewsPublicButton"
-                    href={card.google_reviews_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      background: card.google_reviews_button_color || "#ffffff",
-                      color: card.google_reviews_text_color || "#111827",
-                      borderColor: card.google_reviews_button_color || "#ffffff",
-                    }}
-                  >
-                    <span className="vcPublicSocialIcon googleReviewsIcon">★</span>
-                    <span className="googleReviewsCopy">
-                      <strong>
-                        {lang === "en"
-                          ? card.google_reviews_label_en || (card.google_reviews_button_mode === "write" ? "Leave a Google review" : "View our Google reviews")
-                          : card.google_reviews_label_fr || (card.google_reviews_button_mode === "write" ? "Donner un avis Google" : "Voir nos avis Google")}
-                      </strong>
-                      {(card.google_rating != null || card.google_reviews_count != null) ? (
-                        <small>
-                          Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}
-                          {card.google_reviews_count != null ? ` · ${card.google_reviews_count} ${lang === "en" ? "reviews" : "avis"}` : ""}
-                        </small>
-                      ) : null}
-                    </span>
-                  </a>
-                ) : null}
-
                 {!isProfile && card.catalog_enabled ? (
                   card.catalog_mode === "external" && card.catalog_external_url ? (
                     <a
@@ -967,7 +1064,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                         borderColor: card.catalog_button_color || buttonBorderColor,
                       }}
                     >
-                      <span className="vcPublicSocialIcon catalogIcon">▦</span>
+                      <span className="vcPublicSocialIcon catalogIcon">{getCatalogIcon(card.catalog_icon)}</span>
                       <strong>{catalogLabel}</strong>
                     </a>
                   ) : card.catalog_mode === "file" && card.catalog_file_url ? (
@@ -982,9 +1079,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                         borderColor: card.catalog_button_color || buttonBorderColor,
                       }}
                     >
-                      <span className="vcPublicSocialIcon catalogIcon">
-                        {card.catalog_file_type === "video" ? "▶" : card.catalog_file_type === "pdf" ? "PDF" : "▧"}
-                      </span>
+                      <span className="vcPublicSocialIcon catalogIcon">{getCatalogIcon(card.catalog_icon)}</span>
                       <strong>{catalogLabel}</strong>
                     </a>
                   ) : (
@@ -998,7 +1093,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                         borderColor: card.catalog_button_color || buttonBorderColor,
                       }}
                     >
-                      <span className="vcPublicSocialIcon catalogIcon">▦</span>
+                      <span className="vcPublicSocialIcon catalogIcon">{getCatalogIcon(card.catalog_icon)}</span>
                       <strong>{catalogLabel}</strong>
                     </button>
                   )
@@ -1059,10 +1154,18 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                         <div className="premiumMapWrap">
                           <iframe
                             title={`${lang === "en" ? "Location" : "Localisation"} ${index + 1}`}
-                            src={`https://www.google.com/maps?q=${encodeURIComponent(item.label || card.full_name || "")}&output=embed`}
+                            src={getGoogleMapsEmbedUrl(item, card.full_name)}
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
                             allowFullScreen
+                            tabIndex={-1}
+                          />
+                          <a
+                            href={normalizeUrl(item.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="premiumMapClickTarget"
+                            aria-label={lang === "en" ? "Open this exact location in Google Maps" : "Ouvrir cette adresse exacte dans Google Maps"}
                           />
                         </div>
                         <div className="premiumLocationInfo">
@@ -1466,6 +1569,12 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .vcPublicCoverFallback { background:radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 34%),linear-gradient(135deg,#111820,#25140f); }
         .vcPublicAvatar { width:126px; height:126px; margin:-63px auto 0; position:relative; z-index:2; display:grid; place-items:center; overflow:hidden; border:3px solid var(--accent); border-radius:50%; background:#eee; color:#222; font-size:40px; font-weight:900; }
         .vcPublicAvatar img { width:100%; height:100%; object-fit:cover; }
+        .googleReviewsUnderLogoWrap { display:flex; justify-content:center; padding:10px 20px 0; position:relative; z-index:3; }
+        .googleReviewsUnderLogo { display:inline-flex; align-items:center; gap:9px; max-width:calc(100% - 20px); min-height:42px; padding:7px 14px; border:1px solid; border-radius:999px; text-decoration:none; box-shadow:0 8px 24px rgba(0,0,0,.12); }
+        .googleReviewsUnderLogoStar { display:grid; place-items:center; width:28px; height:28px; flex:0 0 28px; border-radius:50%; background:rgba(255,193,7,.14); color:#fbbc04; font-size:17px; line-height:1; }
+        .googleReviewsUnderLogoText { display:flex; align-items:baseline; gap:7px; min-width:0; }
+        .googleReviewsUnderLogoText strong { font-size:14px; line-height:1.1; white-space:nowrap; }
+        .googleReviewsUnderLogoText small { font-size:12px; line-height:1.2; font-weight:700; opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .vcPublicIdentity { padding:18px 24px 10px; text-align:center; }
         .vcPublicIdentity.compactProfileIdentity { padding-bottom:2px; }
         .vcPublicIdentity h1 { margin:0; font-size:clamp(34px,7vw,52px); letter-spacing:-.05em; }
@@ -1542,7 +1651,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
         .premiumLocations{margin-top:18px;padding:18px;border:1px solid color-mix(in srgb,var(--accent) 45%,rgba(255,255,255,.08));border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--panel)),var(--panel));overflow:hidden}
         .premiumLocationHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.premiumLocationTitle{display:flex;align-items:center;gap:11px}.premiumLocationPin{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);font-size:22px}.premiumLocationTitle div{display:grid;gap:2px}.premiumLocationTitle strong{font-size:18px}.premiumLocationTitle small{color:var(--muted);font-size:12px}
-        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;border-radius:12px;background:var(--button-bg);color:var(--button-text);border:2px solid var(--button-border);font-weight:900}.premiumDirections{padding:11px 12px}.premiumDirections span{color:var(--button-text)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;font-size:11px}
+        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{position:relative;min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block;pointer-events:none}.premiumMapClickTarget{position:absolute;inset:0;z-index:2;display:block;cursor:pointer;background:transparent}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;border-radius:12px;background:var(--button-bg);color:var(--button-text);border:2px solid var(--button-border);font-weight:900}.premiumDirections{padding:11px 12px}.premiumDirections span{color:var(--button-text)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;font-size:11px}
         @media(max-width:680px){.premiumLocations{padding:13px;border-radius:20px}.premiumLocationCard{grid-template-columns:1fr;padding:9px;gap:11px}.premiumMapWrap,.premiumMapWrap iframe{min-height:180px}.premiumLocationInfo{padding:3px 2px 4px}.premiumLocationTitle strong{font-size:16px}}
 
         .locationLink {
