@@ -70,6 +70,17 @@ type CardData = {
   show_phone: boolean;
   show_address: boolean;
   show_reviews: boolean;
+  google_reviews_enabled: boolean;
+  google_reviews_url: string;
+  google_reviews_button_mode: "view" | "write";
+  google_reviews_label_fr: string;
+  google_reviews_label_en: string;
+  google_reviews_button_color: string;
+  google_reviews_text_color: string;
+  google_place_id: string;
+  google_rating: number | null;
+  google_reviews_count: number | null;
+  google_reviews_synced_at: string | null;
   led_enabled: boolean;
   led_color: string;
   social_links: SocialLink[];
@@ -124,6 +135,17 @@ const emptyCard: CardData = {
   show_phone: true,
   show_address: true,
   show_reviews: true,
+  google_reviews_enabled: false,
+  google_reviews_url: "",
+  google_reviews_button_mode: "view",
+  google_reviews_label_fr: "Voir nos avis Google",
+  google_reviews_label_en: "View our Google reviews",
+  google_reviews_button_color: "#ffffff",
+  google_reviews_text_color: "#111827",
+  google_place_id: "",
+  google_rating: null,
+  google_reviews_count: null,
+  google_reviews_synced_at: null,
   led_enabled: true,
   led_color: "#ff6a3d",
   social_links: [],
@@ -1558,6 +1580,14 @@ export default function MonEspacePage() {
         show_phone: card.show_phone,
         show_address: card.show_address,
         show_reviews: card.show_reviews,
+        google_reviews_enabled: card.entity_type === "company" ? card.google_reviews_enabled : false,
+        google_reviews_url: card.entity_type === "company" ? (card.google_reviews_url ?? "").trim() : "",
+        google_reviews_button_mode: card.google_reviews_button_mode,
+        google_reviews_label_fr: (card.google_reviews_label_fr ?? "Voir nos avis Google").trim(),
+        google_reviews_label_en: (card.google_reviews_label_en ?? "View our Google reviews").trim(),
+        google_reviews_button_color: card.google_reviews_button_color ?? "#ffffff",
+        google_reviews_text_color: card.google_reviews_text_color ?? "#111827",
+        google_place_id: card.entity_type === "company" ? (card.google_place_id ?? "").trim() : "",
         led_enabled: card.led_enabled,
         led_color: card.led_color ?? "#ff6a3d",
         social_links: cleanSocialLinks,
@@ -2822,6 +2852,103 @@ export default function MonEspacePage() {
                 <span />
               </button>
             </div>            ) : null}
+
+            {card.entity_type === "company" ? (
+              <>
+                <div className="toggleRow">
+                  <div>
+                    <strong>Afficher Avis Google</strong>
+                    <small>Ajoute un bouton Google sur la page publique de la société.</small>
+                  </div>
+                  <button
+                    type="button"
+                    className={`switch ${card.google_reviews_enabled ? "active" : ""}`}
+                    onClick={() => updateField("google_reviews_enabled", !card.google_reviews_enabled)}
+                  >
+                    <span />
+                  </button>
+                </div>
+
+                {card.google_reviews_enabled ? (
+                  <div className="googleReviewsContactSettings">
+                    <label>
+                      Lien Google
+                      <input
+                        type="url"
+                        value={card.google_reviews_url}
+                        onChange={(e) => updateField("google_reviews_url", e.target.value)}
+                        placeholder="https://g.page/r/.../review ou lien Google Maps"
+                      />
+                    </label>
+
+                    <label>
+                      Action du bouton
+                      <select
+                        value={card.google_reviews_button_mode}
+                        onChange={(e) => updateField("google_reviews_button_mode", e.target.value as "view" | "write")}
+                      >
+                        <option value="view">Voir les avis</option>
+                        <option value="write">Donner un avis</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Libellé FR
+                      <input
+                        value={card.google_reviews_label_fr}
+                        onChange={(e) => updateField("google_reviews_label_fr", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Label EN
+                      <input
+                        value={card.google_reviews_label_en}
+                        onChange={(e) => updateField("google_reviews_label_en", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Couleur bouton
+                      <input
+                        type="color"
+                        value={card.google_reviews_button_color}
+                        onChange={(e) => updateField("google_reviews_button_color", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Couleur texte
+                      <input
+                        type="color"
+                        value={card.google_reviews_text_color}
+                        onChange={(e) => updateField("google_reviews_text_color", e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Google Place ID
+                      <input
+                        value={card.google_place_id}
+                        onChange={(e) => updateField("google_place_id", e.target.value)}
+                        placeholder="Optionnel"
+                      />
+                    </label>
+
+                    <div className="googleReviewsPreview">
+                      <strong>
+                        Google ⭐ {card.google_rating != null ? Number(card.google_rating).toFixed(1) : "—"}
+                      </strong>
+                      <span>
+                        {card.google_reviews_count != null
+                          ? `${card.google_reviews_count} avis`
+                          : "Le bouton public fonctionnera avec le lien Google saisi."}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
 
           </section>
 
@@ -4337,6 +4464,49 @@ export default function MonEspacePage() {
         .profilePreviewContacts { display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:6px 18px 18px; }
         .profilePreviewContacts span { min-height:34px;padding:0 11px;display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.045);font-size:10px;font-weight:800; }
 
+        .googleReviewsContactSettings {
+          margin-top: 12px;
+          padding: 16px;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
+          background: #fafafa;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+        .googleReviewsContactSettings label {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .googleReviewsContactSettings input,
+        .googleReviewsContactSettings select {
+          width: 100%;
+          min-height: 44px;
+          border: 1px solid #dfe2e8;
+          border-radius: 10px;
+          background: #fff;
+          padding: 10px 12px;
+          font: inherit;
+        }
+        .googleReviewsContactSettings input[type="color"] {
+          padding: 5px;
+          height: 44px;
+        }
+        .googleReviewsPreview {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 13px 14px;
+          border-radius: 12px;
+          background: #fff;
+          border: 1px solid #e5e7eb;
+        }
+        .googleReviewsPreview span { color: #737985; }
+
         .previewLinks {
           margin-top: 18px;
           padding: 0 14px;
@@ -4611,6 +4781,8 @@ export default function MonEspacePage() {
           }
         }
         @media (max-width: 760px) {
+          .googleReviewsContactSettings { grid-template-columns:1fr; }
+          .googleReviewsPreview { flex-direction:column; }
           .locationManagerHead { display:grid; }
           .addLocationButton { width:100%; }
           .locationCard { grid-template-columns:42px 1fr 38px;align-items:start; }
