@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { getSupabaseBrowser } from "../../lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
 
-type Plan = "free" | "pro";
+type Plan = "startup" | "pro" | "included" | "expired";
 
 export default function ProfilPage() {
   const { lang } = useLanguage();
@@ -15,11 +15,13 @@ export default function ProfilPage() {
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [plan, setPlan] = useState<Plan>("free");
+  const [plan, setPlan] = useState<Plan>("startup");
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isPro = plan === "pro";
+  const isStartup = plan === "startup";
+  const isIncluded = plan === "included";
 
   useEffect(() => {
     async function loadUser() {
@@ -42,26 +44,20 @@ export default function ProfilPage() {
 
         setEmail(user.email || "");
 
-        const rawPlan = String(
-          user.app_metadata?.plan ||
-            user.user_metadata?.plan ||
-            user.app_metadata?.account_type ||
-            user.user_metadata?.account_type ||
-            "free"
-        ).toLowerCase();
+        const { data: subscription } = await supabase
+          .from("subscriptions")
+          .select("status,plan_code,end_date")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        setPlan(rawPlan === "pro" ? "pro" : "free");
+        if (subscription?.status === "included") setPlan("included");
+        else if (subscription?.status === "active") setPlan("pro");
+        else if (subscription?.status === "expired") setPlan("expired");
+        else setPlan("startup");
 
-        const expiration =
-          user.app_metadata?.plan_expires_at ||
-          user.user_metadata?.plan_expires_at ||
-          user.app_metadata?.pro_expires_at ||
-          user.user_metadata?.pro_expires_at ||
-          null;
-
-        setPlanExpiresAt(
-          typeof expiration === "string" ? expiration : null
-        );
+        setPlanExpiresAt(subscription?.end_date || null);
       } catch (x: any) {
         setError(
           x?.message ||
@@ -257,192 +253,17 @@ Thank you.`
 
       <section className="subscriptionSection">
         <div className="subscriptionHeading">
-          <div>
-            <span className="sectionEyebrow">
-              {fr ? "ABONNEMENT" : "SUBSCRIPTION"}
-            </span>
-
-            <h2>
-              {fr ? "Mon abonnement" : "My subscription"}
-            </h2>
-          </div>
-
-          {!loading && (
-            <span
-              className={`currentPlanBadge ${
-                isPro ? "pro" : "free"
-              }`}
-            >
-              {isPro
-                ? fr
-                  ? "COMPTE PRO"
-                  : "PRO ACCOUNT"
-                : fr
-                  ? "COMPTE GRATUIT"
-                  : "FREE ACCOUNT"}
-            </span>
-          )}
+          <div><span className="sectionEyebrow">{fr ? "ABONNEMENT" : "SUBSCRIPTION"}</span><h2>{fr ? "Mon abonnement" : "My subscription"}</h2></div>
+          {!loading ? <span className={`currentPlanBadge ${isPro ? "pro" : "free"}`}>
+            {isStartup ? (fr ? "OFFRE DÉMARRAGE" : "STARTUP OFFER") : isIncluded ? (fr ? "INCLUS" : "INCLUDED") : isPro ? (fr ? "COMPTE PRO" : "PRO ACCOUNT") : (fr ? "À RENOUVELER" : "RENEWAL DUE")}
+          </span> : null}
         </div>
-
-        <div className="plansGrid">
-          <article
-            className={`planCard freePlan ${
-              !isPro ? "current" : ""
-            }`}
-          >
-            {!isPro && !loading ? (
-              <div className="currentRibbon">
-                {fr ? "Votre offre actuelle" : "Your current plan"}
-              </div>
-            ) : null}
-
-            <div className="planTop">
-              <div className="planIcon freeIcon">
-                <UserIcon />
-              </div>
-
-              <div>
-                <span className="planName">
-                  VisiteCard
-                </span>
-
-                <h3>
-                  {fr ? "Gratuit" : "Free"}
-                </h3>
-              </div>
-            </div>
-
-            <div className="price">
-              <strong>0 €</strong>
-
-              <span>
-                / {fr ? "an" : "year"}
-              </span>
-            </div>
-
-            <p className="planDescription">
-              {fr
-                ? "Votre compte VisiteCard pour créer et partager votre présence digitale."
-                : "Your VisiteCard account to create and share your digital presence."}
-            </p>
-
-            <div className="planStatus">
-              <CheckIcon />
-
-              <span>
-                {!isPro
-                  ? fr
-                    ? "Compte actif"
-                    : "Active account"
-                  : fr
-                    ? "Inclus dans votre compte Pro"
-                    : "Included in your Pro account"}
-              </span>
-            </div>
-          </article>
-
-          <article
-            className={`planCard proPlan ${
-              isPro ? "current" : ""
-            }`}
-          >
-            {isPro && !loading ? (
-              <div className="currentRibbon proRibbon">
-                {fr ? "Votre offre actuelle" : "Your current plan"}
-              </div>
-            ) : null}
-
-            <div className="proGlow" />
-
-            <div className="planTop">
-              <div className="planIcon proIcon">
-                <CrownIcon />
-              </div>
-
-              <div>
-                <span className="planName proLabel">
-                  VisiteCard
-                </span>
-
-                <h3>Pro</h3>
-              </div>
-
-              <span className="proBadge">
-                PRO
-              </span>
-            </div>
-
-            <div className="price proPrice">
-              <strong>29 €</strong>
-
-              <span>
-                / {fr ? "an" : "year"}
-              </span>
-            </div>
-
-            <div className="monthlyPrice">
-              {fr
-                ? "Soit seulement 2,42 € / mois"
-                : "Only €2.42 / month"}
-            </div>
-
-            <p className="planDescription">
-              {fr
-                ? "Passez à VisiteCard Pro avec un abonnement annuel simple."
-                : "Upgrade to VisiteCard Pro with a simple annual subscription."}
-            </p>
-
-            {isPro ? (
-              <div className="proActiveBox">
-                <div>
-                  <CheckCircleIcon />
-
-                  <span>
-                    {fr
-                      ? "Votre compte Pro est actif"
-                      : "Your Pro account is active"}
-                  </span>
-                </div>
-
-                {planExpiresAt ? (
-                  <small>
-                    {fr
-                      ? `Valable jusqu'au ${formatExpiration(
-                          planExpiresAt
-                        )}`
-                      : `Valid until ${formatExpiration(
-                          planExpiresAt
-                        )}`}
-                  </small>
-                ) : null}
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="proButton"
-                onClick={requestPro}
-              >
-                <CrownSmallIcon />
-
-                {fr
-                  ? "Passer au Pro — 29 € / an"
-                  : "Upgrade to Pro — €29 / year"}
-
-                <ArrowIcon />
-              </button>
-            )}
-
-            <div className="billingInfo">
-              <LockIcon />
-
-              <span>
-                {fr
-                  ? "Abonnement annuel"
-                  : "Annual subscription"}
-              </span>
-            </div>
-          </article>
-        </div>
+        <article className={`planCard ${isPro ? "proPlan" : "freePlan"} current`}>
+          <div className="planTop"><div className={`planIcon ${isPro ? "proIcon" : "freeIcon"}`}>{isPro ? <CrownIcon/> : <UserIcon/>}</div><div><span className="planName">VisiteCard</span><h3>{isStartup ? (fr ? "Offre démarrage" : "Startup offer") : isIncluded ? (fr ? "Inclus via société" : "Included via company") : isPro ? "Pro" : (fr ? "Abonnement expiré" : "Subscription expired")}</h3></div></div>
+          <div className="price"><strong>{isStartup || isIncluded ? "0" : "29"} €</strong><span>{isStartup ? ` / ${fr ? "2 mois" : "2 months"}` : ` / ${fr ? "an" : "year"}`}</span></div>
+          <p className="planDescription">{isStartup ? (fr ? "Votre nouvelle VisiteCard bénéficie automatiquement de 2 mois offerts. L’administrateur définira ensuite votre prochain abonnement." : "Your new VisiteCard automatically includes a 2-month startup offer. Your next subscription will then be set by the administrator.") : isIncluded ? (fr ? "Votre profil est inclus avec une société active liée." : "Your profile is included with an active linked company.") : (fr ? "Votre abonnement et sa prochaine échéance sont gérés depuis VisiteCard." : "Your subscription and next renewal are managed by VisiteCard.")}</p>
+          {planExpiresAt ? <div className="planStatus"><CheckIcon/><span>{fr ? `Valable jusqu’au ${formatExpiration(planExpiresAt)}` : `Valid until ${formatExpiration(planExpiresAt)}`}</span></div> : null}
+        </article>
       </section>
 
       <div className="accountTitle">
