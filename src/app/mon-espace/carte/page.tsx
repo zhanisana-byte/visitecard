@@ -103,7 +103,7 @@ type CardData = {
   catalog_secondary_currency: string | null;
   catalog_show_secondary_currency: boolean;
   catalog_auto_convert: boolean;
-  catalog_exchange_rate: string;
+  catalog_exchange_rate: number | null;
   led_enabled: boolean;
   led_color: string;
   social_links: SocialLink[];
