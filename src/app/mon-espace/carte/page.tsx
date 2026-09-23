@@ -2938,8 +2938,7 @@ export default function MonEspacePage() {
                 <span />
               </button>
             </div>
-                      {card.entity_type === "company" ? (
-              <>
+                      <>
                 <div className="toggleRow">
                   <strong>Afficher Avis Google</strong>
                   <button
@@ -3030,7 +3029,6 @@ export default function MonEspacePage() {
                   </div>
                 ) : null}
               </>
-            ) : null}
 
 </section>
 
