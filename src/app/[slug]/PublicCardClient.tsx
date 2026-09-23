@@ -354,6 +354,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [wifiCopied, setWifiCopied] = useState<"ssid" | "password" | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+  const [catalogActiveCategory, setCatalogActiveCategory] = useState<string>("");
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -1114,42 +1115,85 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                 </div>
               </div>
 
-              {catalogCategories.length ? (
-                <div className="catalogCategories">
-                  {catalogCategories.map((category) => (
-                    <section key={category.id} className="catalogCategory">
-                      <div
-                        className={`catalogCategoryHero ${category.visual_type === "image" && category.image_url ? "hasImage" : ""}`}
-                        style={{
-                          background: category.visual_type === "image" && category.image_url
-                            ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)),url(${category.image_url}) center/cover`
-                            : (category.background_color || "#f4f4f5"),
-                          color: category.text_color || "#111827",
-                        }}
-                      >
-                        <h3>{catalogText(category.title_fr, category.title_en)}</h3>
-                        <span>{category.items.length} {lang === "en" ? "items" : "éléments"}</span>
+              {catalogCategories.length ? (() => {
+                const activeCategory =
+                  catalogCategories.find((category) => category.id === catalogActiveCategory) ||
+                  catalogCategories[0];
+                return (
+                  <div className="menuCatalog">
+                    <div className="menuCategoryRail">
+                      {catalogCategories.map((category) => {
+                        const active = category.id === activeCategory.id;
+                        return (
+                          <button
+                            type="button"
+                            key={category.id}
+                            className={`menuCategoryTab ${active ? "active" : ""}`}
+                            onClick={() => setCatalogActiveCategory(category.id)}
+                          >
+                            <span
+                              className="menuCategoryVisual"
+                              style={
+                                category.visual_type === "image" && category.image_url
+                                  ? { backgroundImage: `url(${category.image_url})` }
+                                  : { background: category.background_color || "#171717" }
+                              }
+                            >
+                              {!(category.visual_type === "image" && category.image_url) ? (
+                                <b style={{ color: category.text_color || "#fff" }}>
+                                  {catalogText(category.title_fr, category.title_en).charAt(0).toUpperCase()}
+                                </b>
+                              ) : null}
+                            </span>
+                            <strong>{catalogText(category.title_fr, category.title_en)}</strong>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <section className="menuActiveCategory">
+                      <div className="menuSectionTitle">
+                        <div>
+                          <h3>{catalogText(activeCategory.title_fr, activeCategory.title_en)}</h3>
+                          <span />
+                        </div>
+                        <p>
+                          {lang === "en"
+                            ? `${activeCategory.items.length} ${activeCategory.items.length === 1 ? "item" : "items"}`
+                            : `${activeCategory.items.length} ${activeCategory.items.length === 1 ? "élément" : "éléments"}`}
+                        </p>
                       </div>
-                      <div className="catalogItems">
-                        {category.items.map((item) => (
-                          <article key={item.id} className="catalogItem">
-                            {item.visual_type === "image" && item.image_url ? (
-                              <img className="catalogItemImage" src={item.image_url} alt="" />
-                            ) : item.visual_type !== "none" ? (
-                              <div className="catalogItemIcon">{item.icon === "sparkles" ? "✦" : "◆"}</div>
-                            ) : null}
-                            <div className="catalogItemCopy">
-                              <strong>{catalogText(item.title_fr, item.title_en)}</strong>
-                              {catalogText(item.description_fr, item.description_en) ? <p>{catalogText(item.description_fr, item.description_en)}</p> : null}
-                              {formatCatalogPrice(item) ? <span>{formatCatalogPrice(item)}</span> : null}
+
+                      <div className="menuItems">
+                        {activeCategory.items.length ? activeCategory.items.map((item) => (
+                          <article key={item.id} className="menuItem">
+                            <div className="menuItemVisual">
+                              {item.visual_type === "image" && item.image_url ? (
+                                <img src={item.image_url} alt={catalogText(item.title_fr, item.title_en)} />
+                              ) : (
+                                <span>{item.icon === "sparkles" ? "✦" : "◆"}</span>
+                              )}
                             </div>
+                            <div className="menuItemInfo">
+                              <strong>{catalogText(item.title_fr, item.title_en)}</strong>
+                              {catalogText(item.description_fr, item.description_en) ? (
+                                <p>{catalogText(item.description_fr, item.description_en)}</p>
+                              ) : null}
+                            </div>
+                            {formatCatalogPrice(item) ? (
+                              <div className="menuItemPrice">{formatCatalogPrice(item)}</div>
+                            ) : null}
                           </article>
-                        ))}
+                        )) : (
+                          <div className="catalogEmpty">
+                            {lang === "en" ? "No item in this category yet." : "Aucun élément dans cette catégorie."}
+                          </div>
+                        )}
                       </div>
                     </section>
-                  ))}
-                </div>
-              ) : (
+                  </div>
+                );
+              })() : (
                 <div className="catalogEmpty">{lang === "en" ? "No item available yet." : "Aucun élément disponible pour le moment."}</div>
               )}
             </div>
@@ -1639,22 +1683,32 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .catalogLangSwitch button { min-width:38px; height:34px; border-radius:9px; background:transparent; }
         .catalogLangSwitch button.active { background:var(--accent); }
         .catalogClose { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.09); font-size:24px; }
-        .catalogCategories { display:grid; gap:18px; padding:18px; }
-        .catalogCategory { overflow:hidden; border:1px solid rgba(255,255,255,.09); border-radius:22px; background:rgba(255,255,255,.025); }
-        .catalogCategoryHero { min-height:120px; padding:22px; display:flex; flex-direction:column; justify-content:flex-end; }
-        .catalogCategoryHero.hasImage { color:#fff !important; }
-        .catalogCategoryHero h3 { margin:0; font-size:26px; line-height:1.05; }
-        .catalogCategoryHero span { margin-top:7px; font-size:12px; font-weight:800; opacity:.82; }
-        .catalogItems { display:grid; gap:10px; padding:12px; }
-        .catalogItem { min-height:88px; display:flex; gap:13px; align-items:center; padding:11px; border-radius:16px; background:rgba(255,255,255,.055); }
-        .catalogItemImage,.catalogItemIcon { width:68px; height:68px; flex:0 0 68px; border-radius:14px; }
-        .catalogItemImage { object-fit:cover; }
-        .catalogItemIcon { display:grid; place-items:center; background:rgba(255,255,255,.09); color:var(--accent); font-size:25px; }
-        .catalogItemCopy { min-width:0; flex:1; }
-        .catalogItemCopy strong { display:block; font-size:16px; }
-        .catalogItemCopy p { margin:5px 0 7px; color:rgba(255,255,255,.65); font-size:13px; line-height:1.4; }
-        .catalogItemCopy span { display:block; color:var(--accent); font-weight:900; }
-        .catalogEmpty { padding:46px 20px; text-align:center; color:rgba(255,255,255,.62); }
+        .menuCatalog { padding:0 0 18px; }
+        .menuCategoryRail { display:flex; gap:12px; overflow-x:auto; padding:16px 18px 12px; scrollbar-width:none; border-bottom:1px solid rgba(255,255,255,.08); }
+        .menuCategoryRail::-webkit-scrollbar { display:none; }
+        .menuCategoryTab { flex:0 0 78px; border:0; background:transparent; color:#fff; cursor:pointer; padding:0 0 10px; position:relative; }
+        .menuCategoryTab::after { content:""; position:absolute; left:12px; right:12px; bottom:0; height:3px; border-radius:99px; background:transparent; }
+        .menuCategoryTab.active::after { background:var(--accent); box-shadow:0 0 12px color-mix(in srgb,var(--accent) 70%,transparent); }
+        .menuCategoryVisual { width:58px; height:58px; margin:0 auto 7px; display:grid; place-items:center; border-radius:50%; background-size:cover!important; background-position:center!important; border:2px solid rgba(255,255,255,.18); box-shadow:inset 0 0 0 3px #07131c; }
+        .menuCategoryTab.active .menuCategoryVisual { border-color:var(--accent); box-shadow:0 0 0 2px #07131c,0 0 0 4px var(--accent); }
+        .menuCategoryVisual b { font-size:21px; }
+        .menuCategoryTab strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+        .menuActiveCategory { padding:18px 20px 4px; }
+        .menuSectionTitle { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:10px; }
+        .menuSectionTitle>div { display:flex; align-items:center; gap:12px; min-width:0; }
+        .menuSectionTitle h3 { margin:0; font-size:25px; line-height:1; }
+        .menuSectionTitle span { display:block; width:42px; height:3px; border-radius:99px; background:var(--accent); }
+        .menuSectionTitle p { margin:0; color:rgba(255,255,255,.5); font-size:11px; font-weight:800; white-space:nowrap; }
+        .menuItems { display:grid; }
+        .menuItem { display:grid; grid-template-columns:76px minmax(0,1fr) auto; gap:13px; align-items:center; padding:13px 0; border-bottom:1px solid rgba(255,255,255,.11); }
+        .menuItem:last-child { border-bottom:0; }
+        .menuItemVisual { width:76px; height:68px; overflow:hidden; border-radius:12px; display:grid; place-items:center; background:rgba(255,255,255,.07); color:var(--accent); font-size:24px; }
+        .menuItemVisual img { width:100%; height:100%; object-fit:cover; }
+        .menuItemInfo { min-width:0; }
+        .menuItemInfo strong { display:block; font-size:15px; line-height:1.25; }
+        .menuItemInfo p { margin:5px 0 0; color:rgba(255,255,255,.65); font-size:12px; line-height:1.35; }
+        .menuItemPrice { max-width:145px; color:var(--accent); font-size:14px; line-height:1.25; font-weight:950; text-align:right; }
+        .catalogEmpty { padding:42px 20px; text-align:center; color:rgba(255,255,255,.62); }
 
         .reviewFormHead span {
           color:var(--accent);
@@ -1808,8 +1862,14 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           .catalogModalBackdrop { padding:0; place-items:end center; }
           .catalogModal { width:100%; max-height:94dvh; border-radius:26px 26px 0 0; }
           .catalogModalHead { padding:16px; }
-          .catalogCategoryHero { min-height:105px; }
-          .catalogItemImage,.catalogItemIcon { width:60px; height:60px; flex-basis:60px; }
+          .menuCategoryRail { gap:8px; padding:14px 12px 10px; }
+          .menuCategoryTab { flex-basis:66px; }
+          .menuCategoryVisual { width:52px; height:52px; }
+          .menuActiveCategory { padding:16px 16px 2px; }
+          .menuSectionTitle h3 { font-size:23px; }
+          .menuItem { grid-template-columns:70px minmax(0,1fr) auto; gap:11px; padding:12px 0; }
+          .menuItemVisual { width:70px; height:64px; }
+          .menuItemPrice { max-width:105px; font-size:13px; }
           .shareTools button { padding:0 10px; font-size:12px; }
           .vcPublicCover { height:180px; }
           .vcPublicLinks { padding:0 14px; }
