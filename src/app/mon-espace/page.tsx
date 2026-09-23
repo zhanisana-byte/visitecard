@@ -1514,7 +1514,11 @@ export default function MonEspacePage() {
             image_url: item.kind === "location" ? "" : (item.image_url || ""),
           };
         })
-        .filter((item) => item.kind === "wifi" || item.label || item.url);
+        .filter((item) =>
+            card.entity_type === "profile"
+              ? item.kind !== "wifi" && item.kind !== "location" && (item.label || item.url)
+              : item.kind === "wifi" || item.label || item.url
+          );
 
       const baseSlug =
         card.slug ||
@@ -2061,6 +2065,7 @@ export default function MonEspacePage() {
 
             </div>
 
+            {card.entity_type === "company" ? (
             <div className="locationManager">
               <div className="locationManagerHead">
                 <div>
@@ -2137,6 +2142,8 @@ export default function MonEspacePage() {
                 ) : null}
               </div>
             </div>
+
+            ) : null}
 
             <label>
               Présentation
@@ -2462,6 +2469,7 @@ export default function MonEspacePage() {
             </button>
           </section>
 
+          {card.entity_type === "company" ? (
           <section className="formSection wifiSection">
             <div className="sectionTitle wifiSectionTitle">
               <div>
@@ -2530,6 +2538,8 @@ export default function MonEspacePage() {
               profileCardId={card.id}
               language={card.language === "en" ? "en" : "fr"}
             />
+          ) : null}
+
           ) : null}
 
           <section className="formSection">
@@ -2790,6 +2800,7 @@ export default function MonEspacePage() {
               </button>
             </div>
 
+            {card.entity_type === "company" ? (
             <div className="toggleRow">
               <strong>
                 Afficher Localisations
@@ -2811,7 +2822,8 @@ export default function MonEspacePage() {
               >
                 <span />
               </button>
-            </div>
+            </div>            ) : null}
+
           </section>
 
           <section className="formSection">
