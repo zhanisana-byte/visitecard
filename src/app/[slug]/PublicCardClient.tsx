@@ -152,6 +152,12 @@ const texts = {
     qrTitle: "Partagez ma carte",
     qrText: "Scannez ce QR Code pour découvrir ma carte digitale.",
     qrDownload: "Télécharger mon QR Code",
+    qrReady: "Prêt à l’emploi",
+    qrReadyChoose: "Choisir un format",
+    qrReadyA4: "Affiche A4",
+    qrReadyA5: "Affiche A5",
+    qrReadyStory: "Story",
+    qrReadyPost: "Post",
     reviews: "Avis",
     leaveReview: "Donner un avis",
     name: "Nom",
@@ -176,6 +182,12 @@ const texts = {
     qrTitle: "Share my card",
     qrText: "Scan this QR Code to discover my digital card.",
     qrDownload: "Download my QR Code",
+    qrReady: "Ready to use",
+    qrReadyChoose: "Choose a format",
+    qrReadyA4: "A4 poster",
+    qrReadyA5: "A5 poster",
+    qrReadyStory: "Story",
+    qrReadyPost: "Post",
     reviews: "Reviews",
     leaveReview: "Leave a review",
     name: "Name",
@@ -452,6 +464,8 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [wifiOpen, setWifiOpen] = useState(false);
   const [wifiCopied, setWifiCopied] = useState<"ssid" | "password" | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [readyQrOpen, setReadyQrOpen] = useState(false);
+  const [readyQrDownloading, setReadyQrDownloading] = useState<string>("");
   const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
   const [catalogActiveCategory, setCatalogActiveCategory] = useState<string>("");
 
@@ -676,6 +690,76 @@ export default function PublicCardClient({ slug }: { slug: string }) {
       URL.revokeObjectURL(objectUrl);
     } catch {
       window.open(qrUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  async function downloadReadyQr(format: "a4" | "a5" | "story" | "post") {
+    if (!qrUrl || readyQrDownloading) return;
+
+    const formats = {
+      a4: { width: 2480, height: 3508, name: "A4" },
+      a5: { width: 1748, height: 2480, name: "A5" },
+      story: { width: 1080, height: 1920, name: "story" },
+      post: { width: 1080, height: 1350, name: "post" },
+    } as const;
+
+    setReadyQrDownloading(format);
+
+    try {
+      const response = await fetch(qrUrl);
+      if (!response.ok) throw new Error("QR download failed");
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+      const current = formats[format];
+      const canvas = document.createElement("canvas");
+      canvas.width = current.width;
+      canvas.height = current.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas unavailable");
+
+      const width = current.width;
+      const height = current.height;
+      const qrSize = Math.round(Math.min(width * 0.42, height * 0.28));
+      const qrX = Math.round((width - qrSize) / 2);
+      const qrY = Math.round((height - qrSize) / 2);
+      const fontSize = Math.round(Math.min(width * 0.105, height * 0.07));
+      const lineHeight = Math.round(fontSize * 0.78);
+      const topY = Math.round(qrY - fontSize * 1.15);
+      const bottomY = Math.round(qrY + qrSize + fontSize * 1.18);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "#000000";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `900 ${fontSize}px Arial, Helvetica, sans-serif`;
+
+      ctx.fillText("SCAN", width / 2, topY - lineHeight / 2);
+      ctx.fillText("ME", width / 2, topY + lineHeight / 2);
+      ctx.drawImage(bitmap, qrX, qrY, qrSize, qrSize);
+      ctx.fillText("SCAN", width / 2, bottomY - lineHeight / 2);
+      ctx.fillText("ME", width / 2, bottomY + lineHeight / 2);
+
+      ctx.font = `700 ${Math.max(22, Math.round(fontSize * 0.23))}px Arial, Helvetica, sans-serif`;
+      ctx.fillStyle = "#666666";
+      ctx.fillText("www.visitecard.com", width / 2, Math.round(height * 0.94));
+
+      const output = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 1));
+      bitmap.close();
+      if (!output) throw new Error("Image generation failed");
+
+      const objectUrl = URL.createObjectURL(output);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `visitecard-${slug}-${current.name}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      window.alert(lang === "en" ? "Unable to create the ready-to-use visual." : "Impossible de créer le visuel prêt à l’emploi.");
+    } finally {
+      setReadyQrDownloading("");
     }
   }
 
@@ -1413,9 +1497,39 @@ export default function PublicCardClient({ slug }: { slug: string }) {
               <small>{t.qrMini}</small>
               <h2>{t.qrTitle}</h2>
               <p>{t.qrText}</p>
-              <button type="button" onClick={downloadQr}>
-                ↓ {t.qrDownload}
-              </button>
+              <div className="vcQrActions">
+                <button type="button" onClick={downloadQr}>
+                  ↓ {t.qrDownload}
+                </button>
+                <button
+                  type="button"
+                  className="vcReadyQrButton"
+                  onClick={() => setReadyQrOpen((value) => !value)}
+                  aria-expanded={readyQrOpen}
+                >
+                  ✦ {t.qrReady}
+                </button>
+              </div>
+
+              {readyQrOpen ? (
+                <div className="vcReadyQrPanel">
+                  <span>{t.qrReadyChoose}</span>
+                  <div className="vcReadyQrFormats">
+                    <button type="button" onClick={() => downloadReadyQr("a4")} disabled={Boolean(readyQrDownloading)}>
+                      {readyQrDownloading === "a4" ? "..." : t.qrReadyA4}
+                    </button>
+                    <button type="button" onClick={() => downloadReadyQr("a5")} disabled={Boolean(readyQrDownloading)}>
+                      {readyQrDownloading === "a5" ? "..." : t.qrReadyA5}
+                    </button>
+                    <button type="button" onClick={() => downloadReadyQr("story")} disabled={Boolean(readyQrDownloading)}>
+                      {readyQrDownloading === "story" ? "..." : t.qrReadyStory}
+                    </button>
+                    <button type="button" onClick={() => downloadReadyQr("post")} disabled={Boolean(readyQrDownloading)}>
+                      {readyQrDownloading === "post" ? "..." : t.qrReadyPost}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="vcPublicQrBox">
@@ -1936,6 +2050,13 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .vcPublicQrCopy h2 { margin:8px 0; font-size:clamp(28px,5vw,42px); }
         .vcPublicQrCopy p { max-width:420px; margin:0 0 18px; color:var(--muted); line-height:1.55; }
         .vcPublicQrCopy button { min-height:46px; padding:0 16px; border:2px solid var(--button-border); border-radius:13px; background:var(--button-bg); color:var(--button-text); font-weight:900; cursor:pointer; }
+        .vcQrActions { display:flex; flex-wrap:wrap; gap:10px; }
+        .vcQrActions .vcReadyQrButton { background:transparent; color:var(--text); border-color:rgba(255,255,255,.2); }
+        .vcReadyQrPanel { width:min(430px,100%); margin-top:12px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.035); }
+        .vcReadyQrPanel > span { display:block; margin-bottom:9px; color:var(--muted); font-size:12px; font-weight:800; }
+        .vcReadyQrFormats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+        .vcReadyQrFormats button { min-height:38px; padding:0 8px; border-width:1px; border-radius:10px; font-size:12px; }
+        .vcReadyQrFormats button:disabled { opacity:.55; cursor:wait; }
         .vcPublicQrBox { width:176px; height:176px; padding:10px; border-radius:16px; background:#fff; }
         .vcPublicQrBox img { width:100%; height:100%; object-fit:contain; }
         .thanksToast {
@@ -1997,6 +2118,9 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           .vcPublicLinks { padding:0 14px; }
           .vcPublicContactRow { padding:14px; grid-template-columns:1fr; }
           .vcPublicQrSection { grid-template-columns:1fr; }
+          .vcQrActions { display:grid; grid-template-columns:1fr; }
+          .vcQrActions button { width:100%; }
+          .vcReadyQrFormats { grid-template-columns:repeat(2,minmax(0,1fr)); }
           .vcPublicQrBox { width:160px; height:160px; }
         }
 .googleReviewsPublicButton{align-items:center}.googleReviewsIcon{display:grid;place-items:center;font-size:18px}.googleReviewsCopy{display:flex;flex-direction:column;align-items:flex-start;gap:3px}.googleReviewsCopy small{font-size:11px;opacity:.72;font-weight:600}
