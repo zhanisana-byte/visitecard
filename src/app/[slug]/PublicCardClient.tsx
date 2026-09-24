@@ -1423,6 +1423,16 @@ export default function PublicCardClient({ slug }: { slug: string }) {
             </div>
           </section>
         ) : null}
+
+        <a
+          className="vcCreateCardMini"
+          href={`${siteUrl}/creer-compte`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span>{lang === "en" ? "Like this card? Create yours" : "Vous aimez cette carte ? Créez la vôtre"}</span>
+          <strong>www.visitecard.com</strong>
+        </a>
       </div>
 
       {wifiConfig ? (
@@ -1520,6 +1530,9 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         * { box-sizing: border-box; }
         .vcPublicPage { min-height:100dvh; padding:28px 18px 46px; font-family:Inter,system-ui,sans-serif; }
         .vcPublicPage.hasWifiAction { padding-bottom:112px; }
+        .vcCreateCardMini { width:max-content; max-width:100%; margin:14px auto 0; display:flex; align-items:center; justify-content:center; gap:5px; color:var(--muted); font-size:10px; line-height:1.2; text-decoration:none; opacity:.62; transition:opacity .18s ease; }
+        .vcCreateCardMini strong { color:inherit; font-size:10px; font-weight:800; }
+        .vcCreateCardMini:hover { opacity:1; }
         .wifiFloatingAction { position:fixed;z-index:850;bottom:20px;min-height:58px;padding:7px 14px 7px 7px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(7,17,28,.94);color:#fff;box-shadow:0 16px 48px rgba(0,0,0,.32);backdrop-filter:blur(14px);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease; }
         .wifiFloatingAction:hover { transform:translateY(-2px);box-shadow:0 20px 56px rgba(0,0,0,.4); }
         .wifiFloatingAction.bottom-left { left:20px; }
