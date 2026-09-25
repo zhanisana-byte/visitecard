@@ -1047,7 +1047,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           <div className={`vcPublicIdentity ${isProfile && !hasProfileMeta ? "compactProfileIdentity" : ""}`}>
             <h1>{card.full_name || "VisiteCard"}</h1>
             {card.job_title ? <p>{card.job_title}</p> : null}
-            {card.company ? <small>{card.company}</small> : null}
+            {isProfile && card.company && card.company.trim().toLowerCase() !== (card.full_name || "").trim().toLowerCase() ? <small>{card.company}</small> : null}
             {card.bio ? <div className="bio">{card.bio}</div> : null}
             {!isProfile && card.show_reviews !== false ? (
               <button
@@ -1355,8 +1355,12 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                         {activeCategory.items.length ? activeCategory.items.map((item) => (
                           <article key={item.id} className="menuItem">
                             <div className="menuItemVisual">
-                              {item.visual_type === "image" && item.image_url ? (
-                                <img src={item.image_url} alt={catalogText(item.title_fr, item.title_en)} />
+                              {item.image_url ? (
+                                /\.(mp4|webm|ogg|mov)(?:$|\?)/i.test(item.image_url) ? (
+                                  <video src={item.image_url} controls playsInline preload="metadata" />
+                                ) : (
+                                  <img src={item.image_url} alt={catalogText(item.title_fr, item.title_en)} />
+                                )
                               ) : (
                                 <span>{item.icon === "sparkles" ? "✦" : "◆"}</span>
                               )}
@@ -1939,7 +1943,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .menuItem { display:grid; grid-template-columns:76px minmax(0,1fr) auto; gap:13px; align-items:center; padding:13px 0; border-bottom:1px solid rgba(255,255,255,.11); }
         .menuItem:last-child { border-bottom:0; }
         .menuItemVisual { width:76px; height:68px; overflow:hidden; border-radius:12px; display:grid; place-items:center; background:rgba(255,255,255,.07); color:var(--accent); font-size:24px; }
-        .menuItemVisual img { width:100%; height:100%; object-fit:cover; }
+        .menuItemVisual img, .menuItemVisual video { width:100%; height:100%; object-fit:cover; display:block; }
         .menuItemInfo { min-width:0; }
         .menuItemInfo strong { display:block; font-size:15px; line-height:1.25; }
         .menuItemInfo p { margin:5px 0 0; color:rgba(255,255,255,.65); font-size:12px; line-height:1.35; }
