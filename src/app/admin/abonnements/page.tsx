@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type CardInfo = {
   id: string; full_name?: string; company?: string; email?: string; phone?: string;
-  entity_type?: "profile"|"company"; slug?: string;
+  entity_type?: "profile"|"company"; slug?: string; vc_reference?: string;
 };
 type Subscription = {
   id:string; user_id:string; card_id:string; account_type:"profile"|"company";
@@ -69,7 +69,7 @@ export default function AdminSubscriptionsPage(){
     setForm({
       ...s,
       start_date:s.start_date||new Date().toISOString().slice(0,10),
-      plan_code:s.plan_code||"PRO",
+      plan_code:s.plan_code||"",
       currency:s.currency||"TND",
     });
   }
@@ -130,19 +130,19 @@ export default function AdminSubscriptionsPage(){
     {current&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setCurrent(null)}}><div className="modal">
       <button className="close" onClick={()=>setCurrent(null)}>×</button><small>{current.is_missing?"CRÉER ABONNEMENT":"FICHE ABONNEMENT"}</small>
       <h2>{current.card?.company||current.card?.full_name||"Client"}</h2>
-      <div className="contact"><b>{current.card?.email||"—"}</b><span>{current.card?.phone||""}</span></div>
+      <div className="contact"><b>{current.card?.email||"—"}</b><span>Référence : {current.card?.vc_reference||"—"}</span></div>
       <div className="grid">
         <label>Statut<select value={form.status||""} onChange={e=>setForm({...form,status:e.target.value})}>{Object.entries(labels).map(([k,v])=><option key={k} value={k}>{String(v)}</option>)}</select></label>
         <label>Offre
           <select value={form.plan_code||""} onChange={e=>applyOffer(e.target.value)}>
-            <option value="">Sélectionner une offre</option>
+            <option value="">Sans offre</option>
             {offers.map((o:any)=><option key={offerCode(o)} value={offerCode(o)}>{offerLabel(o)}</option>)}
           </select>
         </label>
         <label>Devise<select value={form.currency||"TND"} onChange={e=>setForm({...form,currency:e.target.value})}><option>TND</option><option>EUR</option></select></label>
         <label>Tarif HT<input type="number" step="0.01" value={form.price_ht??0} onChange={e=>setForm({...form,price_ht:e.target.value})}/></label>
         <label>TVA %<input type="number" step="0.01" value={form.tax_rate??0} onChange={e=>setForm({...form,tax_rate:e.target.value})}/></label>
-        {form.status==="startup"&&<label>Mois gratuits<input type="number" value={form.startup_months??2} onChange={e=>setForm({...form,startup_months:e.target.value})}/></label>}
+        {form.status==="startup"&&<label>Mois gratuits (optionnel)<input type="number" min="0" placeholder="0" value={form.startup_months??0} onChange={e=>setForm({...form,startup_months:e.target.value})}/></label>}
         <label>Date début<input type="date" value={form.start_date||""} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
         <label>Date fin<input type="date" value={form.end_date||""} onChange={e=>setForm({...form,end_date:e.target.value})}/></label>
         <label>Commercial / apporteur<input value={form.referrer_name||""} onChange={e=>setForm({...form,referrer_name:e.target.value})}/></label>
