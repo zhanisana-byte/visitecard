@@ -19,7 +19,7 @@ export async function GET(){
     const s=db();
     const {data:subs,error}=await s.from("subscriptions").select("*").order("created_at",{ascending:false});
     if(error)throw error;
-    const {data:cards,error:ce}=await s.from("cards").select("id,user_id,full_name,company,email,phone,entity_type,slug,created_at").order("created_at",{ascending:false});
+    const {data:cards,error:ce}=await s.from("cards").select("id,user_id,full_name,company,email,phone,entity_type,slug,vc_reference,created_at").order("created_at",{ascending:false});
     if(ce)throw ce;
 
     const byId=new Map((cards||[]).map((c:any)=>[c.id,c]));
@@ -44,7 +44,7 @@ export async function GET(){
         card_id:card.id,
         account_type:card.entity_type==="profile"?"profile":"company",
         status:"pending",
-        plan_code:"PRO",
+        plan_code:"",
         currency:"TND",
         price_ht:0,
         tax_rate:0,
@@ -99,7 +99,7 @@ export async function POST(req:Request){
       card_id:card.id,
       account_type:card.entity_type==="profile"?"profile":"company",
       status,
-      plan_code:String(body.plan_code||"PRO"),
+      plan_code:String(body.plan_code||""),
       currency:String(body.currency||"TND"),
       price_ht:Number(body.price_ht||0),
       tax_rate:Number(body.tax_rate||0),
