@@ -51,6 +51,7 @@ type CardData = {
   full_name: string;
   job_title: string;
   activity_font: string;
+  activity_font_size: number;
   company: string;
   bio: string;
   email: string;
@@ -162,6 +163,7 @@ const emptyCard: CardData = {
   full_name: "",
   job_title: "",
   activity_font: "",
+  activity_font_size: 16,
   company: "",
   bio: "",
   email: "",
@@ -743,6 +745,7 @@ export default function MonEspacePage() {
             full_name: loaded.full_name ?? "",
             job_title: loaded.job_title ?? "",
             activity_font: loaded.activity_font ?? "",
+            activity_font_size: Number(loaded.activity_font_size ?? 16),
             company: loaded.company ?? "",
             bio: loaded.bio ?? "",
             email: loaded.email ?? "",
@@ -1631,6 +1634,7 @@ export default function MonEspacePage() {
         full_name: (card.full_name ?? "").trim(),
         job_title: (card.job_title ?? "").trim(),
         activity_font: (card.activity_font ?? "").trim(),
+        activity_font_size: Math.min(36, Math.max(12, Number(card.activity_font_size || 16))),
         company: (card.company ?? "").trim(),
         bio: (card.bio ?? "").trim(),
         email: (card.email ?? "").trim(),
@@ -2131,7 +2135,10 @@ export default function MonEspacePage() {
                     )
                   }
                   placeholder="Facultatif"
-                  style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}
+                  style={{
+                    ...(card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : {}),
+                    fontSize: `${card.activity_font_size || 16}px`,
+                  }}
                 />
               </label>
 
@@ -2184,6 +2191,26 @@ export default function MonEspacePage() {
                   ) : null}
                 </div>
                 <small className="activityFontHint">Chaque choix s’affiche directement avec sa vraie police dans l’aperçu.</small>
+              </div>
+
+              <div className="activityFontSizeField">
+                <div className="activityFontSizeHead">
+                  <span className="activityFontLabel">Taille de l’activité</span>
+                  <strong>{card.activity_font_size || 16} px</strong>
+                </div>
+                <input
+                  className="activityFontSizeRange"
+                  type="range"
+                  min="12"
+                  max="36"
+                  step="1"
+                  value={card.activity_font_size || 16}
+                  onChange={(event) => updateField("activity_font_size", Number(event.target.value))}
+                />
+                <div className="activityFontSizeScale">
+                  <span>12 px</span>
+                  <span>36 px</span>
+                </div>
               </div>
 
               <label>
@@ -3336,7 +3363,10 @@ export default function MonEspacePage() {
 
                 {card.job_title ? (
                   <p
-                    style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}
+                    style={{
+                      ...(card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : {}),
+                      fontSize: `${card.activity_font_size || 16}px`,
+                    }}
                   >
                     {
                       card.job_title
@@ -4747,6 +4777,11 @@ export default function MonEspacePage() {
         .activityFontOption span{font-size:18px;line-height:1.2;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .activityFontOption small{font-family:Arial,sans-serif;font-size:10px;color:#7a8190;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
         .activityFontHint{font-size:11px;line-height:1.45;color:#8a919f}
+        .activityFontSizeField{grid-column:1/-1;display:grid;gap:8px;margin-top:-1px;padding:13px 15px;border:1px solid #e4e7ec;border-radius:14px;background:#fff}
+        .activityFontSizeHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .activityFontSizeHead strong{font-size:13px;color:#ff5a33;white-space:nowrap}
+        .activityFontSizeRange{width:100%;height:6px!important;padding:0!important;margin:2px 0 0!important;border:0!important;border-radius:999px!important;background:#e9edf2!important;accent-color:#ff5a33;cursor:pointer}
+        .activityFontSizeScale{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#98a2b3}
 
         .paletteIntro{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding:12px 14px;border:1px solid var(--line,#e5e7eb);border-radius:12px}
         .paletteIntro strong{font-size:13px}
