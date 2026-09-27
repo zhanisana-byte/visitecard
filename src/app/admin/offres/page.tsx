@@ -297,10 +297,14 @@ export default function AdminOffersPage() {
 
       <div className="container">
         <section className="hero">
-          <span>ADMINISTRATION</span>
-          <div className="heroLine">
-            <h1>Offres & Tarifs</h1>
-            <p>Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.</p>
+          <div>
+            <span>ADMINISTRATION</span>
+            <div className="heroLine">
+              <h1>Offres & Tarifs</h1>
+              <p>
+                Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -1148,20 +1152,17 @@ export default function AdminOffersPage() {
         }
 
         .container {
-          width: min(1400px, calc(100% - 32px));
-          margin: 0 auto;
-          padding: 18px 0 60px;
+          max-width: 1400px;
+          margin: auto;
+          padding: 18px 24px 60px;
         }
 
         .hero {
           background: #111;
           color: white;
-          border-radius: 16px;
-          padding: 16px 20px;
+          border-radius: 18px;
+          padding: 18px 22px;
           margin-bottom: 18px;
-          min-height: auto;
-          height: auto;
-          display: block;
         }
 
         .hero span {
@@ -1174,14 +1175,14 @@ export default function AdminOffersPage() {
         .heroLine {
           display: flex;
           align-items: center;
-          gap: 16px;
-          margin-top: 4px;
+          gap: 18px;
+          margin-top: 5px;
           min-width: 0;
         }
 
         .hero h1 {
-          font-size: 25px;
-          line-height: 1.15;
+          font-size: 26px;
+          line-height: 1.1;
           margin: 0;
           white-space: nowrap;
         }
@@ -1443,6 +1444,53 @@ export default function AdminOffersPage() {
         .newOffer {
           margin-top: 36px;
           border: 2px dashed #ddd;
+        }
+
+        
+        .startupScope {
+          margin-top: 18px;
+          padding: 18px;
+          border: 1px solid #e6e6e6;
+          border-radius: 16px;
+          background: #fafafa;
+        }
+
+        .scopeTitle {
+          font-weight: 800;
+          margin-bottom: 12px;
+        }
+
+        .scopeChoices {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .scopeChoice {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px;
+          border: 1px solid #ddd;
+          border-radius: 14px;
+          background: white;
+          cursor: pointer;
+        }
+
+        .scopeChoice input {
+          width: 18px;
+          height: 18px;
+          accent-color: #ff7417;
+        }
+
+        .scopeChoice span {
+          display: grid;
+          gap: 3px;
+        }
+
+        .scopeChoice small {
+          color: #777;
+          font-size: 12px;
         }
 
         @media (max-width: 900px) {
