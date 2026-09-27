@@ -30,15 +30,15 @@ type Agent = {
 };
 
 const emptyBank = {
-  label: "",
+  label: "Attijari Bank · Agence Lac Marina",
   beneficiary_name: "Sana Zhani",
-  bank_name: "",
+  bank_name: "Attijari Bank",
   currency: "TND",
-  rib: "",
-  iban: "",
-  bic_swift: "",
-  instructions_fr: "",
-  instructions_en: "",
+  rib: "04060145004805694935",
+  iban: "TN59 04060145004805694935",
+  bic_swift: "BSTUTNTT",
+  instructions_fr: "Indiquez votre référence VC dans le libellé du virement.",
+  instructions_en: "Please include your VC reference in the bank transfer description.",
   is_active: true,
 };
 
@@ -574,13 +574,13 @@ export default function PaymentSettingsPage() {
         }
 
         header {
-          height: 66px;
+          height: 58px;
           background: #111;
           color: #fff;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 32px;
+          padding: 0 24px;
         }
 
         header a {
@@ -592,13 +592,13 @@ export default function PaymentSettingsPage() {
         .container {
           max-width: 1350px;
           margin: auto;
-          padding: 32px 22px 80px;
+          padding: 18px 22px 60px;
         }
 
         .hero {
           background: #111;
           color: white;
-          padding: 34px;
+          padding: 18px 22px;
           border-radius: 22px;
         }
 
