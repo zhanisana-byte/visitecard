@@ -351,6 +351,7 @@ export async function GET(request: Request) {
       { data: banks, error: banksError },
       { data: subscriptions, error: subscriptionsError },
       { data: history, error: historyError },
+      { data: paymentRequests, error: paymentRequestsError },
     ] = await Promise.all([
       s
         .from("vc_offers")
@@ -390,6 +391,13 @@ export async function GET(request: Request) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50),
+
+      s
+        .from("vc_payment_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
     if (offersError) throw offersError;
@@ -398,6 +406,7 @@ export async function GET(request: Request) {
     if (banksError) throw banksError;
     if (subscriptionsError) throw subscriptionsError;
     if (historyError) throw historyError;
+    if (paymentRequestsError) throw paymentRequestsError;
 
     return NextResponse.json({
       cards,
@@ -407,6 +416,7 @@ export async function GET(request: Request) {
       banks: banks || [],
       subscriptions: subscriptions || [],
       history: history || [],
+      payment_requests: paymentRequests || [],
     });
   } catch (e: any) {
     return NextResponse.json(
@@ -673,6 +683,7 @@ export async function POST(request: Request) {
             ? "Profil"
             : "Société"),
         vc_reference: card.vc_reference,
+        card_reference: card.vc_reference,
         quantity: 1,
         unit_price: unit,
         total_price: unit,
