@@ -7,6 +7,17 @@ import { useLanguage } from "@/components/LanguageProvider";
 
 type Plan = "startup" | "pro" | "included" | "expired";
 
+type PaymentRequest = {
+  id: string;
+  payment_reference?: string | null;
+  vc_reference?: string | null;
+  amount?: number | null;
+  total_amount?: number | null;
+  currency?: string | null;
+  payment_method?: string | null;
+  status?: string | null;
+};
+
 export default function ProfilPage() {
   const { lang } = useLanguage();
   const fr = lang === "fr";
@@ -19,6 +30,7 @@ export default function ProfilPage() {
   const [plan, setPlan] = useState<Plan>("startup");
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
 
   const isPro = plan === "pro";
   const isStartup = plan === "startup";
@@ -59,6 +71,33 @@ export default function ProfilPage() {
         else setPlan("startup");
 
         setPlanExpiresAt(subscription?.end_date || null);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          const response = await fetch("/api/billing/checkout", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            cache: "no-store",
+          });
+
+          if (response.ok) {
+            const billing = await response.json();
+            const requests = Array.isArray(billing?.payment_requests)
+              ? billing.payment_requests
+              : [];
+
+            const current =
+              requests.find((r: PaymentRequest) =>
+                ["pending", "confirmed", "approved", "paid"].includes(
+                  String(r.status || "").toLowerCase()
+                )
+              ) || null;
+
+            setPaymentRequest(current);
+          }
+        }
       } catch (x: any) {
         setError(
           x?.message ||
@@ -224,6 +263,19 @@ Thank you.`
     } catch {
       return value;
     }
+  }
+
+  const paymentStatus = String(paymentRequest?.status || "").toLowerCase();
+  const paymentConfirmed = ["confirmed", "approved", "paid"].includes(paymentStatus);
+
+  function paymentMethodLabel(value?: string | null) {
+    if (value === "bank_transfer" || value === "bank")
+      return fr ? "Virement bancaire" : "Bank transfer";
+    if (value === "agent")
+      return fr ? "Agent Visitecard" : "Visitecard agent";
+    if (value === "online")
+      return fr ? "Paiement en ligne" : "Online payment";
+    return value || "—";
   }
 
   return (
@@ -925,7 +977,53 @@ Thank you.`
             width: 100%;
           }
         }
-      `}</style>
+      `}
+        .paymentRequestBox {
+          margin-top: 14px;
+          max-width: 560px;
+          padding: 16px 18px;
+          border: 1px solid #ffb39d;
+          border-radius: 16px;
+          background: #fff7f3;
+        }
+        .paymentRequestBox.confirmed {
+          border-color: #b7dfc5;
+          background: #f3fbf6;
+        }
+        .paymentRequestTop,
+        .paymentRequestMeta {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+        }
+        .paymentRequestTop strong {
+          color: #ff4d1d;
+          font-size: 16px;
+        }
+        .paymentRequestBox.confirmed .paymentRequestTop strong {
+          color: #16864b;
+        }
+        .paymentRequestTop span,
+        .paymentRequestMeta {
+          color: #667085;
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .paymentRequestBox p {
+          margin: 8px 0 10px;
+          color: #475467;
+          font-size: 14px;
+        }
+        .paymentRequestBox a {
+          display: inline-block;
+          margin-top: 12px;
+          color: #0b1f3a;
+          font-weight: 800;
+          text-decoration: underline;
+        }
+
+      </style>
     </main>
   );
 }
