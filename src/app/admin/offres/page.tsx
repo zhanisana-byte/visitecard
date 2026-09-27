@@ -32,6 +32,8 @@ type Settings = {
   payment_online_enabled: boolean;
 };
 
+type Currency = "TND" | "EUR";
+
 const emptyOffer: Partial<Offer> = {
   name: "",
   code: "",
@@ -41,7 +43,7 @@ const emptyOffer: Partial<Offer> = {
   duration_value: 1,
   duration_unit: "year",
   price_tnd: 0,
-  price_eur: 0,
+  price_eur: null,
   promo_enabled: false,
   promo_price_tnd: null,
   promo_price_eur: null,
@@ -53,7 +55,24 @@ const emptyOffer: Partial<Offer> = {
 
 function dateInput(value: string | null) {
   if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function getCurrency(offer: Partial<Offer>): Currency {
+  if (offer.price_eur !== null && offer.price_eur !== undefined && offer.price_tnd == null) {
+    return "EUR";
+  }
+  return "TND";
+}
+
+function getPrice(offer: Partial<Offer>) {
+  return getCurrency(offer) === "EUR" ? offer.price_eur ?? "" : offer.price_tnd ?? "";
+}
+
+function getPromoPrice(offer: Partial<Offer>) {
+  return getCurrency(offer) === "EUR"
+    ? offer.promo_price_eur ?? ""
+    : offer.promo_price_tnd ?? "";
 }
 
 export default function AdminOffersPage() {
@@ -280,11 +299,12 @@ export default function AdminOffersPage() {
         <section className="hero">
           <div>
             <span>ADMINISTRATION</span>
-            <h1>Offres & Tarifs</h1>
-            <p>
-              Gérez les périodes gratuites, les tarifs,
-              promotions et moyens de paiement.
-            </p>
+            <div className="heroLine">
+              <h1>Offres & Tarifs</h1>
+              <p>
+                Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -660,61 +680,74 @@ export default function AdminOffersPage() {
               )}
 
               <div className="prices">
-                <div>
-                  <span>Prix DT</span>
+                <label>
+                  <span>Devise</span>
+                  <select
+                    value={getCurrency(offer)}
+                    onChange={(e) => {
+                      const currency = e.target.value as Currency;
+                      const price = getPrice(offer);
+                      const promoPrice = getPromoPrice(offer);
 
+                      setOffers((current) =>
+                        current.map((item) =>
+                          item.id === offer.id
+                            ? {
+                                ...item,
+                                price_tnd:
+                                  currency === "TND"
+                                    ? price === ""
+                                      ? null
+                                      : Number(price)
+                                    : null,
+                                price_eur:
+                                  currency === "EUR"
+                                    ? price === ""
+                                      ? null
+                                      : Number(price)
+                                    : null,
+                                promo_price_tnd:
+                                  currency === "TND"
+                                    ? promoPrice === ""
+                                      ? null
+                                      : Number(promoPrice)
+                                    : null,
+                                promo_price_eur:
+                                  currency === "EUR"
+                                    ? promoPrice === ""
+                                      ? null
+                                      : Number(promoPrice)
+                                    : null,
+                              }
+                            : item
+                        )
+                      );
+                    }}
+                  >
+                    <option value="TND">DT — Dinar tunisien</option>
+                    <option value="EUR">€ — Euro</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Prix</span>
                   <div className="priceInput">
                     <input
                       type="number"
                       min="0"
-                      step="0.001"
-                      value={
-                        offer.price_tnd ?? ""
-                      }
+                      step={getCurrency(offer) === "TND" ? "0.001" : "0.01"}
+                      value={getPrice(offer)}
                       onChange={(e) =>
                         updateOffer(
                           offer.id,
-                          "price_tnd",
-                          e.target.value === ""
-                            ? null
-                            : Number(
-                                e.target.value
-                              )
+                          getCurrency(offer) === "TND" ? "price_tnd" : "price_eur",
+                          e.target.value === "" ? null : Number(e.target.value)
                         )
                       }
                     />
-
-                    <b>DT</b>
+                    <b>{getCurrency(offer) === "TND" ? "DT" : "€"}</b>
                   </div>
-                </div>
-
-                <div>
-                  <span>Prix €</span>
-
-                  <div className="priceInput">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={
-                        offer.price_eur ?? ""
-                      }
-                      onChange={(e) =>
-                        updateOffer(
-                          offer.id,
-                          "price_eur",
-                          e.target.value === ""
-                            ? null
-                            : Number(
-                                e.target.value
-                              )
-                        )
-                      }
-                    />
-
-                    <b>€</b>
-                  </div>
-                </div>
+                </label>
               </div>
 
               <div className="promo">
@@ -743,57 +776,20 @@ export default function AdminOffersPage() {
                     <div className="grid">
                       <label>
                         <span>
-                          Prix promo DT
+                          Prix promotionnel ({getCurrency(offer) === "TND" ? "DT" : "€"})
                         </span>
-
                         <input
                           type="number"
                           min="0"
-                          step="0.001"
-                          value={
-                            offer.promo_price_tnd ??
-                            ""
-                          }
+                          step={getCurrency(offer) === "TND" ? "0.001" : "0.01"}
+                          value={getPromoPrice(offer)}
                           onChange={(e) =>
                             updateOffer(
                               offer.id,
-                              "promo_price_tnd",
-                              e.target.value ===
-                                ""
-                                ? null
-                                : Number(
-                                    e.target
-                                      .value
-                                  )
-                            )
-                          }
-                        />
-                      </label>
-
-                      <label>
-                        <span>
-                          Prix promo €
-                        </span>
-
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={
-                            offer.promo_price_eur ??
-                            ""
-                          }
-                          onChange={(e) =>
-                            updateOffer(
-                              offer.id,
-                              "promo_price_eur",
-                              e.target.value ===
-                                ""
-                                ? null
-                                : Number(
-                                    e.target
-                                      .value
-                                  )
+                              getCurrency(offer) === "TND"
+                                ? "promo_price_tnd"
+                                : "promo_price_eur",
+                              e.target.value === "" ? null : Number(e.target.value)
                             )
                           }
                         />
@@ -815,11 +811,7 @@ export default function AdminOffersPage() {
                             updateOffer(
                               offer.id,
                               "promo_start_at",
-                              e.target.value
-                                ? new Date(
-                                    `${e.target.value}T00:00:00`
-                                  ).toISOString()
-                                : null
+                              e.target.value || null
                             )
                           }
                         />
@@ -839,11 +831,7 @@ export default function AdminOffersPage() {
                             updateOffer(
                               offer.id,
                               "promo_end_at",
-                              e.target.value
-                                ? new Date(
-                                    `${e.target.value}T23:59:59`
-                                  ).toISOString()
-                                : null
+                              e.target.value || null
                             )
                           }
                         />
@@ -1063,51 +1051,58 @@ export default function AdminOffersPage() {
 
           <div className="grid">
             <label>
-              <span>Prix DT</span>
+              <span>Devise</span>
+              <select
+                value={getCurrency(newOffer)}
+                onChange={(e) => {
+                  const currency = e.target.value as Currency;
+                  const price = getPrice(newOffer);
 
-              <input
-                type="number"
-                min="0"
-                step="0.001"
-                value={
-                  newOffer.price_tnd ?? ""
-                }
-                onChange={(e) =>
                   setNewOffer({
                     ...newOffer,
                     price_tnd:
-                      e.target.value === ""
-                        ? null
-                        : Number(
-                            e.target.value
-                          ),
-                  })
-                }
-              />
+                      currency === "TND"
+                        ? price === ""
+                          ? null
+                          : Number(price)
+                        : null,
+                    price_eur:
+                      currency === "EUR"
+                        ? price === ""
+                          ? null
+                          : Number(price)
+                        : null,
+                    promo_price_tnd: null,
+                    promo_price_eur: null,
+                  });
+                }}
+              >
+                <option value="TND">DT — Dinar tunisien</option>
+                <option value="EUR">€ — Euro</option>
+              </select>
             </label>
 
             <label>
-              <span>Prix €</span>
+              <span>Prix</span>
+              <div className="priceInput">
+                <input
+                  type="number"
+                  min="0"
+                  step={getCurrency(newOffer) === "TND" ? "0.001" : "0.01"}
+                  value={getPrice(newOffer)}
+                  onChange={(e) => {
+                    const value =
+                      e.target.value === "" ? null : Number(e.target.value);
 
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={
-                  newOffer.price_eur ?? ""
-                }
-                onChange={(e) =>
-                  setNewOffer({
-                    ...newOffer,
-                    price_eur:
-                      e.target.value === ""
-                        ? null
-                        : Number(
-                            e.target.value
-                          ),
-                  })
-                }
-              />
+                    setNewOffer({
+                      ...newOffer,
+                      price_tnd: getCurrency(newOffer) === "TND" ? value : null,
+                      price_eur: getCurrency(newOffer) === "EUR" ? value : null,
+                    });
+                  }}
+                />
+                <b>{getCurrency(newOffer) === "TND" ? "DT" : "€"}</b>
+              </div>
             </label>
           </div>
 
@@ -1138,13 +1133,13 @@ export default function AdminOffersPage() {
         }
 
         .topbar {
-          height: 66px;
+          height: 58px;
           background: #111;
           color: white;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 32px;
+          padding: 0 24px;
           position: sticky;
           top: 0;
           z-index: 20;
@@ -1159,15 +1154,15 @@ export default function AdminOffersPage() {
         .container {
           max-width: 1400px;
           margin: auto;
-          padding: 34px 24px 80px;
+          padding: 18px 24px 60px;
         }
 
         .hero {
           background: #111;
           color: white;
-          border-radius: 24px;
-          padding: 38px;
-          margin-bottom: 24px;
+          border-radius: 18px;
+          padding: 18px 22px;
+          margin-bottom: 18px;
         }
 
         .hero span {
@@ -1177,14 +1172,26 @@ export default function AdminOffersPage() {
           font-weight: 800;
         }
 
+        .heroLine {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          margin-top: 5px;
+          min-width: 0;
+        }
+
         .hero h1 {
-          font-size: 36px;
-          margin: 10px 0 8px;
+          font-size: 26px;
+          line-height: 1.1;
+          margin: 0;
+          white-space: nowrap;
         }
 
         .hero p {
           margin: 0;
           color: #bbb;
+          font-size: 14px;
+          line-height: 1.4;
         }
 
         .message {
@@ -1460,11 +1467,16 @@ export default function AdminOffersPage() {
           }
 
           .hero {
-            padding: 26px 22px;
+            padding: 16px 18px;
+          }
+
+          .heroLine {
+            display: block;
           }
 
           .hero h1 {
-            font-size: 28px;
+            font-size: 24px;
+            margin-bottom: 7px;
           }
 
           .panel,
