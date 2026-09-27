@@ -177,6 +177,7 @@ export async function PATCH(
       email_confirm?: boolean;
       password?: string;
       user_metadata?: Record<string, any>;
+      ban_duration?: string;
     } = {};
 
     let newName:
@@ -288,6 +289,22 @@ export async function PATCH(
 
       authUpdates.password =
         password;
+    }
+
+    /* -----------------------------------------------------
+       ÉTAT DU COMPTE
+    ----------------------------------------------------- */
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "account_active"
+      )
+    ) {
+      authUpdates.ban_duration =
+        body.account_active === false
+          ? "876000h"
+          : "none";
     }
 
     /* -----------------------------------------------------
