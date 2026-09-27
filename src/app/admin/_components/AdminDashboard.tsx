@@ -94,7 +94,7 @@ export default function AdminDashboard() {
     } catch (e: any) { setError(e?.message || "Création impossible."); } finally { setActionLoading(false); }
   }
 
-  async function updateUser(payload: Record<string, string>, message: string) {
+  async function updateUser(payload: Record<string, unknown>, message: string) {
     if (!current) return;
     setActionLoading(true); setError("");
     try {
