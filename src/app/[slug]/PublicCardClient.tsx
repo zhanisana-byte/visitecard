@@ -41,6 +41,7 @@ type CardRow = {
   full_name?: string;
   job_title?: string;
   activity_font?: string;
+  activity_font_size?: number;
   company?: string;
   bio?: string;
   email?: string;
@@ -1066,7 +1067,16 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
           <div className={`vcPublicIdentity ${isProfile && !hasProfileMeta ? "compactProfileIdentity" : ""}`}>
             <h1>{card.full_name || "VisiteCard"}</h1>
-            {card.job_title ? <p style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}>{card.job_title}</p> : null}
+            {card.job_title ? (
+              <p
+                style={{
+                  ...(card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : {}),
+                  fontSize: `${Math.min(36, Math.max(12, Number(card.activity_font_size || 16)))}px`,
+                }}
+              >
+                {card.job_title}
+              </p>
+            ) : null}
             {isProfile && card.company && card.company.trim().toLowerCase() !== (card.full_name || "").trim().toLowerCase() ? <small>{card.company}</small> : null}
             {card.bio ? <div className="bio">{card.bio}</div> : null}
             {!isProfile && card.show_reviews !== false ? (
