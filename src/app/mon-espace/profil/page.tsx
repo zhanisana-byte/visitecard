@@ -977,7 +977,6 @@ Thank you.`
             width: 100%;
           }
         }
-      `}
         .paymentRequestBox {
           margin-top: 14px;
           max-width: 560px;
@@ -1022,7 +1021,7 @@ Thank you.`
           font-weight: 800;
           text-decoration: underline;
         }
-
+      `}
       </style>
     </main>
   );
