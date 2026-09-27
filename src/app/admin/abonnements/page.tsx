@@ -27,6 +27,8 @@ export default function AdminSubscriptionsPage(){
   const [form,setForm]=useState<any>({}); const [saving,setSaving]=useState(false);
   const [offers,setOffers]=useState<any[]>([]);
   const [agents,setAgents]=useState<any[]>([]);
+  const [caFrom,setCaFrom]=useState("");
+  const [caTo,setCaTo]=useState("");
 
   async function load(){
     setLoading(true);setError("");
@@ -52,8 +54,20 @@ export default function AdminSubscriptionsPage(){
   const startup=items.filter(x=>x.status==="startup").length;
   const included=items.filter(x=>x.status==="included").length;
   const soon=items.filter(x=>x.end_date&&["active","startup"].includes(x.status)&&new Date(x.end_date).getTime()-Date.now()<=30*86400000&&new Date(x.end_date).getTime()>=Date.now()).length;
-  const caTND=items.filter(x=>x.currency==="TND"&&x.status==="active").reduce((a,b)=>a+Number(b.price_ht||0),0);
-  const caEUR=items.filter(x=>x.currency==="EUR"&&x.status==="active").reduce((a,b)=>a+Number(b.price_ht||0),0);
+  const caItems=items.filter(x=>{
+    if(x.status!=="active") return false;
+    if(!caFrom&&!caTo) return true;
+    if(!x.start_date) return false;
+    const d=new Date(`${x.start_date}T12:00:00`).getTime();
+    if(caFrom&&d<new Date(`${caFrom}T00:00:00`).getTime()) return false;
+    if(caTo&&d>new Date(`${caTo}T23:59:59`).getTime()) return false;
+    return true;
+  });
+  const caTND=caItems.filter(x=>x.currency==="TND").reduce((a,b)=>a+Number(b.price_ht||0),0);
+  const caEUR=caItems.filter(x=>x.currency==="EUR").reduce((a,b)=>a+Number(b.price_ht||0),0);
+  const caPeriodLabel=caFrom||caTo
+    ? `${caFrom?date(caFrom):"Début"} → ${caTo?date(caTo):"Aujourd’hui"}`
+    : "Toute la période";
 
   const offerLabel=(o:any)=>o.name_fr||o.name||o.label||o.code||"Offre";
   const offerCode=(o:any)=>o.code||o.plan_code||o.id;
@@ -95,13 +109,22 @@ export default function AdminSubscriptionsPage(){
     <div className="wrap">
       <section className="subscriptionsHero"><div><small>ADMINISTRATION</small><h1>Abonnements</h1><p>Suivez les offres démarrage, abonnements, échéances et apporteurs.</p></div></section>
       {error&&<div className="error">{error}</div>}
+      <section className="caPeriod">
+        <div className="caPeriodTitle">
+          <strong>Période du chiffre d’affaires</strong>
+          <span>{caPeriodLabel}</span>
+        </div>
+        <label><span>Du</span><input type="date" value={caFrom} onChange={e=>setCaFrom(e.target.value)}/></label>
+        <label><span>Au</span><input type="date" value={caTo} min={caFrom||undefined} onChange={e=>setCaTo(e.target.value)}/></label>
+        <button type="button" onClick={()=>{setCaFrom("");setCaTo("");}}>Toute la période</button>
+      </section>
       <section className="stats">
         <article><span>Actifs</span><strong>{active}</strong></article>
         <article><span>Offre démarrage</span><strong>{startup}</strong></article>
         <article><span>Profils inclus</span><strong>{included}</strong></article>
         <article><span>Expire ≤ 30 jours</span><strong>{soon}</strong></article>
-        <article className="money"><span>CA abonnements TND</span><strong>{money(caTND,"TND")}</strong></article>
-        <article className="money"><span>CA abonnements EUR</span><strong>{money(caEUR,"EUR")}</strong></article>
+        <article className="money"><span>CA abonnements TND</span><strong>{money(caTND,"TND")}</strong><small>{caPeriodLabel}</small></article>
+        <article className="money"><span>CA abonnements EUR</span><strong>{money(caEUR,"EUR")}</strong><small>{caPeriodLabel}</small></article>
       </section>
       <section className="panel">
         <div className="filters">
@@ -168,15 +191,7 @@ export default function AdminSubscriptionsPage(){
       <button className="save" disabled={saving} onClick={save}>{saving?"Enregistrement...":current.is_missing?"Créer l’abonnement":"Enregistrer l’abonnement"}</button>
     </div></div>}
     <style jsx>{`
-      *{box-sizing:border-box}.admin{min-height:100vh;background:#f6f7fb;color:#171923;font-family:Arial,sans-serif}header{height:68px;background:#fff;border-bottom:1px solid #e7e9ef;display:flex;align-items:center;justify-content:space-between;padding:0 max(20px,calc((100vw - 1440px)/2))}header a{color:#5f42d8;text-decoration:none;font-weight:800;font-size:13px}.wrap{max-width:1440px;margin:auto;padding:30px 22px 60px}.subscriptionsHero small,.modal>small{color:#6d4aff;font-weight:900;letter-spacing:.16em}.subscriptionsHero{display:block!important;min-height:0!important;height:auto!important;padding:8px 0 4px!important;margin:0!important;background:none!important}.subscriptionsHero>div{margin:0!important;padding:0!important;max-width:none!important}.subscriptionsHero h1{font-size:34px;margin:7px 0}.subscriptionsHero p{color:#777d89;margin:0}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:25px 0}.stats article{background:#fff;border:1px solid #e5e8ef;border-radius:16px;padding:17px}.stats span{display:block;color:#777d89;font-size:12px;font-weight:700}.stats strong{display:block;font-size:25px;margin-top:9px}.stats .money{border-top:3px solid #6d4aff}.panel{background:#fff;border:1px solid #e5e8ef;border-radius:18px;overflow:hidden}.filters{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:9px;padding:17px}.filters input,.filters select,.modal input,.modal select,.modal textarea{width:100%;border:1px solid #dfe2e9;border-radius:10px;background:#fff;padding:11px;font:inherit}.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}th{text-align:left;background:#fafbfc;padding:12px;font-size:11px;color:#777;text-transform:uppercase}td{padding:13px 12px;border-top:1px solid #eef0f4;font-size:13px}td small{display:block;color:#9296a0;margin-top:4px}td button{border:1px solid #dedfea;background:#fff;border-radius:8px;padding:7px 11px;color:#5f42d8;font-weight:800;cursor:pointer}.badge{padding:5px 8px;border-radius:20px;font-size:11px;font-weight:900;background:#eee}.badge.active{background:#e7f8ef;color:#16734a}.badge.startup{background:#f0edff;color:#6041d4}.badge.included{background:#e9f4ff;color:#1767ad}.badge.missing{background:#fff6df;color:#946200}.badge.expired{background:#fff0f0;color:#b12635}.empty{padding:45px;text-align:center;color:#888}.error{background:#fff0f0;color:#ad2433;padding:11px;border-radius:10px;margin:15px 0}.overlay{position:fixed;inset:0;background:rgba(10,12,18,.58);z-index:50;display:grid;place-items:center;padding:20px}.modal{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:25px;position:relative}.close{position:absolute;right:15px;top:13px;border:0;background:#f1f2f5;width:34px;height:34px;border-radius:50%;font-size:22px}.modal h2{margin:7px 0}.contact{display:flex;gap:12px;color:#777;font-size:13px;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.modal label{display:block;font-size:12px;font-weight:800;margin:8px 0}.modal label input,.modal label select,.modal label textarea{display:block;margin-top:6px}.modal textarea{min-height:85px;resize:vertical}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto!important;margin:0!important}.save{width:100%;height:45px;border:0;border-radius:11px;background:#6d4aff;color:#fff;font-weight:900;margin-top:12px}.save:disabled{opacity:.6}@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.wrap{padding:20px 12px}.stats{grid-template-columns:1fr 1fr}.filters,.grid{grid-template-columns:1fr}.subscriptionsHero h1{font-size:28px}.contact{flex-direction:column}}
-    
-        .periodFilters{display:flex;align-items:end;gap:12px;margin:0 0 16px;flex-wrap:wrap}
-        .periodField{display:grid;gap:6px;min-width:170px}
-        .periodField label{font-size:12px;font-weight:800;color:#667085;text-transform:uppercase;letter-spacing:.04em}
-        .periodField input{height:46px;border:1px solid #dfe3eb;border-radius:12px;padding:0 13px;background:#fff;color:#111827;font:inherit}
-        .resetPeriod{height:46px;border:1px solid #ddd7ff;border-radius:12px;padding:0 16px;background:#fff;color:#5b35f5;font-weight:800;cursor:pointer}
-        .resetPeriod:hover{background:#f7f5ff}
-        @media(max-width:650px){.periodFilters{display:grid;grid-template-columns:1fr 1fr}.periodField{min-width:0}.resetPeriod{grid-column:1/-1;width:100%}}
-`}</style>
+      *{box-sizing:border-box}.admin{min-height:100vh;background:#f6f7fb;color:#171923;font-family:Arial,sans-serif}header{height:68px;background:#fff;border-bottom:1px solid #e7e9ef;display:flex;align-items:center;justify-content:space-between;padding:0 max(20px,calc((100vw - 1440px)/2))}header a{color:#5f42d8;text-decoration:none;font-weight:800;font-size:13px}.wrap{max-width:1440px;margin:auto;padding:30px 22px 60px}.subscriptionsHero small,.modal>small{color:#6d4aff;font-weight:900;letter-spacing:.16em}.subscriptionsHero{display:block!important;min-height:0!important;height:auto!important;padding:8px 0 4px!important;margin:0!important;background:none!important}.subscriptionsHero>div{margin:0!important;padding:0!important;max-width:none!important}.subscriptionsHero h1{font-size:34px;margin:7px 0}.subscriptionsHero p{color:#777d89;margin:0}.caPeriod{display:flex;align-items:end;gap:12px;margin:22px 0 0;background:#fff;border:1px solid #e5e8ef;border-radius:16px;padding:14px 16px}.caPeriodTitle{margin-right:auto;display:grid;gap:4px}.caPeriodTitle strong{font-size:14px}.caPeriodTitle span{font-size:12px;color:#777d89}.caPeriod label{display:grid;gap:5px}.caPeriod label span{font-size:11px;font-weight:800;color:#777d89;text-transform:uppercase}.caPeriod input{height:40px;border:1px solid #dfe2e9;border-radius:9px;padding:0 10px;background:#fff;font:inherit}.caPeriod button{height:40px;border:1px solid #dedfea;background:#fff;border-radius:9px;padding:0 13px;color:#5f42d8;font-weight:800;cursor:pointer}.stats .money small{display:block;margin-top:6px;color:#9296a0;font-size:10px;font-weight:700}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:25px 0}.stats article{background:#fff;border:1px solid #e5e8ef;border-radius:16px;padding:17px}.stats span{display:block;color:#777d89;font-size:12px;font-weight:700}.stats strong{display:block;font-size:25px;margin-top:9px}.stats .money{border-top:3px solid #6d4aff}.panel{background:#fff;border:1px solid #e5e8ef;border-radius:18px;overflow:hidden}.filters{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:9px;padding:17px}.filters input,.filters select,.modal input,.modal select,.modal textarea{width:100%;border:1px solid #dfe2e9;border-radius:10px;background:#fff;padding:11px;font:inherit}.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}th{text-align:left;background:#fafbfc;padding:12px;font-size:11px;color:#777;text-transform:uppercase}td{padding:13px 12px;border-top:1px solid #eef0f4;font-size:13px}td small{display:block;color:#9296a0;margin-top:4px}td button{border:1px solid #dedfea;background:#fff;border-radius:8px;padding:7px 11px;color:#5f42d8;font-weight:800;cursor:pointer}.badge{padding:5px 8px;border-radius:20px;font-size:11px;font-weight:900;background:#eee}.badge.active{background:#e7f8ef;color:#16734a}.badge.startup{background:#f0edff;color:#6041d4}.badge.included{background:#e9f4ff;color:#1767ad}.badge.missing{background:#fff6df;color:#946200}.badge.expired{background:#fff0f0;color:#b12635}.empty{padding:45px;text-align:center;color:#888}.error{background:#fff0f0;color:#ad2433;padding:11px;border-radius:10px;margin:15px 0}.overlay{position:fixed;inset:0;background:rgba(10,12,18,.58);z-index:50;display:grid;place-items:center;padding:20px}.modal{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:25px;position:relative}.close{position:absolute;right:15px;top:13px;border:0;background:#f1f2f5;width:34px;height:34px;border-radius:50%;font-size:22px}.modal h2{margin:7px 0}.contact{display:flex;gap:12px;color:#777;font-size:13px;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.modal label{display:block;font-size:12px;font-weight:800;margin:8px 0}.modal label input,.modal label select,.modal label textarea{display:block;margin-top:6px}.modal textarea{min-height:85px;resize:vertical}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto!important;margin:0!important}.save{width:100%;height:45px;border:0;border-radius:11px;background:#6d4aff;color:#fff;font-weight:900;margin-top:12px}.save:disabled{opacity:.6}@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.wrap{padding:20px 12px}.caPeriod{display:grid;grid-template-columns:1fr 1fr;align-items:end}.caPeriodTitle{grid-column:1/-1}.caPeriod button{grid-column:1/-1}.stats{grid-template-columns:1fr 1fr}.filters,.grid{grid-template-columns:1fr}.subscriptionsHero h1{font-size:28px}.contact{flex-direction:column}}
+    `}</style>
   </main>
 }
