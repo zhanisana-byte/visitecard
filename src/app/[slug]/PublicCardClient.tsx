@@ -40,6 +40,7 @@ type CardRow = {
   qr_token?: string;
   full_name?: string;
   job_title?: string;
+  activity_font?: string;
   company?: string;
   bio?: string;
   email?: string;
@@ -200,6 +201,21 @@ const texts = {
     empty: "No published reviews yet.",
   },
 };
+
+function loadPublicActivityFont(font?: string | null) {
+  const value = (font || "").trim();
+  if (!value || typeof document === "undefined") return;
+
+  const safeId = `visitecard-public-font-${value.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  if (document.getElementById(safeId)) return;
+
+  const family = encodeURIComponent(value).replace(/%20/g, "+");
+  const link = document.createElement("link");
+  link.id = safeId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+  document.head.appendChild(link);
+}
 
 const catalogIconMap: Record<string, string> = {
   grid: "▦",
@@ -468,6 +484,10 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   const [readyQrDownloading, setReadyQrDownloading] = useState<string>("");
   const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
   const [catalogActiveCategory, setCatalogActiveCategory] = useState<string>("");
+
+  useEffect(() => {
+    loadPublicActivityFont(card?.activity_font);
+  }, [card?.activity_font]);
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -1046,7 +1066,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
           <div className={`vcPublicIdentity ${isProfile && !hasProfileMeta ? "compactProfileIdentity" : ""}`}>
             <h1>{card.full_name || "VisiteCard"}</h1>
-            {card.job_title ? <p>{card.job_title}</p> : null}
+            {card.job_title ? <p style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}>{card.job_title}</p> : null}
             {isProfile && card.company && card.company.trim().toLowerCase() !== (card.full_name || "").trim().toLowerCase() ? <small>{card.company}</small> : null}
             {card.bio ? <div className="bio">{card.bio}</div> : null}
             {!isProfile && card.show_reviews !== false ? (
