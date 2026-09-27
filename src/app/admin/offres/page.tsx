@@ -26,7 +26,9 @@ type Settings = {
   id?: string;
   startup_offer_enabled: boolean;
   startup_duration_value: number;
-  startup_duration_unit: "day" | "month";
+  startup_duration_unit: "day" | "month" | "year";
+  startup_apply_to_profiles: boolean;
+  startup_apply_to_companies: boolean;
   payment_agent_enabled: boolean;
   payment_bank_enabled: boolean;
   payment_online_enabled: boolean;
@@ -81,6 +83,8 @@ export default function AdminOffersPage() {
     startup_offer_enabled: true,
     startup_duration_value: 2,
     startup_duration_unit: "month",
+    startup_apply_to_profiles: true,
+    startup_apply_to_companies: true,
     payment_agent_enabled: true,
     payment_bank_enabled: true,
     payment_online_enabled: false,
@@ -115,7 +119,13 @@ export default function AdminOffersPage() {
       setOffers(d.offers || []);
 
       if (d.settings) {
-        setSettings(d.settings);
+        setSettings({
+          ...d.settings,
+          startup_apply_to_profiles:
+            d.settings.startup_apply_to_profiles ?? true,
+          startup_apply_to_companies:
+            d.settings.startup_apply_to_companies ?? true,
+        });
       }
     } catch (e: any) {
       setError(e.message || "Erreur de chargement.");
@@ -297,14 +307,12 @@ export default function AdminOffersPage() {
 
       <div className="container">
         <section className="hero">
-          <div>
-            <span>ADMINISTRATION</span>
-            <div className="heroLine">
-              <h1>Offres & Tarifs</h1>
-              <p>
-                Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.
-              </p>
-            </div>
+          <span>ADMINISTRATION</span>
+          <div className="heroLine">
+            <h1>Offres & Tarifs</h1>
+            <p>
+              Créez des offres Profil, Société ou Pack séparément en DT ou en €.
+            </p>
           </div>
         </section>
 
@@ -348,130 +356,144 @@ export default function AdminOffersPage() {
             </label>
           </div>
 
-          <div className="grid">
-            <label>
-              <span>Durée gratuite</span>
+          {settings.startup_offer_enabled && (
+            <>
+              <div className="grid">
+                <label>
+                  <span>Durée gratuite</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={settings.startup_duration_value}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        startup_duration_value: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
 
-              <input
-                type="number"
-                min="1"
-                value={
-                  settings.startup_duration_value
-                }
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    startup_duration_value:
-                      Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-
-            <label>
-              <span>Unité</span>
-
-              <select
-                value={
-                  settings.startup_duration_unit
-                }
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    startup_duration_unit:
-                      e.target.value as
-                        | "day"
-                        | "month",
-                  })
-                }
-              >
-                <option value="day">
-                  Jour(s)
-                </option>
-
-                <option value="month">
-                  Mois
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <div className="paymentGrid">
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={
-                  settings.payment_agent_enabled
-                }
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    payment_agent_enabled:
-                      e.target.checked,
-                  })
-                }
-              />
-
-              <div>
-                <strong>
-                  Paiement auprès d’un agent
-                </strong>
-                <small>
-                  Espèces auprès d’un agent
-                  VisiteCard
-                </small>
+                <label>
+                  <span>Unité</span>
+                  <select
+                    value={settings.startup_duration_unit}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        startup_duration_unit: e.target.value as
+                          | "day"
+                          | "month"
+                          | "year",
+                      })
+                    }
+                  >
+                    <option value="day">Jour(s)</option>
+                    <option value="month">Mois</option>
+                    <option value="year">Année(s)</option>
+                  </select>
+                </label>
               </div>
-            </label>
 
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={
-                  settings.payment_bank_enabled
-                }
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    payment_bank_enabled:
-                      e.target.checked,
-                  })
-                }
-              />
+              <div className="startupScope">
+                <div className="scopeTitle">
+                  Appliquer l’offre de démarrage à
+                </div>
 
-              <div>
-                <strong>
-                  Virement bancaire
-                </strong>
-                <small>
-                  Paiement avec référence VC
-                </small>
+                <div className="scopeChoices">
+                  <label className="scopeChoice">
+                    <input
+                      type="checkbox"
+                      checked={settings.startup_apply_to_profiles}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          startup_apply_to_profiles: e.target.checked,
+                        })
+                      }
+                    />
+                    <span>
+                      <b>Profil</b>
+                      <small>Offre de démarrage pour les profils</small>
+                    </span>
+                  </label>
+
+                  <label className="scopeChoice">
+                    <input
+                      type="checkbox"
+                      checked={settings.startup_apply_to_companies}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          startup_apply_to_companies: e.target.checked,
+                        })
+                      }
+                    />
+                    <span>
+                      <b>Société</b>
+                      <small>Offre de démarrage pour les sociétés</small>
+                    </span>
+                  </label>
+                </div>
               </div>
-            </label>
+            </>
+          )}
 
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={
-                  settings.payment_online_enabled
-                }
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    payment_online_enabled:
-                      e.target.checked,
-                  })
-                }
-              />
+          <div className="paymentSection">
+            <h3>Moyens de paiement</h3>
 
-              <div>
-                <strong>
-                  Paiement en ligne
-                </strong>
-                <small>
-                  À activer lorsque disponible
-                </small>
-              </div>
-            </label>
+            <div className="paymentGrid">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={settings.payment_agent_enabled}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      payment_agent_enabled: e.target.checked,
+                    })
+                  }
+                />
+                <div>
+                  <strong>Paiement auprès d’un agent</strong>
+                  <small>Espèces auprès d’un agent VisiteCard</small>
+                </div>
+              </label>
+
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={settings.payment_bank_enabled}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      payment_bank_enabled: e.target.checked,
+                    })
+                  }
+                />
+                <div>
+                  <strong>Virement bancaire</strong>
+                  <small>Paiement avec référence VC</small>
+                </div>
+              </label>
+
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={settings.payment_online_enabled}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      payment_online_enabled: e.target.checked,
+                    })
+                  }
+                />
+                <div>
+                  <strong>Paiement en ligne</strong>
+                  <small>À activer lorsque disponible</small>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="actions">
@@ -491,7 +513,7 @@ export default function AdminOffersPage() {
           <div>
             <h2>Tarifs</h2>
             <p>
-              Profil, société et packs combinés.
+              Créez autant d’offres que nécessaire : Profil DT, Profil €, Société DT, Société € ou Pack.
             </p>
           </div>
         </section>
@@ -1152,17 +1174,20 @@ export default function AdminOffersPage() {
         }
 
         .container {
-          max-width: 1400px;
-          margin: auto;
-          padding: 18px 24px 60px;
+          width: min(1500px, calc(100% - 32px));
+          margin: 0 auto;
+          padding: 18px 0 60px;
         }
 
         .hero {
           background: #111;
           color: white;
-          border-radius: 18px;
-          padding: 18px 22px;
-          margin-bottom: 18px;
+          border-radius: 16px;
+          padding: 14px 20px;
+          margin: 0 0 18px;
+          min-height: 0;
+          height: auto;
+          display: block;
         }
 
         .hero span {
@@ -1175,14 +1200,14 @@ export default function AdminOffersPage() {
         .heroLine {
           display: flex;
           align-items: center;
-          gap: 18px;
-          margin-top: 5px;
+          gap: 16px;
+          margin-top: 4px;
           min-width: 0;
         }
 
         .hero h1 {
-          font-size: 26px;
-          line-height: 1.1;
+          font-size: 25px;
+          line-height: 1.15;
           margin: 0;
           white-space: nowrap;
         }
@@ -1339,6 +1364,18 @@ export default function AdminOffersPage() {
 
         .promoToggle input {
           width: auto;
+        }
+
+
+        .paymentSection {
+          margin-top: 22px;
+          padding-top: 18px;
+          border-top: 1px solid #ededed;
+        }
+
+        .paymentSection h3 {
+          margin: 0;
+          font-size: 16px;
         }
 
         .paymentGrid {
@@ -1514,7 +1551,9 @@ export default function AdminOffersPage() {
           }
 
           .hero {
-            padding: 16px 18px;
+            padding: 14px 16px;
+            min-height: 0;
+            height: auto;
           }
 
           .heroLine {
