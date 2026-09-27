@@ -18,7 +18,12 @@ export async function GET(request: NextRequest, { params }: Params) {
     const activeStatus = ["active", "startup", "included"].includes(subscription.status);
     const notExpired = !subscription.end_date || new Date(subscription.end_date).getTime() >= new Date().setHours(0, 0, 0, 0);
     if (!activeStatus || !notExpired) return NextResponse.redirect(new URL("/", siteUrl));
-    await s.from("qr_scans").insert({ card_id: card.id, user_agent: request.headers.get("user-agent") || null, referrer: request.headers.get("referer") || null });
+    const { error: scanError } = await s.from("qr_scans").insert({
+      card_id: card.id,
+      user_agent: request.headers.get("user-agent") || null,
+      referrer: request.headers.get("referer") || null
+    });
+    if (scanError) console.error("QR scan tracking:", scanError.message);
     return NextResponse.redirect(new URL(`/${card.slug}`, siteUrl));
   } catch {
     return NextResponse.redirect(new URL("/", siteUrl));
