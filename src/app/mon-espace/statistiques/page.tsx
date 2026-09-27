@@ -66,7 +66,7 @@ export default function StatistiquesPage() {
         const token = sessionData.session?.access_token;
         if (!token) return;
 
-        const response = await fetch("/api/stats", {
+        const response = await fetch("/api/admin/stats", {
           cache: "no-store",
           headers: { Authorization: `Bearer ${token}` },
         });
