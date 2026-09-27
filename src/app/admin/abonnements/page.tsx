@@ -98,7 +98,15 @@ export default function AdminSubscriptionsPage(){
         {loading?<div className="empty">Chargement...</div>:<div className="table"><table><thead><tr><th>Client</th><th>Type</th><th>Offre</th><th>Tarif HT</th><th>Statut</th><th>Début</th><th>Fin</th><th>Apporteur</th><th></th></tr></thead>
           <tbody>{rows.map(s=><tr key={s.id}>
             <td><b>{s.card?.company||s.card?.full_name||"Sans nom"}</b><small>{s.card?.email||"—"}</small></td>
-            <td>{s.account_type==="company"?"Société":"Profil"}</td><td>{s.plan_code}</td><td>{money(s.price_ht,s.currency)}</td>
+            <td>{s.account_type==="company"?"Société":"Profil"}</td>
+            <td>{s.status==="startup"
+              ? `${Number(s.startup_months||0)} mois gratuit${Number(s.startup_months||0)>1?"s":""}`
+              : s.status==="active"
+                ? "Compte Pro"
+                : s.status==="included"
+                  ? "Inclus"
+                  : "—"}</td>
+            <td>{money(s.price_ht,s.currency)}</td>
             <td><span className={`badge ${s.is_missing?"missing":s.status}`}>{s.is_missing?"À configurer":labels[s.status]}</span></td><td>{date(s.start_date)}</td><td>{date(s.end_date)}</td>
             <td>{s.referrer_name||s.referrer_code||"—"}</td><td><button onClick={()=>edit(s)}>{s.is_missing?"Configurer":"Fiche"}</button></td>
           </tr>)}</tbody></table>{!rows.length&&<div className="empty">Aucun abonnement.</div>}</div>}
