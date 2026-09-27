@@ -50,6 +50,7 @@ type CardData = {
   slug: string;
   full_name: string;
   job_title: string;
+  activity_font: string;
   company: string;
   bio: string;
   email: string;
@@ -111,10 +112,56 @@ const socialOptions: Array<{
   { value: "website", label: "Site web" },
 ];
 
+const activityFontOptions = [
+  { value: "", label: "Police VisiteCard", category: "Défaut" },
+  { value: "Inter", label: "Inter", category: "Moderne" },
+  { value: "Poppins", label: "Poppins", category: "Moderne" },
+  { value: "Montserrat", label: "Montserrat", category: "Moderne" },
+  { value: "Roboto", label: "Roboto", category: "Classique" },
+  { value: "Open Sans", label: "Open Sans", category: "Classique" },
+  { value: "Lato", label: "Lato", category: "Classique" },
+  { value: "Raleway", label: "Raleway", category: "Élégante" },
+  { value: "Nunito", label: "Nunito", category: "Douce" },
+  { value: "Ubuntu", label: "Ubuntu", category: "Moderne" },
+  { value: "Merriweather", label: "Merriweather", category: "Éditoriale" },
+  { value: "Lora", label: "Lora", category: "Élégante" },
+  { value: "Playfair Display", label: "Playfair Display", category: "Luxe" },
+  { value: "Cormorant Garamond", label: "Cormorant Garamond", category: "Luxe" },
+  { value: "DM Serif Display", label: "DM Serif Display", category: "Élégante" },
+  { value: "Libre Baskerville", label: "Libre Baskerville", category: "Classique" },
+  { value: "Cinzel", label: "Cinzel", category: "Prestige" },
+  { value: "Bebas Neue", label: "Bebas Neue", category: "Impact" },
+  { value: "Oswald", label: "Oswald", category: "Impact" },
+  { value: "Anton", label: "Anton", category: "Impact" },
+  { value: "Barlow Condensed", label: "Barlow Condensed", category: "Sport" },
+  { value: "Great Vibes", label: "Great Vibes", category: "Signature" },
+  { value: "Allura", label: "Allura", category: "Signature" },
+  { value: "Alex Brush", label: "Alex Brush", category: "Signature" },
+  { value: "Sacramento", label: "Sacramento", category: "Signature" },
+  { value: "Parisienne", label: "Parisienne", category: "Signature" },
+  { value: "Dancing Script", label: "Dancing Script", category: "Manuscrite" },
+  { value: "Satisfy", label: "Satisfy", category: "Manuscrite" },
+  { value: "Pacifico", label: "Pacifico", category: "Créative" },
+  { value: "Caveat", label: "Caveat", category: "Manuscrite" },
+  { value: "Marck Script", label: "Marck Script", category: "Signature" },
+] as const;
+
+function googleFontsUrl(fonts: readonly { value: string }[]) {
+  const families = fonts
+    .map((font) => font.value)
+    .filter(Boolean)
+    .map((font) => `family=${encodeURIComponent(font).replace(/%20/g, "+")}`);
+
+  return families.length
+    ? `https://fonts.googleapis.com/css2?${families.join("&")}&display=swap`
+    : "";
+}
+
 const emptyCard: CardData = {
   slug: "",
   full_name: "",
   job_title: "",
+  activity_font: "",
   company: "",
   bio: "",
   email: "",
@@ -523,6 +570,34 @@ export default function MonEspacePage() {
   const [showSaveSuccess, setShowSaveSuccess] =
     useState(false);
 
+  const [fontPickerOpen, setFontPickerOpen] = useState(false);
+  const [fontSearch, setFontSearch] = useState("");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const id = "visitecard-activity-fonts";
+    if (document.getElementById(id)) return;
+
+    const href = googleFontsUrl(activityFontOptions);
+    if (!href) return;
+
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }, []);
+
+  const filteredActivityFonts = useMemo(() => {
+    const query = fontSearch.trim().toLowerCase();
+    if (!query) return activityFontOptions;
+
+    return activityFontOptions.filter((font) =>
+      `${font.label} ${font.category}`.toLowerCase().includes(query)
+    );
+  }, [fontSearch]);
+
   const siteUrl =
     process.env
       .NEXT_PUBLIC_SITE_URL ||
@@ -667,6 +742,7 @@ export default function MonEspacePage() {
             slug: loaded.slug ?? "",
             full_name: loaded.full_name ?? "",
             job_title: loaded.job_title ?? "",
+            activity_font: loaded.activity_font ?? "",
             company: loaded.company ?? "",
             bio: loaded.bio ?? "",
             email: loaded.email ?? "",
@@ -1554,6 +1630,7 @@ export default function MonEspacePage() {
         slug: baseSlug,
         full_name: (card.full_name ?? "").trim(),
         job_title: (card.job_title ?? "").trim(),
+        activity_font: (card.activity_font ?? "").trim(),
         company: (card.company ?? "").trim(),
         bio: (card.bio ?? "").trim(),
         email: (card.email ?? "").trim(),
@@ -2054,10 +2131,60 @@ export default function MonEspacePage() {
                     )
                   }
                   placeholder="Facultatif"
+                  style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}
                 />
               </label>
 
+              <div className="activityFontField">
+                <span className="activityFontLabel">{card.entity_type === "profile" ? "Police de la profession" : "Police de l’activité"}</span>
+                <div className="activityFontPicker">
+                  <button
+                    type="button"
+                    className="activityFontTrigger"
+                    onClick={() => setFontPickerOpen((open) => !open)}
+                    aria-expanded={fontPickerOpen}
+                  >
+                    <span
+                      style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}
+                    >
+                      {activityFontOptions.find((font) => font.value === card.activity_font)?.label || "Police VisiteCard"}
+                    </span>
+                    <b>⌄</b>
+                  </button>
 
+                  {fontPickerOpen ? (
+                    <div className="activityFontMenu">
+                      <input
+                        className="activityFontSearch"
+                        value={fontSearch}
+                        onChange={(event) => setFontSearch(event.target.value)}
+                        placeholder="Rechercher une police…"
+                        autoFocus
+                      />
+                      <div className="activityFontList">
+                        {filteredActivityFonts.map((font) => (
+                          <button
+                            type="button"
+                            key={font.value || "default"}
+                            className={`activityFontOption ${card.activity_font === font.value ? "selected" : ""}`}
+                            onClick={() => {
+                              updateField("activity_font", font.value);
+                              setFontPickerOpen(false);
+                              setFontSearch("");
+                            }}
+                          >
+                            <span style={font.value ? { fontFamily: `"${font.value}", sans-serif` } : undefined}>
+                              {card.job_title || "Votre activité"}
+                            </span>
+                            <small>{font.label} · {font.category}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                <small className="activityFontHint">Chaque choix s’affiche directement avec sa vraie police dans l’aperçu.</small>
+              </div>
 
               <label>
                 E-mail
@@ -3208,7 +3335,9 @@ export default function MonEspacePage() {
                 </h3>
 
                 {card.job_title ? (
-                  <p>
+                  <p
+                    style={card.activity_font ? { fontFamily: `"${card.activity_font}", sans-serif` } : undefined}
+                  >
                     {
                       card.job_title
                     }
@@ -4605,6 +4734,20 @@ export default function MonEspacePage() {
           }
         }
 
+        .activityFontField{grid-column:1/-1;position:relative;display:grid;gap:8px;margin-top:-2px}
+        .activityFontLabel{font-size:13px;font-weight:800;color:#111827}
+        .activityFontPicker{position:relative}
+        .activityFontTrigger{width:100%;min-height:52px;padding:0 16px;border:1px solid #dfe3e8;border-radius:14px;background:#fff;color:#111827;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:17px;font-weight:700;cursor:pointer;text-align:left}
+        .activityFontTrigger b{font-size:20px;line-height:1;font-family:Arial,sans-serif;color:#667085}
+        .activityFontMenu{position:absolute;z-index:90;left:0;right:0;top:calc(100% + 8px);padding:10px;border:1px solid #e1e5ea;border-radius:16px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.16)}
+        .activityFontSearch{width:100%;height:44px!important;margin:0 0 9px!important;padding:0 13px!important;border:1px solid #e1e5ea!important;border-radius:11px!important;background:#f8fafc!important;font-size:13px!important;font-family:Arial,sans-serif!important}
+        .activityFontList{max-height:320px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding-right:3px}
+        .activityFontOption{min-height:74px;padding:10px 12px;border:1px solid #e6e8ec;border-radius:12px;background:#fff;color:#101828;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:6px;cursor:pointer;text-align:left}
+        .activityFontOption:hover,.activityFontOption.selected{border-color:#ff5a33;background:#fff8f5}
+        .activityFontOption span{font-size:18px;line-height:1.2;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .activityFontOption small{font-family:Arial,sans-serif;font-size:10px;color:#7a8190;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+        .activityFontHint{font-size:11px;line-height:1.45;color:#8a919f}
+
         .paletteIntro{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding:12px 14px;border:1px solid var(--line,#e5e7eb);border-radius:12px}
         .paletteIntro strong{font-size:13px}
         .paletteIntro span{font-size:11px;line-height:1.45;opacity:.7}
@@ -4695,6 +4838,11 @@ export default function MonEspacePage() {
           .networkPicker {
             grid-template-columns:
               repeat(2,minmax(0,1fr));
+          }
+
+          .activityFontList {
+            grid-template-columns: 1fr;
+            max-height: 300px;
           }
 
           .networkTitle {
