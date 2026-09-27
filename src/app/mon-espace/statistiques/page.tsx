@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 type CardRow = {
   id: string;
   full_name: string | null;
+  company?: string | null;
   slug: string | null;
   entity_type: string | null;
   views: number | null;
@@ -59,67 +60,36 @@ export default function StatistiquesPage() {
 
     async function load() {
       setLoading(true);
-
       try {
-        const s = getSupabaseBrowser();
+        const supabase = getSupabaseBrowser();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) return;
 
-        const { data: auth } = await s.auth.getUser();
-
-        if (!auth.user) {
-          if (active) setLoading(false);
-          return;
-        }
-
-        const { data: cardRows } = await s
-          .from("cards")
-          .select(
-            "id,full_name,slug,entity_type,views,social_links,custom_links"
-          )
-          .eq("user_id", auth.user.id)
-          .order("created_at", { ascending: true });
-
-        const myCards = (cardRows || []) as CardRow[];
+        const response = await fetch("/api/stats", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Erreur statistiques");
 
         if (!active) return;
-
-        setCards(myCards);
-
-        if (!myCards.length) {
+        setCards((data.cards || []) as CardRow[]);
+        setScans((data.scans || []) as ScanRow[]);
+        setReviews((data.reviews || []) as ReviewRow[]);
+      } catch {
+        if (active) {
+          setCards([]);
           setScans([]);
           setReviews([]);
-          return;
         }
-
-        const ids = myCards.map((card) => card.id);
-
-        const [scanResult, reviewResult] = await Promise.all([
-          s
-            .from("qr_scans")
-            .select("card_id,created_at")
-            .in("card_id", ids)
-            .order("created_at", { ascending: true }),
-
-          s
-            .from("card_reviews")
-            .select("card_id,rating")
-            .in("card_id", ids)
-            .eq("status", "published"),
-        ]);
-
-        if (!active) return;
-
-        setScans((scanResult.data || []) as ScanRow[]);
-        setReviews((reviewResult.data || []) as ReviewRow[]);
       } finally {
         if (active) setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   const statistics = useMemo(() => {
@@ -170,7 +140,7 @@ export default function StatistiquesPage() {
 
         return {
           id: card.id,
-          name: card.full_name || card.slug || "VisiteCard",
+          name: card.company || card.full_name || card.slug || "VisiteCard",
           type:
             card.entity_type === "profile"
               ? fr
