@@ -5,7 +5,7 @@ import { getSupabaseBrowser } from "@/app/lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
 
 type Card = { id: string; full_name: string | null; company: string | null; entity_type: "profile" | "company"; slug: string | null; vc_reference: string | null };
-type Offer = { id: string; name: string; entity_type: "profile" | "company" | "bundle"; profile_count: number; company_count: number; price_tnd: number; price_eur: number; promo_enabled: boolean; promo_price_tnd: number | null; promo_price_eur: number | null; promo_start_at: string | null; promo_end_at: string | null };
+type Offer = { id: string; name: string; entity_type: "profile" | "company" | "bundle"; profile_count: number; company_count: number; duration_value?: number; duration_unit?: string; price_tnd: number; price_eur: number; promo_enabled: boolean; promo_price_tnd: number | null; promo_price_eur: number | null; promo_start_at: string | null; promo_end_at: string | null };
 type Agent = { id: string; name: string; commercial_code: string | null; country_name: string; region: string | null; city: string | null; whatsapp: string | null };
 type Bank = { id: string; currency: "TND" | "EUR"; beneficiary_name: string; bank_name: string; rib: string | null; iban: string | null; bic_swift: string | null; instructions_fr: string | null; instructions_en: string | null };
 
@@ -103,6 +103,17 @@ export default function AbonnementPage() {
     <div className="title"><span>VISITECARD PRO</span><h1>{fr ? "Abonnement & paiement" : "Subscription & payment"}</h1><p>{fr ? "Choisissez les cartes à activer. Le meilleur tarif disponible est appliqué automatiquement." : "Choose the cards to activate. The best available price is applied automatically."}</p></div>
     {error && <div className="error">{error}</div>}
     {success && <div className="success"><strong>{fr ? "Demande enregistrée" : "Request saved"}</strong><span>{fr ? "Référence à utiliser" : "Reference to use"}: <b>{success.reference}</b></span><span>{fr ? "Montant" : "Amount"}: <b>{Number(success.amount).toFixed(2)} {success.currency === "EUR" ? "€" : "DT"}</b></span></div>}
+    <div className="proBanner">
+      <div className="proBannerText">
+        <strong>{fr ? "Un seul QR code. Tous vos liens. Toujours à jour." : "One QR code. All your links. Always up to date."}</strong>
+        <span>{fr ? "Votre carte digitale professionnelle avec un seul paiement par an." : "Your professional digital card with one annual payment."}</span>
+      </div>
+      <div className="proBannerPrice">
+        <b>{(quote.total / 12).toFixed(2)} {currency === "EUR" ? "€" : "DT"}</b>
+        <span>{fr ? "/ mois" : "/ month"}</span>
+        <small>{fr ? `soit ${quote.total.toFixed(2)} ${currency === "EUR" ? "€" : "DT"} facturés une fois par an` : `${quote.total.toFixed(2)} ${currency === "EUR" ? "€" : "DT"} billed once a year`}</small>
+      </div>
+    </div>
     <div className="layout">
       <section className="panel">
         <div className="step"><b>1</b><div><h2>{fr ? "Cartes à activer" : "Cards to activate"}</h2><p>{fr ? "Profil et sociétés liées" : "Profile and linked companies"}</p></div></div>
@@ -118,9 +129,72 @@ export default function AbonnementPage() {
         {method === "agent" && <div className="agentBox"><label>{fr ? "Choisir un agent" : "Choose an agent"}<select value={agentId} onChange={(e) => setAgentId(e.target.value)}><option value="">—</option>{visibleAgents.map((a) => <option key={a.id} value={a.id}>{a.name} · {[a.country_name, a.region, a.city].filter(Boolean).join(" / ")}</option>)}</select></label>{agentId && <p>{agents.find((a) => a.id === agentId)?.whatsapp ? `WhatsApp : ${agents.find((a) => a.id === agentId)?.whatsapp}` : ""}</p>}</div>}
         {method === "bank" && bank && <div className="bankBox"><h3>{bank.bank_name}</h3><p><span>{fr ? "Bénéficiaire" : "Beneficiary"}</span><b>{bank.beneficiary_name}</b></p>{bank.rib && <p><span>RIB</span><b>{bank.rib}</b></p>}{bank.iban && <p><span>IBAN</span><b>{bank.iban}</b></p>}{bank.bic_swift && <p><span>SWIFT / BIC</span><b>{bank.bic_swift}</b></p>}<small>{fr ? bank.instructions_fr : bank.instructions_en}</small></div>}
       </section>
-      <aside className="summary"><span>{fr ? "RÉCAPITULATIF" : "SUMMARY"}</span><h2>{quote.label || (fr ? "Votre sélection" : "Your selection")}</h2><div className="summaryCards">{chosenCards.map((c) => <p key={c.id}><span>{c.full_name || c.company}</span><b>{c.vc_reference || "VC—"}</b></p>)}</div><div className="total"><span>Total</span><strong>{quote.total.toFixed(2)} {currency === "EUR" ? "€" : "DT"}</strong></div><button className="submit" disabled={sending || !selected.length || quote.total < 0} onClick={submit}>{sending ? (fr ? "Enregistrement..." : "Saving...") : (fr ? "Activer et réserver mon QR code" : "Activate and reserve my QR code")}</button><small className="hint">{fr ? "Votre QR code et votre référence VC restent les mêmes après chaque renouvellement." : "Your QR code and VC reference remain unchanged after each renewal."}</small></aside>
+      <aside className="summary">
+        <span>{fr ? "COMPTE PRO" : "PRO ACCOUNT"}</span>
+        <h2>{fr ? "Votre carte digitale complète" : "Your complete digital card"}</h2>
+
+        <div className="monthlyPrice">
+          <strong>{(quote.total / 12).toFixed(2)} {currency === "EUR" ? "€" : "DT"}</strong>
+          <b>{fr ? "/ mois" : "/ month"}</b>
+          <small>
+            {fr
+              ? `soit ${quote.total.toFixed(2)} ${currency === "EUR" ? "€" : "DT"} facturés une seule fois par an`
+              : `${quote.total.toFixed(2)} ${currency === "EUR" ? "€" : "DT"} billed once per year`}
+          </small>
+        </div>
+
+        <div className="proFeatures">
+          <p>✓ {fr ? "Un QR code permanent" : "One permanent QR code"}</p>
+          <p>✓ {fr ? "Tous vos réseaux sociaux et liens" : "All your social networks and links"}</p>
+          <p>✓ {fr ? "Informations modifiables à tout moment" : "Edit your information at any time"}</p>
+          <p>✓ {fr ? "Même QR code après renouvellement" : "Same QR code after renewal"}</p>
+          <p>✓ {fr ? "Catalogue / Menu" : "Catalogue / Menu"}</p>
+          <p>✓ {fr ? "Statistiques de consultation" : "View statistics"}</p>
+          <p>✓ {fr ? "Avis Google et Wi-Fi selon votre carte" : "Google reviews and Wi-Fi depending on your card"}</p>
+        </div>
+
+        <div className="summaryCards">
+          {chosenCards.map((c) => (
+            <p key={c.id}>
+              <span>{c.full_name || c.company}</span>
+              <b>{c.vc_reference || "VC—"}</b>
+            </p>
+          ))}
+        </div>
+
+        <div className="annualBilling">
+          <div>
+            <span>{fr ? "Paiement aujourd’hui" : "Payment today"}</span>
+            <small>{fr ? "Valable 1 an" : "Valid for 1 year"}</small>
+          </div>
+          <strong>{quote.total.toFixed(2)} {currency === "EUR" ? "€" : "DT"}</strong>
+        </div>
+
+        <button className="submit" disabled={sending || !selected.length || quote.total < 0} onClick={submit}>
+          {sending
+            ? fr ? "Enregistrement..." : "Saving..."
+            : fr ? "Activer mon Compte Pro" : "Activate my Pro Account"}
+        </button>
+
+        <small className="hint">
+          {fr
+            ? "Votre QR code reste le même. Vous renouvelez uniquement votre abonnement chaque année."
+            : "Your QR code stays the same. You only renew your subscription each year."}
+        </small>
+      </aside>
     </div>
     <style jsx>{`
+
+      .proBanner{margin-top:24px;background:linear-gradient(100deg,#fff7f2,#fff);border:1px solid #ffd8ca;border-radius:18px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+      .proBannerText{display:flex;flex-direction:column;gap:5px}.proBannerText strong{font-size:18px;color:#07162e}.proBannerText span{font-size:13px;color:#697386}
+      .proBannerPrice{text-align:right;min-width:260px}.proBannerPrice b{font-size:25px;color:#ff501e}.proBannerPrice>span{font-size:13px;font-weight:800;color:#ff501e;margin-left:4px}.proBannerPrice small{display:block;margin-top:3px;color:#697386;font-size:11px}
+      .monthlyPrice{margin:18px 0;padding:18px;border-radius:17px;background:#fff6f1;border:1px solid #ffd9cc;text-align:center}
+      .monthlyPrice strong{font-size:34px;color:#ff501e;letter-spacing:-1px}.monthlyPrice>b{font-size:14px;color:#ff501e;margin-left:5px}.monthlyPrice small{display:block;margin-top:5px;color:#6f7785;font-size:12px;font-weight:600}
+      .proFeatures{padding:2px 2px 12px}.proFeatures p{margin:9px 0;color:#344054;font-size:13px;font-weight:650}
+      .summaryCards{border-top:1px solid #edf0f4;padding-top:8px}
+      .annualBilling{margin:14px 0;background:#07162e;color:#fff;border-radius:16px;padding:15px 16px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+      .annualBilling div{display:flex;flex-direction:column;gap:3px}.annualBilling span{font-size:13px;font-weight:800}.annualBilling small{font-size:11px;color:#cbd3df}.annualBilling strong{font-size:22px;white-space:nowrap}
+
       .billing{max-width:1180px}.title span,.summary>span{font-size:10px;font-weight:900;letter-spacing:.14em;color:#ff501e}.title h1{font-size:34px;margin:7px 0;color:#07162e}.title p{color:#697386;max-width:720px}.layout{display:grid;grid-template-columns:1fr 370px;gap:22px;margin-top:28px}.panel,.summary{background:#fff;border:1px solid #e4e8ef;border-radius:24px;padding:24px}.step{display:flex;align-items:center;gap:12px}.step.top{margin-top:28px}.step>b{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#07162e;color:#fff}.step h2{margin:0;font-size:19px;color:#07162e}.step p{margin:3px 0 0;color:#89909d;font-size:12px}.cards{display:grid;gap:9px;margin-top:16px}.card{width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:14px;border:1px solid #e1e5ec;background:#fff;border-radius:14px;cursor:pointer}.card.selected{border-color:#ff6a3d;background:#fff8f5}.check{width:25px;height:25px;border:2px solid #ccd2db;border-radius:7px;display:grid;place-items:center;font-weight:900}.selected .check{background:#ff501e;border-color:#ff501e;color:#fff}.card strong,.card small{display:block}.card small{color:#89909d;margin-top:4px}.choice,.methods{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:13px}.choice button,.method{border:1px solid #e0e4eb;background:#fff;border-radius:13px;padding:13px;cursor:pointer;font-weight:800}.choice button.active,.method.active{border-color:#ff501e;background:#fff6f2;color:#d83d11}.methods{grid-template-columns:repeat(3,1fr)}.method{text-align:left}.method strong,.method small{display:block}.method small{font-weight:500;color:#89909d;margin-top:5px}.method.disabled{opacity:.55;cursor:not-allowed}.agentBox,.bankBox{margin-top:13px;padding:16px;border-radius:14px;background:#f7f8fa}.agentBox label{font-size:12px;font-weight:800}.agentBox select{display:block;width:100%;height:43px;border:1px solid #dfe3ea;border-radius:10px;margin-top:7px;padding:0 10px;background:#fff}.bankBox h3{margin:0 0 12px}.bankBox p{display:grid;grid-template-columns:110px 1fr;gap:10px;margin:8px 0;font-size:12px}.bankBox p span{color:#7c8491}.bankBox b{word-break:break-all}.bankBox>small{display:block;margin-top:12px;color:#6f7784}.summary{height:max-content;position:sticky;top:95px}.summary h2{font-size:21px;color:#07162e}.summaryCards{border-top:1px solid #eceff3;border-bottom:1px solid #eceff3;padding:10px 0}.summaryCards p{display:flex;justify-content:space-between;gap:10px;font-size:12px}.summaryCards p span{color:#697386}.total{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 0}.total strong{font-size:28px;color:#07162e}.submit{width:100%;border:0;border-radius:13px;background:#ff501e;color:#fff;padding:15px;font-weight:900;cursor:pointer}.submit:disabled{opacity:.55}.hint{display:block;text-align:center;color:#89909d;line-height:1.5;margin-top:12px}.error,.success{padding:14px 16px;border-radius:13px;margin-top:18px}.error{background:#fff0f1;color:#a62332}.success{background:#ebfbf3;color:#14784d;display:flex;gap:12px;flex-wrap:wrap}.loading{padding:50px;text-align:center}.agentBox p{font-size:12px;color:#697386}@media(max-width:900px){.layout{grid-template-columns:1fr}.summary{position:static}.methods{grid-template-columns:1fr}}@media(max-width:600px){.billing{padding-left:14px;padding-right:14px}.title h1{font-size:28px}.panel,.summary{padding:17px}.choice{grid-template-columns:1fr 1fr}}
     `}</style>
   </main>;
