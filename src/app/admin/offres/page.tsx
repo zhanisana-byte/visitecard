@@ -297,14 +297,10 @@ export default function AdminOffersPage() {
 
       <div className="container">
         <section className="hero">
-          <div>
-            <span>ADMINISTRATION</span>
-            <div className="heroLine">
-              <h1>Offres & Tarifs</h1>
-              <p>
-                Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.
-              </p>
-            </div>
+          <span>ADMINISTRATION</span>
+          <div className="heroLine">
+            <h1>Offres & Tarifs</h1>
+            <p>Gérez les périodes gratuites, les tarifs, promotions et moyens de paiement.</p>
           </div>
         </section>
 
@@ -1152,17 +1148,20 @@ export default function AdminOffersPage() {
         }
 
         .container {
-          max-width: 1400px;
-          margin: auto;
-          padding: 18px 24px 60px;
+          width: min(1400px, calc(100% - 32px));
+          margin: 0 auto;
+          padding: 18px 0 60px;
         }
 
         .hero {
           background: #111;
           color: white;
-          border-radius: 18px;
-          padding: 18px 22px;
+          border-radius: 16px;
+          padding: 16px 20px;
           margin-bottom: 18px;
+          min-height: auto;
+          height: auto;
+          display: block;
         }
 
         .hero span {
@@ -1175,14 +1174,14 @@ export default function AdminOffersPage() {
         .heroLine {
           display: flex;
           align-items: center;
-          gap: 18px;
-          margin-top: 5px;
+          gap: 16px;
+          margin-top: 4px;
           min-width: 0;
         }
 
         .hero h1 {
-          font-size: 26px;
-          line-height: 1.1;
+          font-size: 25px;
+          line-height: 1.15;
           margin: 0;
           white-space: nowrap;
         }
