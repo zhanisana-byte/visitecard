@@ -313,7 +313,53 @@ Thank you.`
           <div className="planTop"><div className={`planIcon ${isPro ? "proIcon" : "freeIcon"}`}>{isPro ? <CrownIcon/> : <UserIcon/>}</div><div><span className="planName">VisiteCard</span><h3>{isStartup ? (fr ? "Offre démarrage" : "Startup offer") : isIncluded ? (fr ? "Inclus" : "Included") : isPro ? "Pro" : (fr ? "Abonnement expiré" : "Subscription expired")}</h3></div></div>
           <p className="planDescription">{fr ? "Consultez vos offres, vos références VC et choisissez votre mode de paiement depuis l’espace Abonnement." : "View your offers, VC references and choose your payment method from the Subscription area."}</p>
           {planExpiresAt ? <div className="planStatus"><CheckIcon/><span>{fr ? `Valable jusqu’au ${formatExpiration(planExpiresAt)}` : `Valid until ${formatExpiration(planExpiresAt)}`}</span></div> : null}
-          <Link className="billingLink" href="/mon-espace/abonnement">{fr ? "Activer et réserver mon QR code" : "Activate and reserve my QR code"}</Link>
+          {paymentRequest ? (
+            <div className={`paymentRequestBox ${paymentConfirmed ? "confirmed" : "pending"}`}>
+              <div className="paymentRequestTop">
+                <div>
+                  <strong>
+                    {paymentConfirmed
+                      ? fr ? "Paiement confirmé" : "Payment confirmed"
+                      : fr ? "Demande en cours" : "Request pending"}
+                  </strong>
+                  <small>
+                    {paymentConfirmed
+                      ? fr ? "Votre abonnement a été validé." : "Your subscription has been validated."
+                      : fr ? "Votre demande est en attente de confirmation." : "Your request is awaiting confirmation."}
+                  </small>
+                </div>
+                <span className="requestStatus">
+                  {paymentConfirmed ? (fr ? "CONFIRMÉ" : "CONFIRMED") : (fr ? "EN ATTENTE" : "PENDING")}
+                </span>
+              </div>
+
+              <div className="requestGrid">
+                <div>
+                  <span>{fr ? "Référence" : "Reference"}</span>
+                  <b>{paymentRequest.payment_reference || paymentRequest.vc_reference || "—"}</b>
+                </div>
+                <div>
+                  <span>{fr ? "Montant" : "Amount"}</span>
+                  <b>
+                    {Number(paymentRequest.total_amount ?? paymentRequest.amount ?? 0).toFixed(2)}{" "}
+                    {paymentRequest.currency === "EUR" ? "€" : paymentRequest.currency || ""}
+                  </b>
+                </div>
+                <div>
+                  <span>{fr ? "Méthode" : "Method"}</span>
+                  <b>{paymentMethodLabel(paymentRequest.payment_method)}</b>
+                </div>
+              </div>
+
+              <Link className="billingLink requestLink" href="/mon-espace/abonnement">
+                {fr ? "Voir l’état de ma demande" : "View my request status"}
+              </Link>
+            </div>
+          ) : (
+            <Link className="billingLink" href="/mon-espace/abonnement">
+              {fr ? "Activer et réserver mon QR code" : "Activate and reserve my QR code"}
+            </Link>
+          )}
         </article>
       </section>
 
@@ -978,7 +1024,7 @@ Thank you.`
           }
         }
         .paymentRequestBox {
-          margin-top: 14px;
+          margin-top: 18px;
           max-width: 560px;
           padding: 16px 18px;
           border: 1px solid #ffb39d;
@@ -1020,6 +1066,61 @@ Thank you.`
           color: #0b1f3a;
           font-weight: 800;
           text-decoration: underline;
+        }
+
+        .paymentRequestTop > div {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .paymentRequestTop small {
+          color: #667085;
+          font-size: 12px;
+        }
+        .requestStatus {
+          background: #fff0e8;
+          color: #e84818 !important;
+          border-radius: 999px;
+          padding: 6px 9px;
+          font-size: 10px !important;
+          font-weight: 900 !important;
+        }
+        .confirmed .requestStatus {
+          background: #e8f8ef;
+          color: #16864b !important;
+        }
+        .requestGrid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
+        }
+        .requestGrid > div {
+          background: #fff;
+          border: 1px solid #eceff3;
+          border-radius: 11px;
+          padding: 10px 12px;
+        }
+        .requestGrid span {
+          display: block;
+          color: #98a2b3;
+          font-size: 10px;
+          margin-bottom: 4px;
+        }
+        .requestGrid b {
+          color: #101828;
+          font-size: 13px;
+        }
+        .requestLink {
+          margin-top: 14px !important;
+        }
+        @media (max-width: 650px) {
+          .requestGrid {
+            grid-template-columns: 1fr;
+          }
+          .paymentRequestTop {
+            align-items: flex-start;
+          }
         }
       `}
       </style>
