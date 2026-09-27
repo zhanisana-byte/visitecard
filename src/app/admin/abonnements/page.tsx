@@ -25,13 +25,19 @@ export default function AdminSubscriptionsPage(){
   const [q,setQ]=useState(""); const [currency,setCurrency]=useState("all"); const [status,setStatus]=useState("all");
   const [type,setType]=useState("all"); const [current,setCurrent]=useState<Subscription|null>(null);
   const [form,setForm]=useState<any>({}); const [saving,setSaving]=useState(false);
+  const [offers,setOffers]=useState<any[]>([]);
+  const [agents,setAgents]=useState<any[]>([]);
 
   async function load(){
     setLoading(true);setError("");
     try{const r=await fetch("/api/admin/subscriptions",{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d.error||"Erreur");setItems(d.subscriptions||[])}
     catch(e:any){setError(e.message||"Erreur de chargement")}finally{setLoading(false)}
   }
-  useEffect(()=>{load()},[]);
+  useEffect(()=>{
+    load();
+    fetch("/api/admin/offers",{cache:"no-store"}).then(r=>r.json()).then(d=>setOffers((d.offers||[]).filter((o:any)=>o.is_active!==false))).catch(()=>{});
+    fetch("/api/admin/payment-settings",{cache:"no-store"}).then(r=>r.json()).then(d=>setAgents(d.agents||[])).catch(()=>{});
+  },[]);
 
   const rows=useMemo(()=>items.filter(s=>{
     if(currency!=="all"&&s.currency!==currency)return false;
@@ -48,6 +54,15 @@ export default function AdminSubscriptionsPage(){
   const soon=items.filter(x=>x.end_date&&["active","startup"].includes(x.status)&&new Date(x.end_date).getTime()-Date.now()<=30*86400000&&new Date(x.end_date).getTime()>=Date.now()).length;
   const caTND=items.filter(x=>x.currency==="TND"&&x.status==="active").reduce((a,b)=>a+Number(b.price_ht||0),0);
   const caEUR=items.filter(x=>x.currency==="EUR"&&x.status==="active").reduce((a,b)=>a+Number(b.price_ht||0),0);
+
+  const offerLabel=(o:any)=>o.name_fr||o.name||o.label||o.code||"Offre";
+  const offerCode=(o:any)=>o.code||o.plan_code||o.id;
+  const offerPrice=(o:any,c:string)=>Number(c==="EUR"?(o.promo_price_eur??o.price_eur??0):(o.promo_price_tnd??o.price_tnd??0));
+
+  function applyOffer(code:string){
+    const o=offers.find((x:any)=>String(offerCode(x))===String(code));
+    setForm((f:any)=>({...f,plan_code:code,price_ht:o?offerPrice(o,f.currency||"TND"):f.price_ht}));
+  }
 
   function edit(s:Subscription){
     setCurrent(s);
@@ -118,17 +133,35 @@ export default function AdminSubscriptionsPage(){
       <div className="contact"><b>{current.card?.email||"—"}</b><span>{current.card?.phone||""}</span></div>
       <div className="grid">
         <label>Statut<select value={form.status||""} onChange={e=>setForm({...form,status:e.target.value})}>{Object.entries(labels).map(([k,v])=><option key={k} value={k}>{String(v)}</option>)}</select></label>
-        <label>Offre<input value={form.plan_code||""} onChange={e=>setForm({...form,plan_code:e.target.value})}/></label>
+        <label>Offre
+          <select value={form.plan_code||""} onChange={e=>applyOffer(e.target.value)}>
+            <option value="">Sélectionner une offre</option>
+            {offers.map((o:any)=><option key={offerCode(o)} value={offerCode(o)}>{offerLabel(o)}</option>)}
+          </select>
+        </label>
         <label>Devise<select value={form.currency||"TND"} onChange={e=>setForm({...form,currency:e.target.value})}><option>TND</option><option>EUR</option></select></label>
         <label>Tarif HT<input type="number" step="0.01" value={form.price_ht??0} onChange={e=>setForm({...form,price_ht:e.target.value})}/></label>
         <label>TVA %<input type="number" step="0.01" value={form.tax_rate??0} onChange={e=>setForm({...form,tax_rate:e.target.value})}/></label>
-        <label>Mois démarrage<input type="number" value={form.startup_months??2} onChange={e=>setForm({...form,startup_months:e.target.value})}/></label>
+        {form.status==="startup"&&<label>Mois gratuits<input type="number" value={form.startup_months??2} onChange={e=>setForm({...form,startup_months:e.target.value})}/></label>}
         <label>Date début<input type="date" value={form.start_date||""} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
         <label>Date fin<input type="date" value={form.end_date||""} onChange={e=>setForm({...form,end_date:e.target.value})}/></label>
         <label>Commercial / apporteur<input value={form.referrer_name||""} onChange={e=>setForm({...form,referrer_name:e.target.value})}/></label>
         <label>Code commercial<input value={form.referrer_code||""} onChange={e=>setForm({...form,referrer_code:e.target.value})}/></label>
-        <label>Mode paiement<input value={form.payment_method||""} onChange={e=>setForm({...form,payment_method:e.target.value})}/></label>
+        <label>Mode de paiement
+          <select value={form.payment_method||""} onChange={e=>setForm({...form,payment_method:e.target.value})}>
+            <option value="">Sélectionner</option>
+            <option value="cash">Espèces</option>
+            <option value="bank_transfer">Virement bancaire</option>
+            <option value="agent">Par agent</option>
+          </select>
+        </label>
         <label>Référence paiement<input value={form.payment_reference||""} onChange={e=>setForm({...form,payment_reference:e.target.value})}/></label>
+        {form.payment_method==="agent"&&<label>Agent
+          <select value={form.referrer_name||""} onChange={e=>setForm({...form,referrer_name:e.target.value})}>
+            <option value="">Sélectionner un agent</option>
+            {agents.map((a:any)=><option key={a.id||a.name} value={a.name||a.full_name}>{a.name||a.full_name||"Agent"}</option>)}
+          </select>
+        </label>}
       </div>
       <label className="check"><input type="checkbox" checked={!!form.auto_renew} onChange={e=>setForm({...form,auto_renew:e.target.checked})}/> Renouvellement automatique</label>
       <label>Notes<textarea value={form.notes||""} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
