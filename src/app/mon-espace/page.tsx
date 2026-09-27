@@ -2809,11 +2809,31 @@ export default function MonEspacePage() {
                     }
                   />
 
-                  <span>
-                    {
-                      card.primary_color
-                    }
-                  </span>
+                  <input
+                    className="hexInput"
+                    value={card.primary_color}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      const normalized = raw.startsWith("#") ? raw : `#${raw}`;
+
+                      // Mise à jour immédiate dès qu'un HEX complet et valide est saisi/collé.
+                      if (/^#[0-9A-Fa-f]{6}$/.test(normalized)) {
+                        updateField("primary_color", normalized);
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData("text").trim();
+                      const normalized = pasted.startsWith("#") ? pasted : `#${pasted}`;
+
+                      if (/^#[0-9A-Fa-f]{6}$/.test(normalized)) {
+                        updateField("primary_color", normalized);
+                      }
+                    }}
+                    maxLength={7}
+                    spellCheck={false}
+                    aria-label="Code HEX de la couleur principale"
+                  />
                 </div>
               </label>
 
