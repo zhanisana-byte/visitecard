@@ -507,8 +507,9 @@ export async function POST(request: Request) {
     const method =
       body.payment_method === "agent"
         ? "agent"
-        : body.payment_method === "bank"
-        ? "bank"
+        : body.payment_method === "bank" ||
+          body.payment_method === "bank_transfer"
+        ? "bank_transfer"
         : "online";
 
     if (method === "online") {
@@ -535,7 +536,7 @@ export async function POST(request: Request) {
     }
 
     if (
-      method === "bank" &&
+      method === "bank_transfer" &&
       !settings?.payment_bank_enabled
     ) {
       return NextResponse.json(
@@ -572,7 +573,7 @@ export async function POST(request: Request) {
       agent = data;
     }
 
-    if (method === "bank") {
+    if (method === "bank_transfer") {
       const { data, error } = await s
         .from("vc_bank_accounts")
         .select("*")
