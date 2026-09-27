@@ -34,7 +34,6 @@ type Settings = {
   payment_online_enabled: boolean;
 };
 
-type Currency = "TND" | "EUR";
 
 const emptyOffer: Partial<Offer> = {
   name: "",
@@ -60,22 +59,6 @@ function dateInput(value: string | null) {
   return String(value).slice(0, 10);
 }
 
-function getCurrency(offer: Partial<Offer>): Currency {
-  if (offer.price_eur !== null && offer.price_eur !== undefined && offer.price_tnd == null) {
-    return "EUR";
-  }
-  return "TND";
-}
-
-function getPrice(offer: Partial<Offer>) {
-  return getCurrency(offer) === "EUR" ? offer.price_eur ?? "" : offer.price_tnd ?? "";
-}
-
-function getPromoPrice(offer: Partial<Offer>) {
-  return getCurrency(offer) === "EUR"
-    ? offer.promo_price_eur ?? ""
-    : offer.promo_price_tnd ?? "";
-}
 
 export default function AdminOffersPage() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -703,71 +686,19 @@ export default function AdminOffersPage() {
 
               <div className="prices">
                 <label>
-                  <span>Devise</span>
-                  <select
-                    value={getCurrency(offer)}
-                    onChange={(e) => {
-                      const currency = e.target.value as Currency;
-                      const price = getPrice(offer);
-                      const promoPrice = getPromoPrice(offer);
-
-                      setOffers((current) =>
-                        current.map((item) =>
-                          item.id === offer.id
-                            ? {
-                                ...item,
-                                price_tnd:
-                                  currency === "TND"
-                                    ? price === ""
-                                      ? null
-                                      : Number(price)
-                                    : null,
-                                price_eur:
-                                  currency === "EUR"
-                                    ? price === ""
-                                      ? null
-                                      : Number(price)
-                                    : null,
-                                promo_price_tnd:
-                                  currency === "TND"
-                                    ? promoPrice === ""
-                                      ? null
-                                      : Number(promoPrice)
-                                    : null,
-                                promo_price_eur:
-                                  currency === "EUR"
-                                    ? promoPrice === ""
-                                      ? null
-                                      : Number(promoPrice)
-                                    : null,
-                              }
-                            : item
-                        )
-                      );
-                    }}
-                  >
-                    <option value="TND">DT — Dinar tunisien</option>
-                    <option value="EUR">€ — Euro</option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>Prix</span>
+                  <span>Prix (DT)</span>
                   <div className="priceInput">
-                    <input
-                      type="number"
-                      min="0"
-                      step={getCurrency(offer) === "TND" ? "0.001" : "0.01"}
-                      value={getPrice(offer)}
-                      onChange={(e) =>
-                        updateOffer(
-                          offer.id,
-                          getCurrency(offer) === "TND" ? "price_tnd" : "price_eur",
-                          e.target.value === "" ? null : Number(e.target.value)
-                        )
-                      }
-                    />
-                    <b>{getCurrency(offer) === "TND" ? "DT" : "€"}</b>
+                    <input type="number" min="0" step="0.001" value={offer.price_tnd ?? ""}
+                      onChange={(e) => updateOffer(offer.id, "price_tnd", e.target.value === "" ? null : Number(e.target.value))} />
+                    <b>DT</b>
+                  </div>
+                </label>
+                <label>
+                  <span>Prix (€)</span>
+                  <div className="priceInput">
+                    <input type="number" min="0" step="0.01" value={offer.price_eur ?? ""}
+                      onChange={(e) => updateOffer(offer.id, "price_eur", e.target.value === "" ? null : Number(e.target.value))} />
+                    <b>€</b>
                   </div>
                 </label>
               </div>
@@ -797,24 +728,14 @@ export default function AdminOffersPage() {
                   <>
                     <div className="grid">
                       <label>
-                        <span>
-                          Prix promotionnel ({getCurrency(offer) === "TND" ? "DT" : "€"})
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step={getCurrency(offer) === "TND" ? "0.001" : "0.01"}
-                          value={getPromoPrice(offer)}
-                          onChange={(e) =>
-                            updateOffer(
-                              offer.id,
-                              getCurrency(offer) === "TND"
-                                ? "promo_price_tnd"
-                                : "promo_price_eur",
-                              e.target.value === "" ? null : Number(e.target.value)
-                            )
-                          }
-                        />
+                        <span>Prix promotionnel (DT)</span>
+                        <input type="number" min="0" step="0.001" value={offer.promo_price_tnd ?? ""}
+                          onChange={(e) => updateOffer(offer.id, "promo_price_tnd", e.target.value === "" ? null : Number(e.target.value))} />
+                      </label>
+                      <label>
+                        <span>Prix promotionnel (€)</span>
+                        <input type="number" min="0" step="0.01" value={offer.promo_price_eur ?? ""}
+                          onChange={(e) => updateOffer(offer.id, "promo_price_eur", e.target.value === "" ? null : Number(e.target.value))} />
                       </label>
                     </div>
 
@@ -1073,57 +994,19 @@ export default function AdminOffersPage() {
 
           <div className="grid">
             <label>
-              <span>Devise</span>
-              <select
-                value={getCurrency(newOffer)}
-                onChange={(e) => {
-                  const currency = e.target.value as Currency;
-                  const price = getPrice(newOffer);
-
-                  setNewOffer({
-                    ...newOffer,
-                    price_tnd:
-                      currency === "TND"
-                        ? price === ""
-                          ? null
-                          : Number(price)
-                        : null,
-                    price_eur:
-                      currency === "EUR"
-                        ? price === ""
-                          ? null
-                          : Number(price)
-                        : null,
-                    promo_price_tnd: null,
-                    promo_price_eur: null,
-                  });
-                }}
-              >
-                <option value="TND">DT — Dinar tunisien</option>
-                <option value="EUR">€ — Euro</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Prix</span>
+              <span>Prix (DT)</span>
               <div className="priceInput">
-                <input
-                  type="number"
-                  min="0"
-                  step={getCurrency(newOffer) === "TND" ? "0.001" : "0.01"}
-                  value={getPrice(newOffer)}
-                  onChange={(e) => {
-                    const value =
-                      e.target.value === "" ? null : Number(e.target.value);
-
-                    setNewOffer({
-                      ...newOffer,
-                      price_tnd: getCurrency(newOffer) === "TND" ? value : null,
-                      price_eur: getCurrency(newOffer) === "EUR" ? value : null,
-                    });
-                  }}
-                />
-                <b>{getCurrency(newOffer) === "TND" ? "DT" : "€"}</b>
+                <input type="number" min="0" step="0.001" value={newOffer.price_tnd ?? ""}
+                  onChange={(e) => setNewOffer({...newOffer, price_tnd: e.target.value === "" ? null : Number(e.target.value)})} />
+                <b>DT</b>
+              </div>
+            </label>
+            <label>
+              <span>Prix (€)</span>
+              <div className="priceInput">
+                <input type="number" min="0" step="0.01" value={newOffer.price_eur ?? ""}
+                  onChange={(e) => setNewOffer({...newOffer, price_eur: e.target.value === "" ? null : Number(e.target.value)})} />
+                <b>€</b>
               </div>
             </label>
           </div>
