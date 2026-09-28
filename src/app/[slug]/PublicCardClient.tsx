@@ -338,15 +338,28 @@ function extractGoogleMapsPlaceName(value?: string | null) {
 
 function getGoogleMapsEmbedUrl(item: CustomLink, fallbackName?: string) {
   const coordinates = extractGoogleMapsCoordinates(item.url);
-
-  if (coordinates) {
-    return `https://www.google.com/maps?q=${encodeURIComponent(`${coordinates.lat},${coordinates.lng}`)}&z=17&output=embed`;
-  }
-
   const placeName = extractGoogleMapsPlaceName(item.url);
+
+  // Prefer the Google Maps place/business name as the search query.
+  // Using coordinates alone gives the right pin position, but Google may
+  // label the embedded map with a nearby POI (café, shop, etc.).
+  // q=<place name> makes Google display the actual business name, while
+  // ll=<exact coordinates> keeps the map centred on the exact saved place.
   const query = placeName || item.label || fallbackName || "";
 
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`;
+  if (query && coordinates) {
+    return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(query)}&ll=${encodeURIComponent(`${coordinates.lat},${coordinates.lng}`)}&z=17`;
+  }
+
+  if (query) {
+    return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(query)}&z=17`;
+  }
+
+  if (coordinates) {
+    return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(`${coordinates.lat},${coordinates.lng}`)}&z=17`;
+  }
+
+  return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(fallbackName || "")}&z=17`;
 }
 
 function socialHref(item: SocialLink) {
