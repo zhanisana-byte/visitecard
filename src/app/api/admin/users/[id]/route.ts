@@ -1,780 +1,155 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
-
-import {
-  ADMIN_COOKIE,
-  verifyAdminSession,
-} from "@/lib/admin-session";
+import { ADMIN_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
-/* =========================================================
-   SUPABASE ADMIN
-========================================================= */
-
 function getSupabaseAdmin() {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  const serviceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl) {
-    throw new Error(
-      "NEXT_PUBLIC_SUPABASE_URL manquante."
-    );
-  }
-
-  if (!serviceRoleKey) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY manquante."
-    );
-  }
-
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    }
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL manquante.");
+  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY manquante.");
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
-
-/* =========================================================
-   VÉRIFIER ADMIN
-========================================================= */
 
 async function isAdmin() {
-  const cookieStore = await cookies();
-
-  const sessionCookie =
-    cookieStore.get(ADMIN_COOKIE)?.value;
-
-  return verifyAdminSession(
-    sessionCookie
-  );
+  const store = await cookies();
+  return verifyAdminSession(store.get(ADMIN_COOKIE)?.value);
 }
 
-/* =========================================================
-   PATCH
-   Modifier :
-   - nom
-   - e-mail
-   - mot de passe
-========================================================= */
-
-export async function PATCH(
-  request: Request,
-  context: {
-    params: Promise<{
-      id: string;
-    }>;
-  }
-) {
-  try {
-    /* -----------------------------------------------------
-       SÉCURITÉ ADMIN
-    ----------------------------------------------------- */
-
-    const authorized =
-      await isAdmin();
-
-    if (!authorized) {
-      return NextResponse.json(
-        {
-          error:
-            "Accès administrateur refusé.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
-
-    /* -----------------------------------------------------
-       USER ID
-    ----------------------------------------------------- */
-
-    const { id } =
-      await context.params;
-
-    if (!id) {
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant utilisateur manquant.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    /* -----------------------------------------------------
-       BODY
-    ----------------------------------------------------- */
-
-    let body: any;
-
-    try {
-      body =
-        await request.json();
-    } catch {
-      return NextResponse.json(
-        {
-          error:
-            "Données envoyées invalides.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const supabase =
-      getSupabaseAdmin();
-
-    /* -----------------------------------------------------
-       RÉCUPÉRER USER ACTUEL
-    ----------------------------------------------------- */
-
-    const {
-      data: currentData,
-      error: currentError,
-    } =
-      await supabase.auth.admin.getUserById(
-        id
-      );
-
-    if (
-      currentError ||
-      !currentData.user
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Utilisateur introuvable.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    const currentUser =
-      currentData.user;
-
-    /* -----------------------------------------------------
-       CONSTRUIRE MODIFICATIONS AUTH
-    ----------------------------------------------------- */
-
-    const authUpdates: {
-      email?: string;
-      email_confirm?: boolean;
-      password?: string;
-      user_metadata?: Record<string, any>;
-    } = {};
-
-    let newName:
-      | string
-      | undefined;
-
-    let newEmail:
-      | string
-      | undefined;
-
-    /* -----------------------------------------------------
-       NOM
-    ----------------------------------------------------- */
-
-    if (
-      Object.prototype.hasOwnProperty.call(
-        body,
-        "name"
-      )
-    ) {
-      newName = String(
-        body.name || ""
-      ).trim();
-
-      authUpdates.user_metadata = {
-        ...(currentUser.user_metadata ||
-          {}),
-        name: newName,
-      } as any;
-    }
-
-    /* -----------------------------------------------------
-       EMAIL
-    ----------------------------------------------------- */
-
-    if (
-      Object.prototype.hasOwnProperty.call(
-        body,
-        "email"
-      )
-    ) {
-      newEmail = String(
-        body.email || ""
-      ).trim();
-
-      if (!newEmail) {
-        return NextResponse.json(
-          {
-            error:
-              "L'adresse e-mail est obligatoire.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      const at = newEmail.indexOf("@");
-      const domain = at >= 0 ? newEmail.slice(at + 1) : "";
-
-      if (
-        /\s/.test(newEmail) ||
-        at <= 0 ||
-        at !== newEmail.lastIndexOf("@") ||
-        !domain ||
-        !domain.includes(".") ||
-        domain.startsWith(".") ||
-        domain.endsWith(".")
-      ) {
-        return NextResponse.json(
-          {
-            error: "L'adresse e-mail n'est pas valide.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      authUpdates.email = newEmail;
-      authUpdates.email_confirm = true;
-    }
-
-    /* -----------------------------------------------------
-       PASSWORD
-    ----------------------------------------------------- */
-
-    if (
-      Object.prototype.hasOwnProperty.call(
-        body,
-        "password"
-      )
-    ) {
-      const password =
-        String(
-          body.password || ""
-        );
-
-      if (
-        password.length < 8
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "Le mot de passe doit contenir au moins 8 caractères.",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      authUpdates.password =
-        password;
-    }
-
-    /* -----------------------------------------------------
-       RIEN À MODIFIER
-    ----------------------------------------------------- */
-
-    if (
-      Object.keys(authUpdates)
-        .length === 0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Aucune modification demandée.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    /* -----------------------------------------------------
-       MODIFIER AUTH USER
-    ----------------------------------------------------- */
-
-    const {
-      data: updatedData,
-      error: updateError,
-    } =
-      await supabase.auth.admin.updateUserById(
-        id,
-        authUpdates
-      );
-
-    if (updateError) {
-      const message =
-        updateError.message || "";
-
-      const normalizedMessage = message.toLowerCase();
-
-      if (
-        normalizedMessage.includes("already") ||
-        normalizedMessage.includes("registered") ||
-        normalizedMessage.includes("exists") ||
-        normalizedMessage.includes("duplicate")
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "Cette adresse e-mail est déjà utilisée par un autre compte.",
-          },
-          {
-            status: 409,
-          }
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error:
-            message || "Impossible de modifier l'adresse e-mail.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    /* -----------------------------------------------------
-       SYNCHRONISER PROFILE
-    ----------------------------------------------------- */
-
-    const profileUpdates: Record<
-      string,
-      any
-    > = {
-      updated_at:
-        new Date().toISOString(),
-    };
-
-    if (
-      newName !== undefined
-    ) {
-      profileUpdates.name =
-        newName;
-    }
-
-    if (
-      newEmail !== undefined
-    ) {
-      profileUpdates.email =
-        newEmail;
-    }
-
-    if (
-      Object.keys(
-        profileUpdates
-      ).length > 1
-    ) {
-      const {
-        error: profileError,
-      } = await supabase
-        .from("profiles")
-        .update(
-          profileUpdates
-        )
-        .eq("id", id);
-
-      if (profileError) {
-        console.error(
-          "PROFILE UPDATE:",
-          profileError
-        );
-        throw new Error(
-          "L'e-mail Auth a été modifié, mais la synchronisation du profil a échoué."
-        );
-      }
-    }
-
-    /* -----------------------------------------------------
-       SYNCHRONISER CARTE
-    ----------------------------------------------------- */
-
-    const cardUpdates: Record<
-      string,
-      any
-    > = {
-      updated_at:
-        new Date().toISOString(),
-    };
-
-    if (
-      newName !== undefined
-    ) {
-      cardUpdates.full_name =
-        newName;
-    }
-
-    if (
-      newEmail !== undefined
-    ) {
-      cardUpdates.email =
-        newEmail;
-    }
-
-    if (
-      Object.keys(
-        cardUpdates
-      ).length > 1
-    ) {
-      const {
-        error: cardError,
-      } = await supabase
-        .from("cards")
-        .update(
-          cardUpdates
-        )
-        .eq(
-          "user_id",
-          id
-        );
-
-      if (cardError) {
-        console.error(
-          "CARD UPDATE:",
-          cardError
-        );
-        throw new Error(
-          "L'e-mail Auth a été modifié, mais la synchronisation de la carte a échoué."
-        );
-      }
-    }
-
-    /* -----------------------------------------------------
-       RESPONSE
-    ----------------------------------------------------- */
-
-    return NextResponse.json(
-      {
-        success: true,
-
-        message:
-          "Utilisateur modifié avec succès.",
-
-        user: {
-          id:
-            updatedData.user.id,
-
-          email:
-            updatedData.user.email ||
-            newEmail ||
-            currentUser.email ||
-            "",
-
-          name:
-            updatedData.user
-              .user_metadata
-              ?.name ||
-            newName ||
-            currentUser
-              .user_metadata
-              ?.name ||
-            "",
-        },
-      },
-      {
-        status: 200,
-      }
-    );
-  } catch (error: any) {
-    console.error(
-      "ADMIN UPDATE USER:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        error:
-          error?.message ||
-          "Impossible de modifier l'utilisateur.",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+function makeSlug(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "card";
 }
 
-/* =========================================================
-   DELETE
-   Supprimer définitivement utilisateur
-========================================================= */
+async function getUniqueSlug(supabase: ReturnType<typeof getSupabaseAdmin>, value: string) {
+  const base = makeSlug(value);
+  let candidate = base;
+  let suffix = 2;
 
-export async function DELETE(
-  request: Request,
-  context: {
-    params: Promise<{
-      id: string;
-    }>;
-  }
-) {
-  try {
-    /* -----------------------------------------------------
-       SÉCURITÉ
-    ----------------------------------------------------- */
-
-    const authorized =
-      await isAdmin();
-
-    if (!authorized) {
-      return NextResponse.json(
-        {
-          error:
-            "Accès administrateur refusé.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
-
-    const { id } =
-      await context.params;
-
-    if (!id) {
-      return NextResponse.json(
-        {
-          error:
-            "Identifiant utilisateur manquant.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const supabase =
-      getSupabaseAdmin();
-
-    /* -----------------------------------------------------
-       EMPÊCHER LA SUPPRESSION DU COMPTE ADMIN
-    ----------------------------------------------------- */
-
-    const {
-      data: userData,
-      error: userError,
-    } =
-      await supabase.auth.admin.getUserById(
-        id
-      );
-
-    if (
-      userError ||
-      !userData.user
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Utilisateur introuvable.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    const adminEmail =
-      (
-        process.env.ADMIN_EMAIL ||
-        ""
-      )
-        .trim()
-        .toLowerCase();
-
-    const userEmail =
-      (
-        userData.user.email ||
-        ""
-      )
-        .trim()
-        .toLowerCase();
-
-    if (
-      adminEmail &&
-      userEmail === adminEmail
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Le compte administrateur principal ne peut pas être supprimé.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
-
-    /* -----------------------------------------------------
-       IMPORTANT
-
-       Les tables cards/profiles référencent auth.users.
-       On les supprime avant le compte Auth afin d'éviter
-       un blocage par les clés étrangères.
-    ----------------------------------------------------- */
-
-    /* -----------------------------------------------------
-       RÉCUPÉRER CARTE
-    ----------------------------------------------------- */
-
-    const {
-      data: card,
-    } = await supabase
+  while (true) {
+    const { data, error } = await supabase
       .from("cards")
       .select("id")
-      .eq(
-        "user_id",
-        id
-      )
+      .eq("slug", candidate)
       .maybeSingle();
 
-    /* -----------------------------------------------------
-       SUPPRIMER DONNÉES CARTE
-    ----------------------------------------------------- */
+    if (error) throw error;
+    if (!data) return candidate;
 
-    if (card?.id) {
-      await supabase.from("profile_company_links").delete().or(`profile_card_id.eq.${card.id},company_card_id.eq.${card.id}`);
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+}
 
-      /*
-       * qr_scans et card_reviews ont une FK vers cards.
-       * On les supprime d'abord.
-       */
+export async function GET() {
+  try {
+    if (!(await isAdmin())) return NextResponse.json({ error: "Accès administrateur refusé." }, { status: 403 });
+    const supabase = getSupabaseAdmin();
+    const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (usersError) throw usersError;
 
-      const {
-        error: scansError,
-      } = await supabase
-        .from("qr_scans")
-        .delete()
-        .eq(
-          "card_id",
-          card.id
-        );
+    const { data: cards, error: cardsError } = await supabase
+      .from("cards")
+      .select("id,user_id,slug,full_name,job_title,company,email,photo_url,entity_type,is_public,created_at")
+      .order("created_at", { ascending: false });
+    if (cardsError) throw cardsError;
 
-      if (scansError) {
-        console.error(
-          "DELETE QR SCANS:",
-          scansError
-        );
-      }
+    const { data: links, error: linksError } = await supabase
+      .from("profile_company_links")
+      .select("id,profile_card_id,company_card_id,position_title,created_at");
+    if (linksError) console.error("profile_company_links:", linksError);
 
-      const {
-        error: reviewsError,
-      } = await supabase
-        .from("card_reviews")
-        .delete()
-        .eq(
-          "card_id",
-          card.id
-        );
+    const cardByUser = new Map((cards || []).map((card: any) => [card.user_id, card]));
+    const cardById = new Map((cards || []).map((card: any) => [card.id, card]));
+    const linksByProfile = new Map<string, any[]>();
 
-      if (reviewsError) {
-        console.error(
-          "DELETE REVIEWS:",
-          reviewsError
-        );
-      }
-
-      const {
-        error: cardError,
-      } = await supabase
-        .from("cards")
-        .delete()
-        .eq(
-          "id",
-          card.id
-        );
-
-      if (cardError) {
-        throw new Error(
-          "Impossible de supprimer la carte de l'utilisateur."
-        );
-      }
+    for (const link of links || []) {
+      const company = cardById.get(link.company_card_id) as any;
+      if (!company) continue;
+      const current = linksByProfile.get(link.profile_card_id) || [];
+      current.push({
+        id: link.id,
+        position_title: link.position_title || "",
+        company_card_id: company.id,
+        company_name: company.full_name || company.company || "Société",
+        company_slug: company.slug || null,
+        company_photo_url: company.photo_url || null,
+      });
+      linksByProfile.set(link.profile_card_id, current);
     }
 
-    /* -----------------------------------------------------
-       SUPPRIMER PROFILE
-    ----------------------------------------------------- */
+    const users = usersData.users.map((user) => {
+      const card: any = cardByUser.get(user.id);
+      return {
+        id: user.id,
+        email: user.email || card?.email || "",
+        name: card?.full_name || user.user_metadata?.name || user.user_metadata?.full_name || "",
+        created_at: user.created_at,
+        card_id: card?.id || null,
+        card_slug: card?.slug || null,
+        entity_type: card?.entity_type === "profile" ? "profile" : "company",
+        job_title: card?.job_title || "",
+        company: card?.company || "",
+        photo_url: card?.photo_url || null,
+        is_public: card?.is_public === true,
+        linked_companies: card?.entity_type === "profile" ? linksByProfile.get(card.id) || [] : [],
+      };
+    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    const {
-      error: profileError,
-    } = await supabase
-      .from("profiles")
-      .delete()
-      .eq(
-        "id",
-        id
-      );
-
-    if (profileError) {
-      throw new Error(
-        "Impossible de supprimer le profil de l'utilisateur."
-      );
-    }
-
-    /* -----------------------------------------------------
-       SUPPRIMER AUTH USER
-    ----------------------------------------------------- */
-
-    const {
-      error: authDeleteError,
-    } =
-      await supabase.auth.admin.deleteUser(
-        id
-      );
-
-    if (authDeleteError) {
-      throw authDeleteError;
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message:
-          "Utilisateur supprimé définitivement.",
-        id,
-      },
-      {
-        status: 200,
-      }
-    );
+    return NextResponse.json({ users }, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
   } catch (error: any) {
-    console.error(
-      "ADMIN DELETE USER:",
-      error
-    );
+    console.error("ADMIN GET USERS:", error);
+    return NextResponse.json({ error: error?.message || "Impossible de charger les utilisateurs." }, { status: 500 });
+  }
+}
 
-    return NextResponse.json(
-      {
-        error:
-          error?.message ||
-          "Impossible de supprimer l'utilisateur.",
-      },
-      {
-        status: 500,
-      }
-    );
+export async function POST(request: Request) {
+  try {
+    if (!(await isAdmin())) return NextResponse.json({ error: "Accès administrateur refusé." }, { status: 403 });
+    const body = await request.json();
+    const name = String(body?.name || "").trim();
+    const email = String(body?.email || "").trim();
+    const password = String(body?.password || "");
+    const entityType = body?.entity_type === "company" ? "company" : "profile";
+    if (!email || /\s/.test(email) || email.indexOf("@") <= 0 || email.indexOf("@") !== email.lastIndexOf("@") || !email.slice(email.indexOf("@") + 1).includes(".")) {
+      return NextResponse.json({ error: "L'adresse e-mail n'est pas valide." }, { status: 400 });
+    }
+    if (password.length < 8) return NextResponse.json({ error: "Le mot de passe doit contenir au moins 8 caractères." }, { status: 400 });
+
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, entity_type: entityType } });
+    if (error) throw error;
+    if (!data.user) throw new Error("Utilisateur non créé.");
+
+    const user = data.user;
+    await supabase.from("profiles").upsert({ id: user.id, name: name || email.split("@")[0], email, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    const slug = await getUniqueSlug(supabase, name || email.split("@")[0]);
+    const { error: cardError } = await supabase.from("cards").insert({
+      user_id: user.id,
+      slug,
+      full_name: name || email.split("@")[0],
+      email,
+      entity_type: entityType,
+      is_public: true,
+      show_qr: true,
+      show_reviews: entityType === "company",
+      show_email: true,
+      show_phone: true,
+      show_address: entityType === "company",
+      language: "fr",
+      theme: "dark",
+      primary_color: "#6D4AFF",
+      background_color: "#071521",
+      led_enabled: true,
+      led_color: "#6D4AFF",
+      social_links: [],
+      custom_links: [],
+    });
+    if (cardError) throw cardError;
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error: any) {
+    console.error("ADMIN CREATE USER:", error);
+    return NextResponse.json({ error: error?.message || "Impossible de créer l'utilisateur." }, { status: 500 });
   }
 }
