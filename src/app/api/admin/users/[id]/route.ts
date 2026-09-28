@@ -234,18 +234,21 @@ export async function PATCH(
         );
       }
 
-      const emailRegex =
-        /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
+      const at = newEmail.indexOf("@");
+      const domain = at >= 0 ? newEmail.slice(at + 1) : "";
 
       if (
-        /[^\x00-\x7F]/.test(newEmail) ||
-        newEmail.toLowerCase().includes("xn--") ||
-        !emailRegex.test(newEmail)
+        /\s/.test(newEmail) ||
+        at <= 0 ||
+        at !== newEmail.lastIndexOf("@") ||
+        !domain ||
+        !domain.includes(".") ||
+        domain.startsWith(".") ||
+        domain.endsWith(".")
       ) {
         return NextResponse.json(
           {
-            error:
-              "L'adresse e-mail n'est pas valide. Vérifiez chaque lettre.",
+            error: "L'adresse e-mail n'est pas valide.",
           },
           {
             status: 400,
