@@ -21,6 +21,32 @@ function isValidEmail(value: string) {
   return !!local && !!domain && domain.includes(".") && !domain.startsWith(".") && !domain.endsWith(".");
 }
 
+async function readApiResponse(response: Response) {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return {
+      ok: response.ok,
+      data: {} as Record<string, any>,
+      raw: "",
+    };
+  }
+
+  try {
+    return {
+      ok: response.ok,
+      data: JSON.parse(text) as Record<string, any>,
+      raw: text,
+    };
+  } catch {
+    return {
+      ok: response.ok,
+      data: {} as Record<string, any>,
+      raw: text,
+    };
+  }
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -44,14 +70,32 @@ export default function AdminDashboard() {
   const [siteImage, setSiteImage] = useState("");
 
   async function loadUsers() {
-    setLoading(true); setError("");
+    setLoading(true);
+    setError("");
+
     try {
-      const r = await fetch("/api/admin/users", { cache: "no-store" });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Chargement impossible.");
-      setUsers(data.users || []);
-    } catch (e: any) { setError(e?.message || "Chargement impossible."); }
-    finally { setLoading(false); }
+      const response = await fetch("/api/admin/users", {
+        cache: "no-store",
+      });
+
+      const result = await readApiResponse(response);
+      const data = result.data;
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            (result.raw
+              ? `Erreur serveur (${response.status}).`
+              : "Chargement impossible.")
+        );
+      }
+
+      setUsers(Array.isArray(data?.users) ? data.users : []);
+    } catch (e: any) {
+      setError(e?.message || "Chargement impossible.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadUsers(); }, []);
@@ -89,20 +133,63 @@ export default function AdminDashboard() {
     if (formPassword.length < 8) return setError("Le mot de passe doit contenir au moins 8 caractères.");
     setActionLoading(true); setError("");
     try {
-      const r = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: formName.trim(), email: cleanEmail, password: formPassword, entity_type: formType }) });
-      const data = await r.json(); if (!r.ok) throw new Error(data.error || "Création impossible.");
-      setModal(null); setSuccess(formType === "profile" ? "Profil créé avec succès." : "Société créée avec succès."); await loadUsers();
-    } catch (e: any) { setError(e?.message || "Création impossible."); } finally { setActionLoading(false); }
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formName.trim(),
+          email: cleanEmail,
+          password: formPassword,
+          entity_type: formType,
+        }),
+      });
+
+      const result = await readApiResponse(response);
+      const data = result.data;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Création impossible.");
+      }
+
+      setModal(null);
+      setSuccess(
+        formType === "profile"
+          ? "Profil créé avec succès."
+          : "Société créée avec succès."
+      );
+      await loadUsers();
+    } catch (e: any) {
+      setError(e?.message || "Création impossible.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function updateUser(payload: Record<string, string>, message: string) {
     if (!current) return;
     setActionLoading(true); setError("");
     try {
-      const r = await fetch(`/api/admin/users/${current.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await r.json(); if (!r.ok) throw new Error(data.error || "Modification impossible.");
-      setModal(null); setSuccess(message); await loadUsers();
-    } catch (e: any) { setError(e?.message || "Modification impossible."); } finally { setActionLoading(false); }
+      const response = await fetch(`/api/admin/users/${current.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await readApiResponse(response);
+      const data = result.data;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Modification impossible.");
+      }
+
+      setModal(null);
+      setSuccess(message);
+      await loadUsers();
+    } catch (e: any) {
+      setError(e?.message || "Modification impossible.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function saveEdit() {
@@ -117,12 +204,49 @@ export default function AdminDashboard() {
   }
 
   async function deleteUser(u: User) {
-    if (!window.confirm(`Supprimer définitivement ${u.email} ?`)) return;
-    setActionLoading(true); setError("");
+    const confirmed = window.confirm(
+      `Supprimer définitivement le compte ${u.email} ?\n\nCette action supprime le compte VisiteCard et l'utilisateur Supabase Auth.`
+    );
+
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    setError("");
+    setSuccess("");
+
     try {
-      const r = await fetch(`/api/admin/users/${u.id}`, { method: "DELETE" }); const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Suppression impossible."); setSuccess("Compte supprimé."); await loadUsers();
-    } catch (e: any) { setError(e?.message || "Suppression impossible."); } finally { setActionLoading(false); }
+      const response = await fetch(`/api/admin/users/${u.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const result = await readApiResponse(response);
+      const data = result.data;
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            (result.raw
+              ? `Suppression impossible (HTTP ${response.status}).`
+              : "Le serveur n'a renvoyé aucune réponse après la suppression.")
+        );
+      }
+
+      // Même si une ancienne version de l'API répond 204/vide,
+      // une réponse HTTP réussie est considérée comme une suppression réussie.
+      setUsers((previous) => previous.filter((item) => item.id !== u.id));
+      setSuccess(data?.message || "Compte supprimé définitivement.");
+
+      // Recharge silencieusement pour resynchroniser les compteurs.
+      await loadUsers();
+    } catch (e: any) {
+      setError(e?.message || "Suppression impossible.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function logout() { await fetch("/api/admin/logout", { method: "POST" }); router.replace("/admin/login"); router.refresh(); }
