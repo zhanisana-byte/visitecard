@@ -284,16 +284,11 @@ function extractGoogleMapsCoordinates(value?: string | null) {
     decoded = decodeURIComponent(raw);
   } catch {}
 
-  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-  if (atMatch) {
-    return { lat: atMatch[1], lng: atMatch[2] };
-  }
-
-  const queryMatch = decoded.match(/[?&](?:q|query|ll|center)=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i);
-  if (queryMatch) {
-    return { lat: queryMatch[1], lng: queryMatch[2] };
-  }
-
+  // IMPORTANT: in Google Maps place URLs, the coordinates after @ are often
+  // only the camera/viewport centre. The real place pin is usually stored
+  // in the data segment as !3dLAT!4dLNG (or !2dLNG!3dLAT).
+  // Always prefer the place coordinates so the embedded map matches the
+  // exact location opened when the visitor clicks the Google Maps link.
   const dataLatLng = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
   if (dataLatLng) {
     return { lat: dataLatLng[1], lng: dataLatLng[2] };
@@ -302,6 +297,18 @@ function extractGoogleMapsCoordinates(value?: string | null) {
   const dataLngLat = decoded.match(/!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/);
   if (dataLngLat) {
     return { lat: dataLngLat[2], lng: dataLngLat[1] };
+  }
+
+  const queryMatch = decoded.match(/[?&](?:q|query|ll|center)=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i);
+  if (queryMatch) {
+    return { lat: queryMatch[1], lng: queryMatch[2] };
+  }
+
+  // Last resort only: @LAT,LNG can represent the map centre rather than
+  // the selected business/location.
+  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    return { lat: atMatch[1], lng: atMatch[2] };
   }
 
   return null;
