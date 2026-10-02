@@ -4,24 +4,36 @@ import { useState } from "react";
 import PublicHeader from "@/components/PublicHeader";
 import { useLanguage } from "@/components/LanguageProvider";
 
-type SocialType =
+type FeatureType =
   | "instagram"
   | "facebook"
   | "tiktok"
   | "whatsapp"
   | "linkedin"
-  | "youtube";
+  | "youtube"
+  | "menu"
+  | "wifi"
+  | "maps"
+  | "application"
+  | "pdf"
+  | "links";
 
-const socials: { type: SocialType; label: string }[] = [
-  { type: "instagram", label: "Instagram" },
-  { type: "facebook", label: "Facebook" },
-  { type: "tiktok", label: "TikTok" },
-  { type: "whatsapp", label: "WhatsApp" },
-  { type: "linkedin", label: "LinkedIn" },
-  { type: "youtube", label: "YouTube" },
+const features: { type: FeatureType; labelFr: string; labelEn: string }[] = [
+  { type: "instagram", labelFr: "Instagram", labelEn: "Instagram" },
+  { type: "facebook", labelFr: "Facebook", labelEn: "Facebook" },
+  { type: "tiktok", labelFr: "TikTok", labelEn: "TikTok" },
+  { type: "whatsapp", labelFr: "WhatsApp", labelEn: "WhatsApp" },
+  { type: "linkedin", labelFr: "LinkedIn", labelEn: "LinkedIn" },
+  { type: "youtube", labelFr: "YouTube", labelEn: "YouTube" },
+  { type: "menu", labelFr: "Menu", labelEn: "Menu" },
+  { type: "wifi", labelFr: "Accès WiFi", labelEn: "WiFi Access" },
+  { type: "maps", labelFr: "Google Maps", labelEn: "Google Maps" },
+  { type: "application", labelFr: "Application", labelEn: "Application" },
+  { type: "pdf", labelFr: "PDF / Brochure", labelEn: "PDF / Brochure" },
+  { type: "links", labelFr: "Liens", labelEn: "Links" },
 ];
 
-function SocialLogo({ type }: { type: SocialType }) {
+function FeatureLogo({ type }: { type: FeatureType }) {
   if (type === "instagram") {
     return (
       <div className="logoBox instagram">
@@ -102,13 +114,81 @@ function SocialLogo({ type }: { type: SocialType }) {
     );
   }
 
+  if (type === "youtube") {
+    return (
+      <div className="logoBox youtube">
+        <svg viewBox="0 0 24 24">
+          <path
+            fill="white"
+            d="M21.6 7.1a2.8 2.8 0 0 0-2-2C17.9 4.6 12 4.6 12 4.6s-5.9 0-7.6.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .4 4.9 2.8 2.8 0 0 0 2 2c1.7.5 7.6.5 7.6.5s5.9 0 7.6-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.4-4.9ZM10 15.3V8.7l5.6 3.3-5.6 3.3Z"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  if (type === "menu") {
+    return (
+      <div className="logoBox menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 6h8M4 12h8M4 18h8" />
+          <path d="M16 4v8M19 4v8M17.5 12v8" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (type === "wifi") {
+    return (
+      <div className="logoBox wifi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round">
+          <path d="M4 9.5a12 12 0 0 1 16 0" />
+          <path d="M7 13a7.5 7.5 0 0 1 10 0" />
+          <path d="M10 16.5a3 3 0 0 1 4 0" />
+          <circle cx="12" cy="20" r="1" fill="white" stroke="none" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (type === "maps") {
+    return (
+      <div className="logoBox maps">
+        <svg viewBox="0 0 24 24">
+          <path fill="white" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (type === "application") {
+    return (
+      <div className="logoBox application">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="7" y="2.5" width="10" height="19" rx="2" />
+          <path d="M10 5h4M11 18.5h2" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (type === "pdf") {
+    return (
+      <div className="logoBox pdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 2.5h8l4 4V21.5H6z" />
+          <path d="M14 2.5v5h5" />
+          <path d="M8.3 15.8v-4.2h1.4a1.3 1.3 0 0 1 0 2.6H8.3M12 11.6h1.2c1.6 0 2.5.8 2.5 2.1s-.9 2.1-2.5 2.1H12zM17.2 11.6h2.5M17.2 13.5h2" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
-    <div className="logoBox youtube">
-      <svg viewBox="0 0 24 24">
-        <path
-          fill="white"
-          d="M21.6 7.1a2.8 2.8 0 0 0-2-2C17.9 4.6 12 4.6 12 4.6s-5.9 0-7.6.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .4 4.9 2.8 2.8 0 0 0 2 2c1.7.5 7.6.5 7.6.5s5.9 0 7.6-.5a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.4-4.9ZM10 15.3V8.7l5.6 3.3-5.6 3.3Z"
-        />
+    <div className="logoBox links">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.2 13.8a4 4 0 0 0 5.6 0l2-2a4 4 0 1 0-5.6-5.6l-1.1 1.1" />
+        <path d="M13.8 10.2a4 4 0 0 0-5.6 0l-2 2a4 4 0 1 0 5.6 5.6l1.1-1.1" />
       </svg>
     </div>
   );
@@ -152,10 +232,10 @@ export default function HomePage() {
           </p>
 
           <div className="vcSocialGrid">
-            {socials.map((social) => (
-              <div className="vcSocialCard" key={social.type}>
-                <SocialLogo type={social.type} />
-                <strong>{social.label}</strong>
+            {features.map((feature) => (
+              <div className="vcSocialCard" key={feature.type}>
+                <FeatureLogo type={feature.type} />
+                <strong>{fr ? feature.labelFr : feature.labelEn}</strong>
               </div>
             ))}
           </div>
@@ -308,16 +388,16 @@ export default function HomePage() {
         }
 
         .vcSocialGrid {
-          width: min(570px, 100%);
+          width: min(860px, 100%);
           margin: 0 auto;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
         }
 
         .vcSocialCard {
-          min-height: 126px;
-          padding: 18px 12px;
+          min-height: 118px;
+          padding: 16px 12px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -378,6 +458,40 @@ export default function HomePage() {
 
         .vcSocialCard :global(.youtube) {
           background: #ff0000 !important;
+        }
+
+        .vcSocialCard :global(.menu) {
+          background: #ff6a2f !important;
+        }
+
+        .vcSocialCard :global(.wifi) {
+          background: #2486f2 !important;
+        }
+
+        .vcSocialCard :global(.maps) {
+          background: linear-gradient(135deg, #4285f4 0%, #34a853 55%, #fbbc05 100%) !important;
+        }
+
+        .vcSocialCard :global(.application) {
+          background: linear-gradient(135deg, #7254f5 0%, #9b42e8 100%) !important;
+        }
+
+        .vcSocialCard :global(.pdf) {
+          background: #ef3d3d !important;
+        }
+
+        .vcSocialCard :global(.links) {
+          background: #2d8cf0 !important;
+        }
+
+        .vcSocialCard {
+          transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .vcSocialCard:hover {
+          transform: translateY(-4px);
+          border-color: #d9dee5;
+          box-shadow: 0 16px 38px rgba(15, 23, 42, 0.10);
         }
 
         .vcContactTrigger {
@@ -580,7 +694,7 @@ export default function HomePage() {
           }
 
           .vcSocialGrid {
-            width: min(100%, 400px);
+            width: min(100%, 430px);
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
           }
