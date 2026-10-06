@@ -987,16 +987,15 @@ export default function PublicCardClient({ slug }: { slug: string }) {
   }
 
   const isProfile = card.entity_type === "profile";
-  const profileWhatsapp = socials.find((item) => item.type === "whatsapp");
-  const profileSocials = socials.filter((item) => item.type !== "whatsapp");
+  const profileSocials = socials;
   const hasProfileMeta = Boolean(
     (card.job_title || "").trim() ||
       (card.company || "").trim() ||
       (card.bio || "").trim()
   );
   const hasProfileContacts = Boolean(
-    (card.show_phone !== false && (card.phone || "").trim()) ||
-      profileWhatsapp ||
+    profileSocials.length ||
+      (card.show_phone !== false && (card.phone || "").trim()) ||
       (card.show_email !== false && (card.email || "").trim())
   );
 
@@ -1165,8 +1164,11 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
           {isProfile ? (
             <>
-              {profileSocials.length ? (
-                <div className="profileSocialsCompact" aria-label={lang === "en" ? "Social networks" : "Réseaux sociaux"}>
+              {hasProfileContacts ? (
+                <div
+                  className="profileSocialsCompact"
+                  aria-label={lang === "en" ? "Social networks and contacts" : "Réseaux sociaux et contacts"}
+                >
                   {profileSocials.map((item) => (
                     <a
                       key={item.id}
@@ -1182,24 +1184,26 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                       </span>
                     </a>
                   ))}
-                </div>
-              ) : null}
 
-              {hasProfileContacts ? (
-                <div className="profileContactCompact">
                   {card.show_phone !== false && card.phone ? (
-                    <a href={`tel:${card.phone}`} className="profileContactPill">
-                      <span>☎</span><strong>{t.call}</strong>
+                    <a
+                      href={`tel:${card.phone}`}
+                      className="profileSocialMini profileContactMini phone"
+                      aria-label={t.call}
+                      title={t.call}
+                    >
+                      <span>☎</span>
                     </a>
                   ) : null}
-                  {profileWhatsapp ? (
-                    <a href={socialHref(profileWhatsapp)} target="_blank" rel="noreferrer" className="profileContactPill whatsapp">
-                      <span className="miniSocial"><SocialIcon type="whatsapp" /></span><strong>WhatsApp</strong>
-                    </a>
-                  ) : null}
+
                   {card.show_email !== false && card.email ? (
-                    <a href={`mailto:${card.email}`} className="profileContactPill">
-                      <span>✉</span><strong>{t.email}</strong>
+                    <a
+                      href={`mailto:${card.email}`}
+                      className="profileSocialMini profileContactMini email"
+                      aria-label={t.email}
+                      title={t.email}
+                    >
+                      <span>✉</span>
                     </a>
                   ) : null}
                 </div>
@@ -1793,7 +1797,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:2px solid var(--button-border); border-radius:14px; background:var(--button-bg); color:var(--button-text); font-weight:800; cursor:pointer; }
-        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 8px}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.compactProfileIdentity + .profileContactCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactCompact{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}.profileCustomLinks{display:grid;gap:10px;margin:14px 24px 20px}.profileContactPill{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:2px solid var(--button-border);border-radius:999px;background:var(--button-bg);color:var(--button-text);text-decoration:none;font-size:11px}.profileContactPill strong{font-weight:800;color:var(--button-text)}.miniSocial{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#25d366}.miniSocial :global(svg){width:11px;height:11px}
+        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap;margin:10px auto 8px;padding:0 18px;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}.profileSocialsCompact::-webkit-scrollbar{display:none}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactMini>span{color:#fff;font-size:16px;font-weight:800;line-height:1}.profileContactMini.phone>span{background:#16a34a}.profileContactMini.email>span{background:#dc2626;font-size:15px}.profileCustomLinks{display:grid;gap:10px;margin:14px 24px 20px}
                 .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
         .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{min-height:34px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--button-border);border-radius:10px;background:var(--button-bg);color:var(--button-text);font-size:12px;font-weight:800;white-space:nowrap}
         @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
