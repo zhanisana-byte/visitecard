@@ -337,32 +337,18 @@ function extractGoogleMapsPlaceName(value?: string | null) {
 }
 
 function getGoogleMapsEmbedUrl(item: CustomLink, fallbackName?: string) {
-  const placeName = extractGoogleMapsPlaceName(item.url);
-
-  // If Google Maps gives us a real place/business name, search by that name.
-  // This makes the embedded map display the business POI label (for example
-  // "Gorilla Gym Ariana") instead of showing only a raw GPS marker or a
-  // nearby business name.
-  if (placeName) {
-    return `https://www.google.com/maps?q=${encodeURIComponent(placeName)}&z=17&output=embed`;
-  }
-
-  // If the saved link has no /place/... name, use the card label/name before
-  // falling back to coordinates. This keeps the company name visible whenever
-  // Google can resolve it as a POI.
-  const namedQuery = (item.label || fallbackName || "").trim();
-  if (namedQuery && !/^(localisation|location|adresse|address)$/i.test(namedQuery)) {
-    return `https://www.google.com/maps?q=${encodeURIComponent(namedQuery)}&z=17&output=embed`;
-  }
-
-  // Last fallback: exact coordinates.
   const coordinates = extractGoogleMapsCoordinates(item.url);
   if (coordinates) {
     return `https://www.google.com/maps?q=${encodeURIComponent(`${coordinates.lat},${coordinates.lng}`)}&z=17&output=embed`;
   }
 
-  const query = namedQuery || fallbackName || "";
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`;
+  const placeName = extractGoogleMapsPlaceName(item.url);
+  const namedQuery = (placeName || item.label || fallbackName || "").trim();
+  if (namedQuery && !/^(localisation|location|adresse|address)$/i.test(namedQuery)) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(namedQuery)}&z=17&output=embed`;
+  }
+
+  return `https://www.google.com/maps?output=embed&q=${encodeURIComponent(namedQuery || "Tunisie")}`;
 }
 
 function socialHref(item: SocialLink) {
