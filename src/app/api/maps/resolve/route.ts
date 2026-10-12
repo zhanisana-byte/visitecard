@@ -13,12 +13,7 @@ const ALLOWED_HOSTS = new Set([
 function isAllowedGoogleMapsUrl(value: string) {
   try {
     const url = new URL(value);
-    const host = url.hostname.toLowerCase();
-    return (
-      ALLOWED_HOSTS.has(host) ||
-      host.endsWith(".google.com") ||
-      host.startsWith("maps.google.")
-    );
+    return url.protocol === "https:" && ALLOWED_HOSTS.has(url.hostname.toLowerCase());
   } catch {
     return false;
   }
@@ -37,30 +32,33 @@ function placeNameFromUrl(value: string) {
 export async function GET(request: Request) {
   try {
     const source = new URL(request.url).searchParams.get("url")?.trim() || "";
-
     if (!source || !isAllowedGoogleMapsUrl(source)) {
       return NextResponse.json({ error: "Lien Google Maps invalide." }, { status: 400 });
     }
 
-    const response = await fetch(source, {
-      method: "GET",
-      redirect: "follow",
-      cache: "no-store",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; VisiteCard/1.0)",
-      },
-    });
+    let currentUrl = source;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const response = await fetch(currentUrl, {
+        method: "GET",
+        redirect: "manual",
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; VisiteCard/1.0)" },
+      });
 
-    const finalUrl = response.url || source;
-
-    if (!isAllowedGoogleMapsUrl(finalUrl)) {
-      return NextResponse.json({ finalUrl: source, placeName: "" });
+      const location = response.headers.get("location");
+      if (response.status >= 300 && response.status < 400 && location) {
+        const nextUrl = new URL(location, currentUrl).toString();
+        if (!isAllowedGoogleMapsUrl(nextUrl)) {
+          return NextResponse.json({ finalUrl: currentUrl, placeName: placeNameFromUrl(currentUrl) });
+        }
+        currentUrl = nextUrl;
+        continue;
+      }
+      break;
     }
 
-    return NextResponse.json({
-      finalUrl,
-      placeName: placeNameFromUrl(finalUrl),
-    });
+    return NextResponse.json({ finalUrl: currentUrl, placeName: placeNameFromUrl(currentUrl) });
   } catch {
     return NextResponse.json({ error: "Résolution du lien impossible." }, { status: 502 });
   }
