@@ -338,13 +338,65 @@ export default function HomePage() {
       )}
 
       <style jsx>{`
+        .vcHome :global(.publicHeader) {
+          height: 108px;
+          background: rgba(255,255,255,.96);
+          border-bottom: 1px solid #edf0f5;
+          box-shadow: 0 5px 26px rgba(11,25,44,.025);
+        }
+
+        .vcHome :global(.headerInner) {
+          width: min(1440px, calc(100% - 80px));
+          gap: 24px;
+        }
+
+        .vcHome :global(.brand img) {
+          display: block;
+          width: clamp(205px, 20vw, 286px);
+          height: 85px;
+          object-fit: contain;
+          object-position: left center;
+        }
+
+        .vcHome :global(.headerActions) {
+          gap: 13px;
+        }
+
+        .vcHome :global(.headerActions .btn) {
+          min-height: 52px;
+          height: 52px;
+          padding: 0 25px;
+          border-radius: 16px;
+          font-size: 14px;
+          font-weight: 800;
+          transition: transform .2s, box-shadow .2s, background .2s;
+        }
+
+        .vcHome :global(.headerActions .btn:hover) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 22px rgba(14,30,52,.09);
+        }
+
+        .vcHome :global(.headerActions .btn.primary) {
+          background: linear-gradient(135deg, #ff741f 0%, #ff481e 100%);
+          box-shadow: 0 7px 18px rgba(255,80,30,.12);
+        }
+
+        .vcHome :global(.headerActions .btn.outline) {
+          border-color: #cfdae6;
+          background: #fff;
+        }
+
         .vcHome {
           width: 100%;
           min-height: 100dvh;
           display: flex;
           flex-direction: column;
           overflow-x: hidden;
-          background: #ffffff;
+          background:
+            radial-gradient(ellipse 35% 28% at -6% 29%, rgba(255,118,44,.095), transparent 90%),
+            radial-gradient(ellipse 37% 30% at 107% 17%, rgba(72,127,245,.08), transparent 90%),
+            #ffffff;
           color: #081526;
         }
 
@@ -353,7 +405,7 @@ export default function HomePage() {
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 70px 20px 52px;
+          padding: 62px 20px 64px;
         }
 
         .vcHeroContent {
@@ -366,7 +418,7 @@ export default function HomePage() {
         .vcHeroContent h1 {
           margin: 0;
           color: #081526;
-          font-size: clamp(42px, 4.1vw, 62px);
+          font-size: clamp(42px, 4.1vw, 66px);
           font-weight: 900;
           line-height: 1.08;
           letter-spacing: -0.055em;
@@ -384,15 +436,15 @@ export default function HomePage() {
         }
 
         .vcSocialGrid {
-          width: min(860px, 100%);
+          width: min(920px, 100%);
           margin: 0 auto;
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 14px;
+          gap: 16px;
         }
 
         .vcSocialCard {
-          min-height: 118px;
+          min-height: 126px;
           padding: 16px 12px;
           display: flex;
           flex-direction: column;
@@ -400,9 +452,9 @@ export default function HomePage() {
           justify-content: center;
           gap: 12px;
           border: 1px solid #e4e8ed;
-          border-radius: 20px;
-          background: #ffffff;
-          box-shadow: 0 10px 32px rgba(15, 23, 42, 0.055);
+          border-radius: 22px;
+          background: rgba(255,255,255,.96);
+          box-shadow: 0 10px 35px rgba(15, 23, 42, 0.055);
         }
 
         .vcSocialCard strong {
@@ -669,18 +721,53 @@ export default function HomePage() {
           font-size: 12px;
         }
 
+        @media (max-width: 900px) {
+          .vcHome :global(.publicHeader) { height: 86px; }
+          .vcHome :global(.headerInner) { width: calc(100% - 38px); }
+          .vcHome :global(.brand img) { width: 194px; height: 65px; }
+          .vcHome :global(.headerActions .btn) {
+            height: 44px;
+            min-height: 44px;
+            padding: 0 15px;
+            font-size: 12px;
+            border-radius: 12px;
+          }
+        }
+
         @media (max-width: 700px) {
+          .vcHome :global(.publicHeader) { height: 76px; }
+          .vcHome :global(.headerInner) {
+            width: 100%;
+            padding: 0 12px;
+            gap: 7px;
+          }
+          .vcHome :global(.brand img) { width: 135px; height: 52px; }
+          .vcHome :global(.headerActions) { gap: 6px; }
+          .vcHome :global(.headerActions .btn) {
+            height: 37px;
+            min-height: 37px;
+            padding: 0 9px;
+            font-size: 10px;
+            border-radius: 10px;
+          }
+          .vcHome :global(.headerActions .langSwitch) {
+            position: absolute;
+            top: 79px;
+            right: 12px;
+            background: white;
+            border: 1px solid #edf0f5;
+            border-radius: 12px;
+            padding: 0 8px;
+            z-index: 4;
+          }
+
           .vcHero {
             padding: 45px 15px 38px;
           }
 
           .vcHeroContent h1 {
-            font-size: clamp(38px, 11.5vw, 52px);
+            font-size: clamp(31px, 8.8vw, 48px);
             line-height: 1.01;
-          }
-
-          .desktopBreak {
-            display: none;
           }
 
           .vcHeroContent > p {
@@ -748,6 +835,8 @@ export default function HomePage() {
         }
 
         @media (max-width: 380px) {
+          .vcHome :global(.brand img) { width: 112px; }
+          .vcHome :global(.headerActions .btn) { padding: 0 7px; font-size: 9.5px; }
           .vcHero {
             padding-left: 12px;
             padding-right: 12px;
@@ -762,29 +851,20 @@ export default function HomePage() {
           }
         }
 
-        /* Accueil plus compact : les 6 réseaux restent visibles plus facilement au premier écran */
         @media (min-width: 769px) {
-          .vcHeader {
-            min-height: 92px;
-            padding-top: 12px;
-            padding-bottom: 12px;
-          }
-
           .vcHero {
-            padding-top: 48px;
-            padding-bottom: 42px;
-          }
-
-          .vcHero h1 {
-            margin-bottom: 16px;
-          }
-
-          .vcSubtitle {
-            margin-bottom: 34px;
+            padding-top: 54px;
+            padding-bottom: 52px;
           }
 
           .vcSocialGrid {
-            gap: 14px;
+            gap: 16px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .vcSocialCard, .vcHome :global(.headerActions .btn) {
+            transition: none;
           }
         }
 
