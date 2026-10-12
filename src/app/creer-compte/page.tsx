@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Turnstile from "@/components/Turnstile";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseBrowser } from "@/app/lib/supabase";
@@ -21,6 +22,7 @@ export default function CreerComptePage() {
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
+  const [captchaToken, setCaptchaToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -175,6 +177,11 @@ export default function CreerComptePage() {
       return;
     }
 
+    if (!captchaToken) {
+      setError("Veuillez valider la vérification anti-robot.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -196,6 +203,7 @@ export default function CreerComptePage() {
         email: cleanEmail,
         password,
         options: {
+          captchaToken,
           data: {
             entity_type: entityType,
             name: cleanName,
@@ -350,6 +358,7 @@ export default function CreerComptePage() {
         );
       }
     } finally {
+      setCaptchaToken("");
       setLoading(false);
     }
   }
@@ -362,7 +371,7 @@ export default function CreerComptePage() {
       <section className="registerCard">
         <div className="brand">
           <img
-            src="/logo.png"
+            src="/Logo2.png"
             alt="VisiteCard"
             className="brandLogo"
           />
@@ -545,6 +554,13 @@ export default function CreerComptePage() {
             </div>
           </div>
 
+          <div className="captchaArea">
+            <Turnstile
+              value={captchaToken}
+              onChange={setCaptchaToken}
+            />
+          </div>
+
           {error && (
             <div className="errorMessage">
               {error}
@@ -554,7 +570,7 @@ export default function CreerComptePage() {
           <button
             type="submit"
             className="submitButton"
-            disabled={loading}
+            disabled={loading || !captchaToken}
           >
             {loading ? (
               "Création..."
@@ -576,383 +592,47 @@ export default function CreerComptePage() {
       </section>
 
       <style jsx>{`
-        * {
-          box-sizing: border-box;
-        }
-
-        .registerPage {
-          position: relative;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          padding: 40px 20px;
-          background:
-            radial-gradient(
-              circle at 20% 15%,
-              rgba(109, 74, 255, 0.09),
-              transparent 28%
-            ),
-            radial-gradient(
-              circle at 85% 80%,
-              rgba(255, 102, 66, 0.08),
-              transparent 30%
-            ),
-            #f8f9fc;
-          color: #111827;
-        }
-
-        .registerBackground {
-          position: absolute;
-          border-radius: 999px;
-          filter: blur(2px);
-          pointer-events: none;
-        }
-
-        .registerBackgroundOne {
-          width: 330px;
-          height: 330px;
-          top: -160px;
-          right: -100px;
-          background: rgba(
-            109,
-            74,
-            255,
-            0.08
-          );
-        }
-
-        .registerBackgroundTwo {
-          width: 260px;
-          height: 260px;
-          bottom: -130px;
-          left: -90px;
-          background: rgba(
-            255,
-            103,
-            64,
-            0.07
-          );
-        }
-
-        .registerCard {
-          position: relative;
-          z-index: 2;
-          width: 100%;
-          max-width: 570px;
-          padding: 38px;
-          border: 1px solid #e7e9f0;
-          border-radius: 28px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.97
-          );
-          box-shadow:
-            0 30px 80px
-              rgba(20, 27, 45, 0.09),
-            0 4px 14px
-              rgba(20, 27, 45, 0.03);
-        }
-
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 36px;
-        }
-
-        .brandLogo {
-          display: block;
-          width: auto;
-          height: 52px;
-          max-width: 220px;
-          object-fit: contain;
-        }
-
-        .heading {
-          margin-bottom: 30px;
-        }
-
-        .eyebrow {
-          display: block;
-          margin-bottom: 8px;
-          font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-          color: #6d4aff;
-        }
-
-        h1 {
-          margin: 0;
-          font-size: 32px;
-          line-height: 1.1;
-          letter-spacing: -1.2px;
-          color: #0f172a;
-        }
-
-        .heading p {
-          max-width: 440px;
-          margin: 12px 0 0;
-          font-size: 14px;
-          line-height: 1.55;
-          color: #687084;
-        }
-
-        .typeSection {
-          margin-bottom: 26px;
-        }
-
-        .sectionLabel {
-          display: block;
-          margin-bottom: 10px;
-          font-size: 13px;
-          font-weight: 800;
-          color: #252b3b;
-        }
-
-        .typeGrid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
-        .typeCard {
-          position: relative;
-          min-height: 95px;
-          display: flex;
-          align-items: center;
-          gap: 13px;
-          padding: 17px;
-          text-align: left;
-          border: 1.5px solid #e4e6ed;
-          border-radius: 18px;
-          background: #fff;
-          cursor: pointer;
-          transition:
-            border-color 0.2s ease,
-            background 0.2s ease,
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .typeCard:hover {
-          transform: translateY(-1px);
-          border-color: #cfc6ff;
-        }
-
-        .typeCard.active {
-          border-color: #6d4aff;
-          background: #f8f6ff;
-          box-shadow: 0 7px 22px
-            rgba(109, 74, 255, 0.1);
-        }
-
-        .typeIcon {
-          flex: 0 0 auto;
-          width: 44px;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 13px;
-          background: #f3f1ff;
-          color: #6d4aff;
-        }
-
-        .typeText {
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .typeText strong {
-          font-size: 15px;
-          color: #161b2b;
-        }
-
-        .typeText span {
-          font-size: 11px;
-          color: #83899a;
-        }
-
-        .radio {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          width: 18px;
-          height: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 1.5px solid #d7dae4;
-          border-radius: 50%;
-          background: white;
-        }
-
-        .typeCard.active .radio {
-          border-color: #6d4aff;
-        }
-
-        .radio span {
-          width: 9px;
-          height: 9px;
-          border-radius: 50%;
-          background: #6d4aff;
-        }
-
-        .fields {
-          display: flex;
-          flex-direction: column;
-          gap: 17px;
-        }
-
-        .field {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .field label {
-          font-size: 13px;
-          font-weight: 800;
-          color: #252b3b;
-        }
-
-        .field input {
-          width: 100%;
-          height: 52px;
-          padding: 0 16px;
-          outline: none;
-          border: 1.5px solid #e2e5ec;
-          border-radius: 14px;
-          background: #fff;
-          font-size: 16px;
-          color: #111827;
-          transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .field input:focus {
-          border-color: #6d4aff;
-          box-shadow: 0 0 0 4px
-            rgba(109, 74, 255, 0.09);
-        }
-
-        .field input::placeholder {
-          color: #a7acb8;
-        }
-
-        .emailHelp {
-          display: block;
-          margin-top: -1px;
-          font-size: 11px;
-          line-height: 1.4;
-          color: #8a91a1;
-        }
-
-        .errorMessage {
-          margin-top: 18px;
-          padding: 12px 14px;
-          border: 1px solid #ffd4d4;
-          border-radius: 12px;
-          background: #fff3f3;
-          font-size: 13px;
-          line-height: 1.4;
-          color: #c73434;
-        }
-
-        .submitButton {
-          width: 100%;
-          height: 54px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin-top: 24px;
-          border: 0;
-          border-radius: 15px;
-          background: linear-gradient(
-            135deg,
-            #6042ed,
-            #7b4cff
-          );
-          box-shadow: 0 10px 25px
-            rgba(102, 68, 238, 0.22);
-          font-size: 15px;
-          font-weight: 900;
-          color: white;
-          cursor: pointer;
-          transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            opacity 0.2s ease;
-        }
-
-        .submitButton:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 13px 30px
-            rgba(102, 68, 238, 0.27);
-        }
-
-        .submitButton:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-
-        .login {
-          margin-top: 25px;
-          text-align: center;
-          font-size: 13px;
-          color: #777e90;
-        }
-
-        .login :global(a) {
-          font-weight: 900;
-          text-decoration: none;
-          color: #6243eb;
-        }
-
-        @media (max-width: 600px) {
-          .registerPage {
-            align-items: flex-start;
-            padding: 20px 14px;
-          }
-
-          .registerCard {
-            padding: 26px 18px;
-            border-radius: 22px;
-          }
-
-          .brand {
-            margin-bottom: 28px;
-          }
-
-          .brandLogo {
-            height: 45px;
-            max-width: 190px;
-          }
-
-          h1 {
-            font-size: 27px;
-          }
-
-          .typeGrid {
-            grid-template-columns: 1fr;
-          }
-
-          .typeCard {
-            min-height: 82px;
-          }
-
-          .field input {
-            font-size: 16px;
-          }
-        }
+        * { box-sizing: border-box; }
+        .registerPage { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 46px 18px; color: #09182c; background: radial-gradient(circle at 8% 13%, rgba(255,92,31,.075), transparent 34%), radial-gradient(circle at 94% 88%, rgba(10,31,58,.045), transparent 32%), #fcfbfa; }
+        .registerBackground { position: absolute; border-radius: 50%; pointer-events: none; }
+        .registerBackgroundOne { width: 380px; height: 380px; right: -210px; top: -190px; background: rgba(255,91,29,.045); }
+        .registerBackgroundTwo { width: 310px; height: 310px; left: -200px; bottom: -170px; background: rgba(255,146,65,.07); }
+        .registerCard { position: relative; z-index: 1; width: 100%; max-width: 610px; padding: 40px 42px; border: 1px solid #f0e9e5; border-radius: 28px; background: #fff; box-shadow: 0 24px 85px rgba(12,28,47,.065), 0 4px 16px rgba(12,28,47,.025); }
+        .brand { display: flex; align-items: center; margin-bottom: 32px; }
+        .brandLogo { width: 220px; max-width: 100%; height: auto; display: block; object-fit: contain; }
+        .heading { margin-bottom: 30px; }
+        .eyebrow { display: block; margin-bottom: 9px; color: #ff521c; font-size: 11px; font-weight: 900; letter-spacing: 1.9px; }
+        h1 { margin: 0; color: #08172b; font-size: clamp(27px, 4vw, 35px); line-height: 1.14; letter-spacing: -1.2px; font-weight: 850; }
+        .heading p { margin: 12px 0 0; font-size: 14px; color: #758196; line-height: 1.65; }
+        .typeSection { margin-bottom: 26px; }
+        .sectionLabel, .field label { display: block; margin-bottom: 10px; color: #102038; font-size: 13px; font-weight: 800; }
+        .typeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .typeCard { display: flex; align-items: center; gap: 12px; position: relative; min-height: 97px; padding: 17px 15px; text-align: left; border: 1.5px solid #e6e9ef; background: #fff; border-radius: 18px; cursor: pointer; transition: border-color .18s, background .18s, transform .18s, box-shadow .18s; }
+        .typeCard:hover { border-color: #ffae8b; transform: translateY(-2px); }
+        .typeCard.active { border-color: #ff5a20; background: #fff8f4; box-shadow: 0 6px 22px rgba(255,82,28,.08); }
+        .typeIcon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 13px; background: #fff1e9; color: #ff521c; }
+        .typeText { display: flex; min-width: 0; flex-direction: column; gap: 4px; padding-right: 10px; }
+        .typeText strong { font-size: 15px; color: #0c1d34; }
+        .typeText span { font-size: 11px; color: #8992a1; }
+        .radio { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #d7dce4; background: #fff; }
+        .typeCard.active .radio { border-color: #ff521c; }
+        .radio span { width: 9px; height: 9px; border-radius: 50%; background: #ff521c; }
+        .fields { display: flex; flex-direction: column; gap: 18px; }
+        .field { display: flex; flex-direction: column; }
+        .field label { margin-bottom: 8px; }
+        .field input { width: 100%; height: 54px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #e2e7ee; outline: none; color: #102038; background: #fff; font-size: 16px; transition: border-color .18s, box-shadow .18s; }
+        .field input:focus { border-color: #ff642e; box-shadow: 0 0 0 4px rgba(255,88,32,.10); }
+        .field input::placeholder { color: #a6afbe; }
+        .emailHelp { display: block; margin-top: 8px; color: #8994a5; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+        .captchaArea { min-height: 79px; margin-top: 23px; display: flex; align-items: center; justify-content: flex-start; }
+        .errorMessage { margin-top: 14px; padding: 12px 14px; border: 1px solid #ffd4d4; border-radius: 12px; background: #fff3f3; color: #c73434; font-size: 13px; line-height: 1.5; }
+        .submitButton { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 55px; margin-top: 20px; border: 0; border-radius: 15px; color: #fff; background: #ff521c; font-size: 15px; font-weight: 850; cursor: pointer; box-shadow: 0 10px 23px rgba(255,81,28,.16); transition: background .2s, transform .2s, box-shadow .2s; }
+        .submitButton:hover:not(:disabled) { background: #ef4511; transform: translateY(-1px); box-shadow: 0 14px 28px rgba(255,81,28,.2); }
+        .submitButton:disabled { opacity: .55; cursor: not-allowed; }
+        .login { margin-top: 25px; text-align: center; color: #818b9d; font-size: 13px; }
+        .login :global(a) { color: #ff521c; font-weight: 850; text-decoration: underline; text-underline-offset: 3px; }
+        @media (max-width: 600px) { .registerPage { align-items: flex-start; padding: 16px 12px 28px; } .registerCard { padding: 26px 20px; border-radius: 22px; } .brand { margin-bottom: 26px; } .brandLogo { width: 180px; } .heading { margin-bottom: 25px; } h1 { font-size: 28px; } .typeCard { min-height: 87px; padding: 14px 12px; } .typeGrid { gap: 9px; } .typeIcon { width: 37px; height: 37px; } .typeText strong { font-size: 13px; } .typeText span { font-size: 10px; } .field input { font-size: 16px; } }
+        @media (max-width: 370px) { .registerCard { padding: 22px 15px; } .typeGrid { grid-template-columns: 1fr; } .typeCard { min-height: 74px; } }
       `}</style>
     </main>
   );
