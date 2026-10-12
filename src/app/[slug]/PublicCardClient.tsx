@@ -330,13 +330,20 @@ function extractGoogleMapsPlaceName(value?: string | null) {
   return "";
 }
 
-function getGoogleMapsEmbedUrl(item: CustomLink) {
+function getGoogleMapsEmbedUrl(item: CustomLink, officialPlaceName?: string) {
+  const name = (officialPlaceName || extractGoogleMapsPlaceName(item.url) || item.label || "").trim();
   const coordinates = extractGoogleMapsCoordinates(item.url);
+  const validName = name && !/^(localisation|location|adresse|address|google maps|maps)$/i.test(name);
+
+  if (validName) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(name)}&z=18&output=embed`;
+  }
+
   if (!coordinates) return null;
   const lat = Number(coordinates.lat);
   const lng = Number(coordinates.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return `https://maps.google.com/maps?q=${lat},${lng}&z=18&output=embed`;
+  return `https://www.google.com/maps?q=${lat},${lng}&z=18&output=embed`;
 }
 
 function socialHref(item: SocialLink) {
@@ -1313,12 +1320,17 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                     {locations.map((item, index) => (
                       <article key={item.id} className={ledOn ? "premiumLocationCard ledSoft" : "premiumLocationCard"}>
                         {(() => {
+                          const placeName = resolvedLocations[item.id]?.placeName || extractGoogleMapsPlaceName(item.url) || item.label;
                           const url = getGoogleMapsEmbedUrl({
                             ...item,
                             url: resolvedLocations[item.id]?.url || item.url,
-                          });
+                          }, placeName);
                           return url ? (
                             <div className="premiumMapWrap">
+                              <div className="premiumMapPlaceName" title={placeName}>
+                                <span aria-hidden="true">⌖</span>
+                                <strong>{placeName}</strong>
+                              </div>
                               <iframe
                                 title={`${lang === "en" ? "Location" : "Localisation"} ${index + 1}`}
                                 src={url}
@@ -1869,7 +1881,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
         .premiumLocations{margin-top:18px;padding:18px;border:1px solid color-mix(in srgb,var(--accent) 45%,rgba(255,255,255,.08));border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--panel)),var(--panel));overflow:hidden}
         .premiumLocationHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.premiumLocationTitle{display:flex;align-items:center;gap:11px}.premiumLocationPin{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent);font-size:22px}.premiumLocationTitle div{display:grid;gap:2px}.premiumLocationTitle strong{font-size:18px}.premiumLocationTitle small{color:var(--muted);font-size:12px}
-        .premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{position:relative;min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block;pointer-events:none}.premiumMapUnavailable{min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:20px;background:rgba(255,255,255,.04)}.premiumMapUnavailable span{font-size:26px;color:var(--accent)}.premiumMapUnavailable a{color:var(--accent);font-weight:800;text-decoration:underline}.premiumMapWrap iframe{pointer-events:auto}.premiumMapClickTarget{position:absolute;inset:0;z-index:2;display:block;cursor:pointer;background:transparent}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;border-radius:12px;background:var(--button-bg);color:var(--button-text);border:2px solid var(--button-border);font-weight:900}.premiumDirections{padding:11px 12px}.premiumDirections span{color:var(--button-text)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;font-size:11px}
+        .premiumMapPlaceName{position:absolute;top:12px;right:12px;z-index:3;max-width:calc(100% - 115px);display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:12px;background:#fff;color:#122238;box-shadow:0 5px 18px rgba(0,0,0,.18);font-size:12px;line-height:1.25;pointer-events:none}.premiumMapPlaceName span{color:#fa571c;font-weight:900;font-size:18px}.premiumMapPlaceName strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.premiumLocationList{display:grid;gap:14px}.premiumLocationCard{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,.9fr);gap:16px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:19px;background:rgba(255,255,255,.025)}.premiumMapWrap{position:relative;min-height:190px;border-radius:15px;overflow:hidden;background:rgba(255,255,255,.05)}.premiumMapWrap iframe{width:100%;height:100%;min-height:190px;border:0;display:block;pointer-events:none}.premiumMapUnavailable{min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:20px;background:rgba(255,255,255,.04)}.premiumMapUnavailable span{font-size:26px;color:var(--accent)}.premiumMapUnavailable a{color:var(--accent);font-weight:800;text-decoration:underline}.premiumMapWrap iframe{pointer-events:auto}.premiumMapClickTarget{position:absolute;inset:0;z-index:2;display:block;cursor:pointer;background:transparent}.premiumLocationInfo{display:flex;flex-direction:column;justify-content:center;gap:11px}.premiumLocationAddress{display:flex;gap:10px;align-items:flex-start}.premiumLocationInfoIcon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-size:10px}.premiumLocationAddress div{display:grid;gap:3px;min-width:0}.premiumLocationAddress small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.premiumLocationAddress strong{font-size:13px;line-height:1.4}.premiumDirections,.premiumGoogleMaps{display:flex;align-items:center;gap:8px;text-decoration:none;border-radius:12px;background:var(--button-bg);color:var(--button-text);border:2px solid var(--button-border);font-weight:900}.premiumDirections{padding:11px 12px}.premiumDirections span{color:var(--button-text)}.premiumGoogleMaps{justify-content:center;padding:10px 12px;font-size:11px}
         @media(max-width:680px){.premiumLocations{padding:13px;border-radius:20px}.premiumLocationCard{grid-template-columns:1fr;padding:9px;gap:11px}.premiumMapWrap,.premiumMapWrap iframe{min-height:180px}.premiumLocationInfo{padding:3px 2px 4px}.premiumLocationTitle strong{font-size:16px}}
 
         .locationLink {
