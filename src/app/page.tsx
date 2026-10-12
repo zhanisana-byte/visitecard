@@ -210,17 +210,13 @@ export default function HomePage() {
               <>
                 Un seul QR code
                 <br />
-                pour tous vos Réseaux
-                <br className="desktopBreak" />{" "}
-                Sociaux<span>.</span>
+                pour tous vos Réseaux Sociaux<span>.</span>
               </>
             ) : (
               <>
                 One QR code
                 <br />
-                for all your social
-                <br className="desktopBreak" />
-                networks<span>.</span>
+                for all your social networks<span>.</span>
               </>
             )}
           </h1>
@@ -362,7 +358,7 @@ export default function HomePage() {
 
         .vcHeroContent {
           width: 100%;
-          max-width: 980px;
+          max-width: 1200px;
           margin: 0 auto;
           text-align: center;
         }
@@ -370,9 +366,9 @@ export default function HomePage() {
         .vcHeroContent h1 {
           margin: 0;
           color: #081526;
-          font-size: clamp(48px, 5.2vw, 72px);
+          font-size: clamp(42px, 4.1vw, 62px);
           font-weight: 900;
-          line-height: 0.98;
+          line-height: 1.08;
           letter-spacing: -0.055em;
         }
 
