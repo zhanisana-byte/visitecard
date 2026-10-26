@@ -2723,16 +2723,6 @@ export default function MonEspacePage() {
           {card.entity_type === "profile" ? (
             <section className="formSection">
               <div className="sectionTitle"><h2>Rubrique de mon profil</h2><p>Personnalisez le titre affiché sur votre carte publique et présentez vos projets.</p></div>
-              <div className="grid two">
-                <label>Titre de la rubrique
-                  <input value={card.custom_links.find(item => item.kind === "section")?.label ?? "Mes sociétés"}
-                    placeholder="Mes sociétés, Mes projets, Mes réalisations..."
-                    onChange={e => setCard(prev => ({...prev, custom_links: [
-                      ...prev.custom_links.filter(item => item.kind !== "section"),
-                      {id: prev.custom_links.find(item => item.kind === "section")?.id || uid(), kind:"section",label:e.target.value,url:""}
-                    ]}))} />
-                </label>
-              </div>
               <p>Les sociétés associées apparaîtront sous ce titre. Vous pouvez aussi ajouter des projets avec leur lien.</p>
               {card.custom_links.map((item, index) => item.kind === "project" ? (
                 <div key={item.id} className="grid two" style={{marginBottom:12}}>
@@ -2750,6 +2740,11 @@ export default function MonEspacePage() {
             <ProfileCompaniesEditor
               profileCardId={card.id}
               language={card.language === "en" ? "en" : "fr"}
+              sectionLabel={card.custom_links.find(item => item.kind === "section")?.label ?? "Mes sociétés"}
+              onSectionLabelChange={(label) => setCard(prev => ({...prev, custom_links:[
+                ...prev.custom_links.filter(item => item.kind !== "section"),
+                {id:prev.custom_links.find(item => item.kind === "section")?.id || uid(),kind:"section",label,url:""}
+              ]}))}
             />
           ) : null}
 
