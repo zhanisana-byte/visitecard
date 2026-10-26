@@ -35,11 +35,15 @@ type LinkedCompany = ProfileCompanyLink & {
 type Props = {
   profileCardId: string;
   language?: "fr" | "en";
+  sectionLabel?: string;
+  onSectionLabelChange?: (label: string) => void;
 };
 
 export default function ProfileCompaniesEditor({
   profileCardId,
   language = "fr",
+  sectionLabel,
+  onSectionLabelChange,
 }: Props) {
   const isEnglish = language === "en";
 
@@ -517,7 +521,15 @@ export default function ProfileCompaniesEditor({
             {isEnglish ? "COMPANIES" : "SOCIÉTÉS"}
           </span>
 
-          <h2>{text.title}</h2>
+          {onSectionLabelChange ? (
+            <input
+              aria-label={isEnglish ? "Section title" : "Titre de la rubrique"}
+              value={sectionLabel ?? text.title}
+              onChange={(event) => onSectionLabelChange(event.target.value)}
+              placeholder={text.title}
+              style={{display:"block",width:"100%",maxWidth:520,fontSize:25,fontWeight:800,border:"1px solid #ddd6fe",borderRadius:10,padding:"7px 12px",background:"#fff",color:"#161629"}}
+            />
+          ) : <h2>{text.title}</h2>}
 
           <p>{text.subtitle}</p>
         </div>
