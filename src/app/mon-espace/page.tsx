@@ -36,7 +36,7 @@ type CustomLink = {
   id: string;
   label: string;
   url: string;
-  kind?: "link" | "location" | "wifi";
+  kind?: "link" | "location" | "wifi" | "section" | "project";
   image_url?: string;
   enabled?: boolean;
   ssid?: string;
@@ -822,7 +822,9 @@ export default function MonEspacePage() {
                         "",
 
                       kind:
-                        item.kind === "location"
+                        item.kind === "section" || item.kind === "project"
+                          ? item.kind
+                          : item.kind === "location"
                           ? "location"
                           : item.kind === "wifi"
                             ? "wifi"
@@ -1611,13 +1613,13 @@ export default function MonEspacePage() {
             id: item.id || uid(),
             label: (item.label || "").trim(),
             url: (item.url || "").trim(),
-            kind: item.kind === "location" ? "location" : "link",
+            kind: item.kind === "location" || item.kind === "project" || item.kind === "section" ? item.kind : "link",
             image_url: item.kind === "location" ? "" : (item.image_url || ""),
           };
         })
         .filter((item) =>
             card.entity_type === "profile"
-              ? item.kind !== "wifi" && item.kind !== "location" && (item.label || item.url)
+              ? (item.kind === "section" || item.label || item.url)
               : item.kind === "wifi" || item.label || item.url
           );
 
@@ -2547,7 +2549,7 @@ export default function MonEspacePage() {
                   item,
                   index
                 ) =>
-                  item.kind !== "location" && item.kind !== "wifi" ? (
+                  item.kind !== "location" && item.kind !== "wifi" && item.kind !== "section" && item.kind !== "project" ? (
                   <div
                     className="customCard"
                     key={
@@ -2716,6 +2718,32 @@ export default function MonEspacePage() {
               </label>
             </div>
           </section>
+          ) : null}
+
+          {card.entity_type === "profile" ? (
+            <section className="formSection">
+              <div className="sectionTitle"><h2>Rubrique de mon profil</h2><p>Personnalisez le titre affiché sur votre carte publique et présentez vos projets.</p></div>
+              <div className="grid two">
+                <label>Titre de la rubrique
+                  <input value={card.custom_links.find(item => item.kind === "section")?.label ?? "Mes sociétés"}
+                    placeholder="Mes sociétés, Mes projets, Mes réalisations..."
+                    onChange={e => setCard(prev => ({...prev, custom_links: [
+                      ...prev.custom_links.filter(item => item.kind !== "section"),
+                      {id: prev.custom_links.find(item => item.kind === "section")?.id || uid(), kind:"section",label:e.target.value,url:""}
+                    ]}))} />
+                </label>
+              </div>
+              <p>Les sociétés associées apparaîtront sous ce titre. Vous pouvez aussi ajouter des projets avec leur lien.</p>
+              {card.custom_links.map((item, index) => item.kind === "project" ? (
+                <div key={item.id} className="grid two" style={{marginBottom:12}}>
+                  <label>Nom du projet<input value={item.label} onChange={e => updateCustomLink(index,"label",e.target.value)} placeholder="Ex. Mon nouveau projet" /></label>
+                  <label>Site ou lien du projet<input value={item.url} onChange={e => updateCustomLink(index,"url",e.target.value)} placeholder="https://..." /></label>
+                  <button type="button" className="addLocationButton" onClick={() => removeCustomLink(index)}>Supprimer ce projet</button>
+                </div>
+              ) : null)}
+              <button type="button" className="addLocationButton" onClick={() => setCard(prev => ({...prev, custom_links:[...prev.custom_links,{id:uid(),kind:"project",label:"",url:""}]}))}>+ Ajouter un projet</button>
+              <p>Enregistrez votre carte pour publier ces modifications.</p>
+            </section>
           ) : null}
 
           {card.entity_type === "profile" && card.id ? (
