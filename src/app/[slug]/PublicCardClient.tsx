@@ -26,7 +26,7 @@ type CustomLink = {
   id: string;
   label: string;
   url: string;
-  kind?: "link" | "location" | "wifi";
+  kind?: "link" | "location" | "wifi" | "section" | "project";
   image_url?: string;
   enabled?: boolean;
   ssid?: string;
@@ -619,7 +619,9 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                     (isGoogleMapsUrl(url) ? "Localisation" : "Lien"),
                   url,
                   kind:
-                    item.kind === "wifi"
+                    item.kind === "section" || item.kind === "project"
+                      ? item.kind
+                      : item.kind === "wifi"
                       ? "wifi"
                       : item.kind === "location" || isGoogleMapsUrl(url)
                         ? "location"
@@ -982,11 +984,14 @@ export default function PublicCardClient({ slug }: { slug: string }) {
 
   const customs = (card.custom_links || []).filter(
     (item) =>
-      item.kind !== "wifi" &&
+      item.kind !== "wifi" && item.kind !== "section" && item.kind !== "project" &&
       !isLocationLink(item) &&
       (item.label || "").trim() &&
       (item.url || "").trim()
   );
+
+  const profileSectionTitle = (card.custom_links || []).find(item => item.kind === "section")?.label?.trim() || (lang === "en" ? "My companies" : "Mes sociétés");
+  const profileProjects = (card.custom_links || []).filter(item => item.kind === "project" && item.label?.trim() && item.url?.trim());
 
   const locations = (card.custom_links || []).filter(
     (item) => item.kind !== "wifi" && isLocationLink(item) && (item.url || "").trim()
@@ -1173,7 +1178,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                       aria-label={t.call}
                       title={t.call}
                     >
-                      <span>☎</span>
+                      <span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.4 2.8a2 2 0 0 1-.6 1.7L7.5 9.6a16 16 0 0 0 6.9 6.9l1.4-1.4a2 2 0 0 1 1.7-.6l2.8.4a2 2 0 0 1 1.7 2z"/></svg></span>
                     </a>
                   ) : null}
 
@@ -1184,7 +1189,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
                       aria-label={t.email}
                       title={t.email}
                     >
-                      <span>✉</span>
+                      <span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
                     </a>
                   ) : null}
                 </div>
@@ -1490,15 +1495,22 @@ export default function PublicCardClient({ slug }: { slug: string }) {
           </div>
         ) : null}
 
-        {card.entity_type === "profile" && profileCompanies.length ? (
+        {card.entity_type === "profile" && (profileCompanies.length > 0 || profileProjects.length > 0) ? (
           <section className="profileCompaniesPublic">
-            <div className="profileCompaniesTitle"><span>SOCIÉTÉS</span><h2>Mes sociétés</h2></div>
+            <div className="profileCompaniesTitle"><span>{lang === "en" ? "MY SPACE" : "MON ESPACE"}</span><h2>{profileSectionTitle}</h2></div>
             <div className="profileCompaniesGrid">
+              {profileProjects.map(project => (
+                <a key={project.id} className="profileCompanyCard" href={normalizeUrl(project.url)} target="_blank" rel="noopener noreferrer">
+                  <span className="profileCompanyLogo">✦</span>
+                  <span className="profileCompanyCopy"><strong>{project.label}</strong><small>{lang === "en" ? "Project" : "Projet"}</small></span>
+                  <span className="profileCompanyArrow">{lang === "en" ? "Open" : "Découvrir"} →</span>
+                </a>
+              ))}
               {profileCompanies.map((link) => (
                 <a key={link.id} href={`/${link.company?.slug || ""}`} target="_blank" rel="noopener noreferrer" className={ledOn ? "profileCompanyCard ledSoft" : "profileCompanyCard"}>
                   <span className="profileCompanyLogo">{link.company?.photo_url ? <img src={link.company.photo_url} alt="" /> : (link.company?.full_name || "S").charAt(0)}</span>
                   <span className="profileCompanyCopy"><strong>{link.company?.full_name}</strong><small>{link.position_title}</small></span>
-                  <span className="profileCompanyArrow">Voir la page →</span>
+                  <span className="profileCompanyArrow">Voir →</span>
                 </a>
               ))}
             </div>
@@ -1785,7 +1797,7 @@ export default function PublicCardClient({ slug }: { slug: string }) {
         .langSwitch button.active { color:var(--accent); }
         .langSwitch span { opacity:.35; }
         .shareTools button { min-height:42px; padding:0 14px; border:2px solid var(--button-border); border-radius:14px; background:var(--button-bg); color:var(--button-text); font-weight:800; cursor:pointer; }
-        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap;margin:10px auto 8px;padding:0 18px;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}.profileSocialsCompact::-webkit-scrollbar{display:none}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactMini>span{color:#fff;font-size:16px;font-weight:800;line-height:1}.profileContactMini.phone>span{background:#16a34a}.profileContactMini.email>span{background:#dc2626;font-size:15px}.profileCustomLinks{display:grid;gap:10px;margin:14px 24px 20px}
+        .profileSocialsCompact{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap;margin:10px auto 8px;padding:0 18px;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}.profileSocialsCompact::-webkit-scrollbar{display:none}.compactProfileIdentity + .profileSocialsCompact{margin-top:4px}.profileSocialMini{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;text-decoration:none;transition:transform .18s ease,opacity .18s ease}.profileSocialMini:hover{transform:translateY(-2px);opacity:.9}.profileSocialMini>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;box-shadow:0 5px 16px rgba(0,0,0,.15)}.profileSocialMini :global(svg){width:16px;height:16px}.profileContactMini>span{color:#fff;font-size:16px;font-weight:800;line-height:1}.profileContactMini.phone>span,.profileContactMini.email>span{background:color-mix(in srgb,var(--accent) 14%,var(--panel));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);box-shadow:0 4px 12px rgba(0,0,0,.09)}.profileContactMini>span svg{width:17px;height:17px}.profileCustomLinks{display:grid;gap:10px;margin:14px 24px 20px}
                 .profileCompaniesPublic{margin:18px 0;padding:22px;border:1px solid rgba(255,255,255,.09);border-radius:28px;background:rgba(255,255,255,.02)}
         .profileCompaniesTitle span{font-size:10px;letter-spacing:.14em;font-weight:900;color:var(--accent)}.profileCompaniesTitle h2{margin:5px 0 16px;font-size:22px}.profileCompaniesGrid{display:grid;gap:10px}.profileCompanyCard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--panel);color:inherit;text-decoration:none;border:1px solid rgba(255,255,255,.08)}.profileCompanyLogo{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 18%,var(--panel));font-weight:900}.profileCompanyLogo img{width:100%;height:100%;object-fit:cover}.profileCompanyCopy{display:grid;gap:4px}.profileCompanyCopy small{color:var(--muted)}.profileCompanyArrow{min-height:34px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--button-border);border-radius:10px;background:var(--button-bg);color:var(--button-text);font-size:12px;font-weight:800;white-space:nowrap}
         @media(max-width:560px){.profileCompaniesPublic{padding:15px}.profileCompanyCard{grid-template-columns:46px 1fr}.profileCompanyLogo{width:46px;height:46px}.profileCompanyArrow{grid-column:2}}
